@@ -13,7 +13,7 @@
     "elevenlabs"
   ],
   "scripts": {
-    "test": "node --import tsx --test src/**/*.test.ts"
+    "test": "node --experimental-strip-types --test 'src/**/*.test.ts'"
   },
   "files": [
     "src",

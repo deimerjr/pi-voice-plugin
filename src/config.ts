@@ -1,0 +1,179 @@
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+
+export type SpeechProviderType = "openai" | "elevenlabs" | "custom";
+export type CodeFilterMode = "omit" | "mention" | "raw";
+export type SpeechMode = "final" | "all";
+
+export interface OpenAIProviderConfig {
+  apiKey?: string;
+  baseUrl: string;
+  model: string;
+  voice: string;
+  speed: number;
+  format: "wav" | "mp3" | "opus" | "aac" | "flac";
+}
+
+export interface ElevenLabsProviderConfig {
+  apiKey?: string;
+  baseUrl: string;
+  voiceId: string;
+  modelId: string;
+  stability: number;
+  similarityBoost: number;
+}
+
+export interface CustomProviderConfig {
+  url: string;
+  method: "POST" | "GET";
+  headers?: Record<string, string>;
+  bodyTemplate?: string;
+  format: "wav" | "mp3";
+}
+
+export interface VoicePluginConfig {
+  enabled: boolean;
+  autoRead: boolean;
+  mode: SpeechMode;
+  filterCode: CodeFilterMode;
+  provider: SpeechProviderType;
+  maxCharsPerSpeech: number;
+  playerCommand?: string;
+  openai: OpenAIProviderConfig;
+  elevenlabs: ElevenLabsProviderConfig;
+  custom: CustomProviderConfig;
+}
+
+export const DEFAULT_CONFIG: VoicePluginConfig = {
+  enabled: true,
+  autoRead: false,
+  mode: "final",
+  filterCode: "omit",
+  provider: "openai",
+  maxCharsPerSpeech: 4000,
+  openai: {
+    baseUrl: "https://api.openai.com/v1",
+    model: "tts-1",
+    voice: "nova",
+    speed: 1.0,
+    format: "wav",
+  },
+  elevenlabs: {
+    baseUrl: "https://api.elevenlabs.io/v1",
+    voiceId: "21m00Tcm4TlvDq8ikWAM", // Rachel
+    modelId: "eleven_multilingual_v2",
+    stability: 0.5,
+    similarityBoost: 0.75,
+  },
+  custom: {
+    url: "http://localhost:8000/v1/audio/speech",
+    method: "POST",
+    format: "wav",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  },
+};
+
+export class ConfigManager {
+  private configPath: string;
+  private currentConfig: VoicePluginConfig;
+
+  constructor(customPath?: string) {
+    this.configPath =
+      customPath ||
+      path.join(os.homedir(), ".pi", "agent", "voice.json");
+    this.currentConfig = this.load();
+  }
+
+  public getConfigPath(): string {
+    return this.configPath;
+  }
+
+  public getConfig(): VoicePluginConfig {
+    return { ...this.currentConfig };
+  }
+
+  public getActiveApiKey(): string | undefined {
+    const provider = this.currentConfig.provider;
+    if (provider === "openai") {
+      return (
+        this.currentConfig.openai.apiKey ||
+        process.env.OPENAI_API_KEY ||
+        process.env.OPENAI_TTS_API_KEY
+      );
+    }
+    if (provider === "elevenlabs") {
+      return (
+        this.currentConfig.elevenlabs.apiKey ||
+        process.env.ELEVENLABS_API_KEY ||
+        process.env.XI_API_KEY
+      );
+    }
+    return undefined;
+  }
+
+  public load(): VoicePluginConfig {
+    try {
+      if (fs.existsSync(this.configPath)) {
+        const raw = fs.readFileSync(this.configPath, "utf-8");
+        const parsed = JSON.parse(raw);
+        this.currentConfig = this.mergeConfig(DEFAULT_CONFIG, parsed);
+        return this.currentConfig;
+      }
+    } catch {
+      // Fallback to default on parse error
+    }
+    this.currentConfig = { ...DEFAULT_CONFIG };
+    return this.currentConfig;
+  }
+
+  public save(updates: Partial<VoicePluginConfig>): VoicePluginConfig {
+    this.currentConfig = this.mergeConfig(this.currentConfig, updates);
+    try {
+      const dir = path.dirname(this.configPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(
+        this.configPath,
+        JSON.stringify(this.currentConfig, null, 2),
+        "utf-8"
+      );
+    } catch (err) {
+      console.error("[pi-voice-plugin] Error guardando config:", err);
+    }
+    return this.currentConfig;
+  }
+
+  public updateNested<K extends "openai" | "elevenlabs" | "custom">(
+    section: K,
+    updates: Partial<VoicePluginConfig[K]>
+  ): VoicePluginConfig {
+    const updatedSection = { ...this.currentConfig[section], ...updates };
+    return this.save({ [section]: updatedSection } as Partial<VoicePluginConfig>);
+  }
+
+  private mergeConfig(
+    base: VoicePluginConfig,
+    incoming: Partial<VoicePluginConfig>
+  ): VoicePluginConfig {
+    return {
+      ...base,
+      ...incoming,
+      openai: {
+        ...base.openai,
+        ...(incoming.openai || {}),
+      },
+      elevenlabs: {
+        ...base.elevenlabs,
+        ...(incoming.elevenlabs || {}),
+      },
+      custom: {
+        ...base.custom,
+        ...(incoming.custom || {}),
+      },
+    };
+  }
+}
