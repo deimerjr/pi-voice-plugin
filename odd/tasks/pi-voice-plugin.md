@@ -11,3 +11,4 @@ Plugin/Extensión para Pi CLI que sintetiza en voz las respuestas del asistente 
 - [x] Task 5: Implement Audio Player Manager (`src/player.ts`) con detección de reproductores nativos (pw-play, aplay, afplay) y cancelación inmediata [commit: 80ec32d]
 - [x] Task 6: Implement Pi Extension entrypoint (`extensions/voice.ts` / `src/index.ts`) con comandos `/voice` y hooks de eventos (`agent_end`, `input`, etc.) [commit: 5ddef2f]
 - [x] Task 7: Unit tests, verificación de funcionamiento y documentación en `README.md` [commit: 4081f14]
+- [x] Task 8: Implement mouse-interactive widget, visual menu/submenus, voice preview, and custom API integration (`src/menu.ts`, `src/index.ts`) [commit: 69c4091]
