@@ -83,6 +83,7 @@ export class ConfigManager {
   constructor(customPath?: string) {
     this.configPath =
       customPath ||
+      process.env.PI_VOICE_CONFIG_PATH ||
       path.join(os.homedir(), ".pi", "agent", "voice.json");
     this.currentConfig = this.load();
   }
