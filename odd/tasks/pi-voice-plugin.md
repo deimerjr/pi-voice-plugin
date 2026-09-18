@@ -4,10 +4,10 @@ Plugin/Extensión para Pi CLI que sintetiza en voz las respuestas del asistente 
 
 ## Tasks
 
-- [ ] Task 1: Package structure & TypeScript setup (`package.json`, `tsconfig.json`, `.gitignore`)
-- [ ] Task 2: Implement Config Manager (`src/config.ts`) con persistencia en disco y soporte de variables de entorno
-- [ ] Task 3: Implement Text Sanitizer (`src/sanitizer.ts`) para omitir código, tablas y formateo markdown en la locución
-- [ ] Task 4: Implement Universal TTS Providers (`src/providers/`) con adaptadores para OpenAI/Compatible, ElevenLabs y Custom HTTP
-- [ ] Task 5: Implement Audio Player Manager (`src/player.ts`) con detección de reproductores nativos (pw-play, aplay, afplay) y cancelación inmediata
-- [ ] Task 6: Implement Pi Extension entrypoint (`extensions/voice.ts` / `src/index.ts`) con comandos `/voice` y hooks de eventos (`agent_end`, `input`, etc.)
-- [ ] Task 7: Unit tests, verificación de funcionamiento y documentación en `README.md`
+- [x] Task 1: Package structure & TypeScript setup (`package.json`, `tsconfig.json`, `.gitignore`) [commit: 2791270]
+- [x] Task 2: Implement Config Manager (`src/config.ts`) con persistencia en disco y soporte de variables de entorno [commit: a8730c1]
+- [x] Task 3: Implement Text Sanitizer (`src/sanitizer.ts`) para omitir código, tablas y formateo markdown en la locución [commit: c819f07]
+- [x] Task 4: Implement Universal TTS Providers (`src/providers/`) con adaptadores para OpenAI/Compatible, ElevenLabs y Custom HTTP [commit: 0d60cd3]
+- [x] Task 5: Implement Audio Player Manager (`src/player.ts`) con detección de reproductores nativos (pw-play, aplay, afplay) y cancelación inmediata [commit: 80ec32d]
+- [x] Task 6: Implement Pi Extension entrypoint (`extensions/voice.ts` / `src/index.ts`) con comandos `/voice` y hooks de eventos (`agent_end`, `input`, etc.) [commit: 5ddef2f]
+- [x] Task 7: Unit tests, verificación de funcionamiento y documentación en `README.md` [commit: 4081f14]
