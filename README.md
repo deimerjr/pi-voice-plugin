@@ -6,6 +6,14 @@ Plugin / Extensión modular para **Pi CLI** que sintetiza en voz las respuestas 
 
 ## 🌟 Características
 
+- **Menú Visual Interactivo con Mouse**:
+  - Un botón widget interactivo colocado al pie del editor `[ 🎙️ Voice: ON/OFF (voz) • Clic: Menú ⚙️ ]` que podés clickear directamente con el ratón.
+  - Interfaz visual por overlays con navegación por mouse y teclado (flechas, Enter, Escape).
+  - Atajo rápido global `ctrl+alt+v` o comando `/voice menu` / `/voice`.
+- **Preescucha de Voces en Vivo (Audio Preview)**:
+  - Al explorar el catálogo de voces de OpenAI o ElevenLabs, podés escuchar una muestra de audio real de cada voz antes de confirmarla.
+- **Integración de API Custom**:
+  - Conexión con cualquier endpoint HTTP REST propio o servidor local (Kokoro, XTTS, vLLM, Piper), con configuración interactiva de URL, método (POST/GET), headers de autorización y formato (WAV/MP3).
 - **Soporte Universal de Proveedores**:
   - **OpenAI / Compatible** (`/v1/audio/speech`): Compatible de forma nativa con OpenAI (`tts-1`, `tts-1-hd`), Groq, Deepgram, servidores locales Kokoro TTS, LocalAI, vLLM y FastWhisper.
   - **ElevenLabs** (`/v1/text-to-speech`): Voces ultrarrealistas y clonadas con modelos multilingües.
@@ -44,6 +52,7 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 
 | Comando | Descripción |
 | :--- | :--- |
+| `/voice` / `/voice menu` | Abre el menú visual interactivo con soporte de mouse |
 | `/voice on` | Activa la lectura automática tras cada respuesta |
 | `/voice off` | Desactiva la lectura automática (modo silencioso) |
 | `/voice toggle` | Alterna entre lectura automática ON / OFF |
@@ -53,6 +62,7 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 | `/voice status` | Muestra proveedor, voz, velocidad, reproductor y estado actual |
 | `/voice provider <tipo>` | Cambia de proveedor (`openai`, `elevenlabs`, `custom`) |
 | `/voice voice <nombre>` | Cambia la voz (ej: `nova`, `alloy`, `echo`, `onyx`, o ID de ElevenLabs) |
+| `/voice custom <accion>` | Configura API custom (`url`, `method`, `format`, `activate`) |
 | `/voice speed <numero>` | Ajusta la velocidad de habla (ej: `1.0`, `1.25`) |
 | `/voice filter <modo>` | Tratamiento de código: `omit` (ignorar), `mention` (avisar), `raw` (leer todo) |
 | `/voice key <api-key>` | Guarda la clave de API para el proveedor activo en `voice.json` |

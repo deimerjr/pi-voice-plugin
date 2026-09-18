@@ -1,8 +1,15 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { ConfigManager, type VoicePluginConfig, type CodeFilterMode, type SpeechProviderType } from "./config.ts";
+import { Text, MouseRegion } from "@earendil-works/pi-tui";
+import {
+  ConfigManager,
+  type VoicePluginConfig,
+  type CodeFilterMode,
+  type SpeechProviderType,
+} from "./config.ts";
 import { TextSanitizer } from "./sanitizer.ts";
 import { createTTSProvider } from "./providers/factory.ts";
 import { AudioPlayer } from "./player.ts";
+import { VoiceMenuComponent } from "./menu.ts";
 
 export default function (pi: ExtensionAPI) {
   const configManager = new ConfigManager();
@@ -15,11 +22,85 @@ export default function (pi: ExtensionAPI) {
   let lastAssistantText = "";
   let isSynthesizing = false;
 
-  const updateFooterStatus = (ctx?: ExtensionContext) => {
+  const updateUiState = (ctx?: ExtensionContext) => {
     if (!ctx?.ui) return;
-    const status = config.autoRead ? "🔊 ON" : "🔇 OFF";
-    const providerLabel = config.provider === "openai" ? config.openai.voice : config.provider;
-    ctx.ui.setStatus("pi-voice", `Voice: ${status} (${providerLabel})`);
+    const statusIcon = config.autoRead ? "🔊" : "🔇";
+    const providerLabel =
+      config.provider === "openai"
+        ? config.openai.voice
+        : config.provider === "elevenlabs"
+        ? config.elevenlabs.voiceId
+        : "custom";
+
+    // 1. Footer status (visible in the bottom bar)
+    ctx.ui.setStatus(
+      "pi-voice",
+      `Voice: ${statusIcon} ${config.autoRead ? "ON" : "OFF"} (${providerLabel})`
+    );
+
+    // 2. Interactive clickable widget below editor with mouse support
+    if (ctx.hasUI && ctx.mode === "tui") {
+      ctx.ui.setWidget(
+        "pi-voice-pill",
+        (_tui, theme) => {
+          const pillText = new Text(
+            theme.fg("accent", " [ 🎙️ ") +
+              theme.fg(
+                config.autoRead ? "success" : "muted",
+                `${statusIcon} Voice ${config.autoRead ? "ON" : "OFF"}`
+              ) +
+              theme.fg("dim", ` • ${providerLabel}`) +
+              theme.fg("accent", " • ") +
+              theme.fg("accent", theme.bold("Clic: Menú ⚙️")) +
+              theme.fg("accent", " ] "),
+            0,
+            0
+          );
+
+          return new MouseRegion(pillText, (event) => {
+            if (event.type === "click" && event.button === "left") {
+              openVoiceMenu(ctx).catch(() => {});
+              return { handled: true };
+            }
+            return undefined;
+          });
+        },
+        { placement: "belowEditor" }
+      );
+    }
+  };
+
+  const openVoiceMenu = async (ctx: ExtensionContext): Promise<void> => {
+    if (!ctx.hasUI || ctx.mode !== "tui") {
+      ctx.ui.notify("El menú interactivo requiere modo TUI", "warning");
+      return;
+    }
+
+    await ctx.ui.custom(
+      (tui, theme, _kb, done) => {
+        return new VoiceMenuComponent({
+          configManager,
+          player,
+          theme,
+          tui,
+          ctx,
+          lastAssistantText,
+          onClose: done,
+          onConfigChanged: (newConfig) => {
+            config = newConfig;
+            updateUiState(ctx);
+          },
+        });
+      },
+      {
+        overlay: true,
+        overlayOptions: {
+          anchor: "center",
+          width: 72,
+          maxHeight: 22,
+        },
+      }
+    );
   };
 
   const speakText = async (rawText: string, ctx?: ExtensionContext): Promise<void> => {
@@ -67,7 +148,7 @@ export default function (pi: ExtensionAPI) {
       }
     } finally {
       isSynthesizing = false;
-      updateFooterStatus(ctx);
+      updateUiState(ctx);
     }
   };
 
@@ -88,7 +169,7 @@ export default function (pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
     config = configManager.load();
     player.setCustomCommand(config.playerCommand);
-    updateFooterStatus(ctx);
+    updateUiState(ctx);
   });
 
   // User input cancels ongoing speech immediately
@@ -118,25 +199,41 @@ export default function (pi: ExtensionAPI) {
         lastAssistantText = text;
 
         if (config.enabled && config.autoRead) {
-          // Speak in background
           speakText(text, ctx).catch(() => {});
         }
       }
     }
   });
 
+  // Register shortcut to open voice menu directly (if supported by host)
+  if (typeof (pi as any).registerShortcut === "function") {
+    (pi as any).registerShortcut("ctrl+alt+v", {
+      description: "Abrir menú interactivo de Pi Voice",
+      handler: async (ctx: ExtensionContext) => {
+        await openVoiceMenu(ctx);
+      },
+    });
+  }
+
   // Register command /voice
   pi.registerCommand("voice", {
-    description: "Control de síntesis de voz (/voice help para opciones)",
+    description: "Control de síntesis de voz (/voice menu para interfaz visual)",
     handler: async (args, ctx) => {
       const parts = (args || "").trim().split(/\s+/);
       const sub = parts[0]?.toLowerCase() || "";
       const val = parts.slice(1).join(" ");
 
       switch (sub) {
+        case "":
+        case "menu":
+        case "gui": {
+          await openVoiceMenu(ctx);
+          break;
+        }
+
         case "on": {
           config = configManager.save({ autoRead: true });
-          updateFooterStatus(ctx);
+          updateUiState(ctx);
           ctx.ui.notify("🔊 Lectura en voz automática ACTIVADA", "info");
           break;
         }
@@ -144,7 +241,7 @@ export default function (pi: ExtensionAPI) {
         case "off": {
           config = configManager.save({ autoRead: false });
           player.stop();
-          updateFooterStatus(ctx);
+          updateUiState(ctx);
           ctx.ui.notify("🔇 Lectura en voz automática DESACTIVADA", "info");
           break;
         }
@@ -153,7 +250,7 @@ export default function (pi: ExtensionAPI) {
           const newState = !config.autoRead;
           config = configManager.save({ autoRead: newState });
           if (!newState) player.stop();
-          updateFooterStatus(ctx);
+          updateUiState(ctx);
           ctx.ui.notify(
             newState ? "🔊 Lectura automática ACTIVADA" : "🔇 Lectura automática DESACTIVADA",
             "info"
@@ -164,7 +261,7 @@ export default function (pi: ExtensionAPI) {
         case "stop": {
           player.stop();
           isSynthesizing = false;
-          updateFooterStatus(ctx);
+          updateUiState(ctx);
           ctx.ui.notify("⏹️ Reproducción de voz detenida", "info");
           break;
         }
@@ -197,7 +294,7 @@ export default function (pi: ExtensionAPI) {
             return;
           }
           config = configManager.save({ provider: val.toLowerCase() as SpeechProviderType });
-          updateFooterStatus(ctx);
+          updateUiState(ctx);
           ctx.ui.notify(`Proveedor de voz cambiado a: ${config.provider}`, "info");
           break;
         }
@@ -216,7 +313,37 @@ export default function (pi: ExtensionAPI) {
             config = configManager.updateNested("elevenlabs", { voiceId: val });
             ctx.ui.notify(`Voice ID ElevenLabs cambiado a: ${val}`, "info");
           }
-          updateFooterStatus(ctx);
+          updateUiState(ctx);
+          break;
+        }
+
+        case "custom": {
+          const subParts = val.split(/\s+/);
+          const customAction = subParts[0]?.toLowerCase();
+          const customVal = subParts.slice(1).join(" ");
+
+          if (customAction === "url" && customVal) {
+            config = configManager.updateNested("custom", { url: customVal });
+            updateUiState(ctx);
+            ctx.ui.notify(`URL Custom actualizada a: ${customVal}`, "info");
+          } else if (customAction === "method" && (customVal === "POST" || customVal === "GET")) {
+            config = configManager.updateNested("custom", { method: customVal as "POST" | "GET" });
+            updateUiState(ctx);
+            ctx.ui.notify(`Método Custom actualizado a: ${customVal}`, "info");
+          } else if (customAction === "format" && (customVal === "wav" || customVal === "mp3")) {
+            config = configManager.updateNested("custom", { format: customVal as "wav" | "mp3" });
+            updateUiState(ctx);
+            ctx.ui.notify(`Formato Custom actualizado a: ${customVal}`, "info");
+          } else if (customAction === "activate") {
+            config = configManager.save({ provider: "custom" });
+            updateUiState(ctx);
+            ctx.ui.notify("Custom API seleccionada como proveedor activo", "info");
+          } else {
+            ctx.ui.notify(
+              "Uso de /voice custom: url <url> | method <POST|GET> | format <wav|mp3> | activate",
+              "info"
+            );
+          }
           break;
         }
 
@@ -284,6 +411,8 @@ export default function (pi: ExtensionAPI) {
         default: {
           const helpText = [
             "Comandos de Pi Voice:",
+            "  /voice                 - Abre el menú visual interactivo con mouse",
+            "  /voice menu            - Abre el menú visual interactivo con mouse",
             "  /voice on              - Activa la lectura automática tras cada respuesta",
             "  /voice off             - Desactiva la lectura automática",
             "  /voice toggle          - Alterna entre lectura automática on/off",
@@ -293,6 +422,7 @@ export default function (pi: ExtensionAPI) {
             "  /voice status          - Muestra la configuración actual",
             "  /voice provider <tipo> - Cambia de proveedor (openai | elevenlabs | custom)",
             "  /voice voice <nombre>  - Cambia la voz (ej: nova, alloy, echo, onyx)",
+            "  /voice custom <accion> - Configura API custom (url, method, format, activate)",
             "  /voice speed <numero>  - Cambia la velocidad (ej: 1.0, 1.25)",
             "  /voice filter <modo>   - Modo de código (omit | mention | raw)",
             "  /voice key <api-key>   - Guarda la API key del proveedor activo",

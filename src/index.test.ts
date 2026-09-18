@@ -17,6 +17,7 @@ describe("Voice Extension Entrypoint", () => {
         registeredCommandName = name;
         registeredCommandOpts = opts;
       },
+      registerShortcut(key: string, opts: any) {},
     };
 
     voiceExtension(mockPi);
