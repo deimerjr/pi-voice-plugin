@@ -1,5 +1,4 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { Text, MouseRegion } from "@earendil-works/pi-tui";
 import {
   ConfigManager,
   type VoicePluginConfig,
@@ -38,35 +37,9 @@ export default function (pi: ExtensionAPI) {
       `Voice: ${statusIcon} ${config.autoRead ? "ON" : "OFF"} (${providerLabel})`
     );
 
-    // 2. Interactive clickable widget below editor with mouse support
-    if (ctx.hasUI && ctx.mode === "tui") {
-      ctx.ui.setWidget(
-        "pi-voice-pill",
-        (_tui, theme) => {
-          const pillText = new Text(
-            theme.fg("accent", " [ 🎙️ ") +
-              theme.fg(
-                config.autoRead ? "success" : "muted",
-                `${statusIcon} Voice ${config.autoRead ? "ON" : "OFF"}`
-              ) +
-              theme.fg("dim", ` • ${providerLabel}`) +
-              theme.fg("accent", " • ") +
-              theme.fg("accent", theme.bold("Clic: Menú ⚙️")) +
-              theme.fg("accent", " ] "),
-            0,
-            0
-          );
-
-          return new MouseRegion(pillText, (event) => {
-            if (event.type === "click" && event.button === "left") {
-              openVoiceMenu(ctx).catch(() => {});
-              return { handled: true };
-            }
-            return undefined;
-          });
-        },
-        { placement: "belowEditor" }
-      );
+    // 2. Clear any widget below editor
+    if (ctx.hasUI) {
+      ctx.ui.setWidget("pi-voice-pill", undefined);
     }
   };
 
