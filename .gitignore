@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+
+# Local Pi runtime state
+.atl/
+.pi/
+
+# Environment and local configs
+.env
+*.local.json
+
+# Audio temp files
+*.tmp.wav
+*.tmp.mp3
