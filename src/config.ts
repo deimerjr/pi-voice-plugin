@@ -95,23 +95,31 @@ export class ConfigManager {
     return { ...this.currentConfig };
   }
 
+  public static cleanApiKey(key?: string): string | undefined {
+    if (!key || typeof key !== "string") return undefined;
+    const trimmed = key.trim();
+    const cleaned = trimmed
+      .replace(/^<+|>+$/g, "")
+      .replace(/^["']+|["']+$/g, "")
+      .trim();
+    return cleaned || undefined;
+  }
+
   public getActiveApiKey(): string | undefined {
     const provider = this.currentConfig.provider;
+    let rawKey: string | undefined;
     if (provider === "openai") {
-      return (
+      rawKey =
         this.currentConfig.openai.apiKey ||
         process.env.OPENAI_API_KEY ||
-        process.env.OPENAI_TTS_API_KEY
-      );
-    }
-    if (provider === "elevenlabs") {
-      return (
+        process.env.OPENAI_TTS_API_KEY;
+    } else if (provider === "elevenlabs") {
+      rawKey =
         this.currentConfig.elevenlabs.apiKey ||
         process.env.ELEVENLABS_API_KEY ||
-        process.env.XI_API_KEY
-      );
+        process.env.XI_API_KEY;
     }
-    return undefined;
+    return ConfigManager.cleanApiKey(rawKey);
   }
 
   public load(): VoicePluginConfig {

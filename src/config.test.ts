@@ -68,6 +68,13 @@ describe("ConfigManager", () => {
 
       manager.updateNested("openai", { apiKey: "sk-explicit-key" });
       assert.equal(manager.getActiveApiKey(), "sk-explicit-key");
+
+      // Auto-strip angle brackets and quotes
+      manager.updateNested("openai", { apiKey: "<sk-wrapped-in-brackets>" });
+      assert.equal(manager.getActiveApiKey(), "sk-wrapped-in-brackets");
+
+      manager.updateNested("openai", { apiKey: "\"sk-wrapped-in-quotes\"" });
+      assert.equal(manager.getActiveApiKey(), "sk-wrapped-in-quotes");
     } finally {
       if (prevKey !== undefined) {
         process.env.OPENAI_API_KEY = prevKey;

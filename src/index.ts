@@ -243,16 +243,17 @@ export default function (pi: ExtensionAPI) {
         }
 
         case "key": {
-          if (!val) {
-            ctx.ui.notify("Uso: /voice key <tu-api-key>", "warning");
+          const cleanedKey = ConfigManager.cleanApiKey(val);
+          if (!cleanedKey) {
+            ctx.ui.notify("Uso: /voice key <tu-api-key> (sin los signos < >)", "warning");
             return;
           }
           if (config.provider === "openai") {
-            config = configManager.updateNested("openai", { apiKey: val });
-            ctx.ui.notify("Clave de OpenAI guardada en voice.json", "info");
+            config = configManager.updateNested("openai", { apiKey: cleanedKey });
+            ctx.ui.notify("Clave de OpenAI guardada y sanitizada en voice.json", "info");
           } else if (config.provider === "elevenlabs") {
-            config = configManager.updateNested("elevenlabs", { apiKey: val });
-            ctx.ui.notify("Clave de ElevenLabs guardada en voice.json", "info");
+            config = configManager.updateNested("elevenlabs", { apiKey: cleanedKey });
+            ctx.ui.notify("Clave de ElevenLabs guardada y sanitizada en voice.json", "info");
           }
           break;
         }
