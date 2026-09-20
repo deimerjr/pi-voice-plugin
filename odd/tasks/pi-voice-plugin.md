@@ -13,3 +13,4 @@ Plugin/Extensión para Pi CLI que sintetiza en voz las respuestas del asistente 
 - [x] Task 7: Unit tests, verificación de funcionamiento y documentación en `README.md` [commit: 4081f14]
 - [x] Task 8: Implement mouse-interactive widget, visual menu/submenus, voice preview, and custom API integration (`src/menu.ts`, `src/index.ts`) [commit: 69c4091]
 - [x] Task 9: Deploy local Kokoro ONNX TTS server (`~/.kokoro-tts`, systemd service, `kokoro-tts` cli) and connect as native provider [commit: c4c744e]
+- [ ] Task 10: Implement one-click Stop button and Speaker volume control in Pi Voice Plugin

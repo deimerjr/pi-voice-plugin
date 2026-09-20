@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import voiceExtension from "./index.ts";
+import voiceExtension, { VoiceControlBarComponent } from "./index.ts";
 
 describe("Voice Extension Entrypoint", () => {
   it("registers event listeners and /voice command", async () => {
@@ -66,6 +66,10 @@ describe("Voice Extension Entrypoint", () => {
       await registeredCommandOpts.handler("status", mockCtx);
       assert.ok(notifications.some((n) => n.msg.includes("[Voice]")));
 
+      // Run /voice volume
+      await registeredCommandOpts.handler("volume 80", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("80%")));
+
       // Test input cancels speech
       assert.doesNotThrow(() => {
         listeners["input"][0]({}, mockCtx);
@@ -78,5 +82,65 @@ describe("Voice Extension Entrypoint", () => {
         // ignore
       }
     }
+  });
+
+  it("VoiceControlBarComponent renders buttons and routes clicks properly", () => {
+    const mockTheme: any = {
+      fg: (_col: string, text: string) => text,
+      bg: (_col: string, text: string) => text,
+      bold: (text: string) => `*${text}*`,
+    };
+
+    let stopped = false;
+    let volumeClicked = false;
+
+    const bar = new VoiceControlBarComponent(
+      mockTheme,
+      () => true, // isPlaying: true
+      () => 0.8, // volume: 80%
+      () => {
+        stopped = true;
+      },
+      () => {
+        volumeClicked = true;
+      }
+    );
+
+    const rendered = bar.render(80);
+    assert.equal(rendered.length, 1);
+    assert.ok(rendered[0].includes("Detener"));
+    assert.ok(rendered[0].includes("80%"));
+
+    // Click on stop button area (x = 2)
+    bar.handleMouse({
+      type: "click",
+      button: "left",
+      x: 2,
+      y: 0,
+      width: 80,
+      height: 1,
+      screenX: 2,
+      screenY: 0,
+      shift: false,
+      alt: false,
+      ctrl: false,
+    });
+    assert.equal(stopped, true);
+
+    // Click on volume button area (x = 22)
+    bar.handleMouse({
+      type: "click",
+      button: "left",
+      x: 22,
+      y: 0,
+      width: 80,
+      height: 1,
+      screenX: 22,
+      screenY: 0,
+      shift: false,
+      alt: false,
+      ctrl: false,
+    });
+    assert.equal(volumeClicked, true);
   });
 });

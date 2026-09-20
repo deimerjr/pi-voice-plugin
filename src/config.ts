@@ -48,6 +48,7 @@ export interface VoicePluginConfig {
   provider: SpeechProviderType;
   maxCharsPerSpeech: number;
   playerCommand?: string;
+  volume: number;
   openai: OpenAIProviderConfig;
   elevenlabs: ElevenLabsProviderConfig;
   kokoro: KokoroProviderConfig;
@@ -61,6 +62,7 @@ export const DEFAULT_CONFIG: VoicePluginConfig = {
   filterCode: "omit",
   provider: "openai",
   maxCharsPerSpeech: 4000,
+  volume: 1.0,
   openai: {
     baseUrl: "https://api.openai.com/v1",
     model: "tts-1",
@@ -187,6 +189,10 @@ export class ConfigManager {
     return {
       ...base,
       ...incoming,
+      volume:
+        typeof incoming.volume === "number"
+          ? Math.max(0.0, Math.min(1.5, incoming.volume))
+          : base.volume ?? 1.0,
       openai: {
         ...base.openai,
         ...(incoming.openai || {}),

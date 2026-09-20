@@ -1,4 +1,6 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { Component, Theme, TuiMouseEvent, TuiMouseEventResult } from "@earendil-works/pi-tui";
+import { visibleWidth } from "@earendil-works/pi-tui";
 import {
   ConfigManager,
   type VoicePluginConfig,
@@ -8,7 +10,89 @@ import {
 import { TextSanitizer } from "./sanitizer.ts";
 import { createTTSProvider } from "./providers/factory.ts";
 import { AudioPlayer } from "./player.ts";
-import { VoiceMenuComponent } from "./menu.ts";
+import { VoiceMenuComponent, type MenuScreen } from "./menu.ts";
+
+export class VoiceControlBarComponent implements Component {
+  private theme: Theme;
+  private isPlaying: () => boolean;
+  private getVolume: () => number;
+  private onStop: () => void;
+  private onVolumeClick: () => void;
+
+  private stopWidth: number = 0;
+  private gapWidth: number = 2;
+  private volWidth: number = 0;
+
+  constructor(
+    theme: Theme,
+    isPlaying: () => boolean,
+    getVolume: () => number,
+    onStop: () => void,
+    onVolumeClick: () => void
+  ) {
+    this.theme = theme;
+    this.isPlaying = isPlaying;
+    this.getVolume = getVolume;
+    this.onStop = onStop;
+    this.onVolumeClick = onVolumeClick;
+  }
+
+  render(_width: number): string[] {
+    const playing = this.isPlaying();
+    const vol = this.getVolume();
+    const pct = Math.round(vol * 100);
+
+    const speakerIcon = pct === 0 ? "🔇" : pct < 40 ? "🔈" : pct < 75 ? "🔉" : "🔊";
+
+    // 1. Stop button
+    const stopRaw = playing ? " [ ⏹️ Detener ] " : " [ ⏹️ Parar ] ";
+    const stopFormatted = playing
+      ? this.theme.fg("error", this.theme.bold(stopRaw))
+      : this.theme.fg("dim", stopRaw);
+    this.stopWidth = visibleWidth(stopRaw);
+
+    // 2. Speaker / Volume button
+    const volRaw = ` [ ${speakerIcon} ${pct}% ] `;
+    const volFormatted = this.theme.fg(playing ? "accent" : "muted", volRaw);
+    this.volWidth = visibleWidth(volRaw);
+
+    this.gapWidth = 2;
+    const gap = "  ";
+
+    return [stopFormatted + gap + volFormatted];
+  }
+
+  handleMouse(event: TuiMouseEvent): TuiMouseEventResult | undefined {
+    if (event.button !== "left") return undefined;
+
+    const clickX = event.x;
+    const isOverStop = clickX >= 0 && clickX < this.stopWidth;
+    const volStart = this.stopWidth + this.gapWidth;
+    const volEnd = volStart + this.volWidth;
+    const isOverVol = clickX >= volStart && clickX <= volEnd;
+
+    if (!isOverStop && !isOverVol) return undefined;
+
+    if (event.type === "press") {
+      return { handled: true };
+    }
+
+    if (event.type === "click") {
+      if (isOverStop) {
+        this.onStop();
+        return { handled: true };
+      }
+      if (isOverVol) {
+        this.onVolumeClick();
+        return { handled: true };
+      }
+    }
+
+    return undefined;
+  }
+
+  invalidate(): void {}
+}
 
 export default function (pi: ExtensionAPI) {
   const configManager = new ConfigManager();
@@ -16,6 +100,7 @@ export default function (pi: ExtensionAPI) {
 
   const player = new AudioPlayer({
     customCommand: config.playerCommand,
+    volume: config.volume ?? 1.0,
   });
 
   let lastAssistantText = "";
@@ -33,19 +118,45 @@ export default function (pi: ExtensionAPI) {
         ? config.elevenlabs.voiceId
         : "custom";
 
+    const volPct = Math.round((config.volume ?? 1.0) * 100);
+
     // 1. Footer status (visible in the bottom bar)
     ctx.ui.setStatus(
       "pi-voice",
-      `Voice: ${statusIcon} ${config.autoRead ? "ON" : "OFF"} (${providerLabel})`
+      `Voice: ${statusIcon} ${config.autoRead ? "ON" : "OFF"} (${providerLabel} • ${volPct}%)`
     );
 
-    // 2. Clear any widget below editor
-    if (ctx.hasUI) {
-      ctx.ui.setWidget("pi-voice-pill", undefined);
+    // 2. Interactive control bar widget below editor
+    if (ctx.hasUI && ctx.mode === "tui") {
+      ctx.ui.setWidget(
+        "pi-voice-controls",
+        (_tui, theme) => {
+          return new VoiceControlBarComponent(
+            theme,
+            () => isSynthesizing || player.isPlaying(),
+            () => config.volume ?? 1.0,
+            () => {
+              player.stop();
+              isSynthesizing = false;
+              if (ctx.ui) {
+                ctx.ui.notify("⏹️ Audio detenido", "info");
+              }
+              updateUiState(ctx);
+            },
+            () => {
+              openVoiceMenu(ctx, "volume").catch(() => {});
+            }
+          );
+        },
+        { placement: "belowEditor" }
+      );
     }
   };
 
-  const openVoiceMenu = async (ctx: ExtensionContext): Promise<void> => {
+  const openVoiceMenu = async (
+    ctx: ExtensionContext,
+    initialScreen: MenuScreen = "main"
+  ): Promise<void> => {
     if (!ctx.hasUI || ctx.mode !== "tui") {
       ctx.ui.notify("El menú interactivo requiere modo TUI", "warning");
       return;
@@ -60,6 +171,7 @@ export default function (pi: ExtensionAPI) {
           tui,
           ctx,
           lastAssistantText,
+          initialScreen,
           onClose: done,
           onConfigChanged: (newConfig) => {
             config = newConfig;
@@ -104,6 +216,7 @@ export default function (pi: ExtensionAPI) {
     }
 
     isSynthesizing = true;
+    updateUiState(ctx);
     if (ctx?.ui) {
       ctx.ui.setStatus("pi-voice", "🔊 Sintetizando...");
     }
@@ -111,6 +224,7 @@ export default function (pi: ExtensionAPI) {
     try {
       const result = await provider.synthesize(cleanText);
       isSynthesizing = false;
+      updateUiState(ctx);
 
       if (ctx?.ui) {
         ctx.ui.setStatus("pi-voice", "🔊 Reproduciendo...");
@@ -144,6 +258,7 @@ export default function (pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
     config = configManager.load();
     player.setCustomCommand(config.playerCommand);
+    player.setVolume(config.volume ?? 1.0);
     updateUiState(ctx);
   });
 
@@ -340,6 +455,26 @@ export default function (pi: ExtensionAPI) {
           break;
         }
 
+        case "vol":
+        case "volume": {
+          if (!val) {
+            const currentVol = Math.round((config.volume ?? 1.0) * 100);
+            ctx.ui.notify(`Volumen actual: ${currentVol}%`, "info");
+            return;
+          }
+          const num = parseFloat(val);
+          if (isNaN(num) || num < 0 || num > 150) {
+            ctx.ui.notify("Volumen inválido. Debe ser un número entre 0 y 150 (porcentaje)", "error");
+            return;
+          }
+          const volFraction = num <= 1.5 && val.includes(".") ? num : num / 100;
+          config = configManager.save({ volume: Math.max(0, Math.min(1.5, volFraction)) });
+          player.setVolume(config.volume);
+          updateUiState(ctx);
+          ctx.ui.notify(`Volumen establecido en ${Math.round(config.volume * 100)}%`, "info");
+          break;
+        }
+
         case "filter": {
           const mode = val.toLowerCase();
           if (!["omit", "mention", "raw"].includes(mode)) {
@@ -376,6 +511,7 @@ export default function (pi: ExtensionAPI) {
             `API Key detectada: ${apiKeySet ? "Sí (configurada)" : "No configurada"}`,
             `Voz actual: ${config.provider === "openai" ? config.openai.voice : config.elevenlabs.voiceId}`,
             `Velocidad: ${config.openai.speed}x`,
+            `Volumen: ${Math.round((config.volume ?? 1.0) * 100)}%`,
             `Filtro de código: ${config.filterCode}`,
             `Reproductor de audio CLI: ${detected}`,
             `Archivo de configuración: ${configManager.getConfigPath()}`,
@@ -404,6 +540,7 @@ export default function (pi: ExtensionAPI) {
             "  /voice status          - Muestra la configuración actual",
             "  /voice provider <tipo> - Cambia de proveedor (openai | elevenlabs | custom)",
             "  /voice voice <nombre>  - Cambia la voz (ej: nova, alloy, echo, onyx)",
+            "  /voice volume <0-150>  - Ajusta el volumen de habla (ej: 80, 100)",
             "  /voice custom <accion> - Configura API custom (url, method, format, activate)",
             "  /voice speed <numero>  - Cambia la velocidad (ej: 1.0, 1.25)",
             "  /voice filter <modo>   - Modo de código (omit | mention | raw)",

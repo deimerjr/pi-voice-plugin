@@ -10,6 +10,9 @@ Plugin / Extensión modular para **Pi CLI** que sintetiza en voz las respuestas 
   - Un botón widget interactivo colocado al pie del editor `[ 🎙️ Voice: ON/OFF (voz) • Clic: Menú ⚙️ ]` que podés clickear directamente con el ratón.
   - Interfaz visual por overlays con navegación por mouse y teclado (flechas, Enter, Escape).
   - Atajo rápido global `ctrl+alt+v` o comando `/voice menu` / `/voice`.
+- **Botón de Parada con un Clic e Indicador de Volumen**:
+  - Un botón de parada dedicado `[ ⏹️ Parar ]` que se ilumina en rojo `[ ⏹️ Detener ]` durante la reproducción y detiene el audio al instante con un solo clic.
+  - Un botón de volumen `[ 🔊 100% ]` con icono de parlante dinámico que al hacerle clic abre el diálogo interactivo para subir, bajar o silenciar el volumen (de 0% a 150%).
 - **Preescucha de Voces en Vivo (Audio Preview)**:
   - Al explorar el catálogo de voces de OpenAI o ElevenLabs, podés escuchar una muestra de audio real de cada voz antes de confirmarla.
 - **Integración de API Custom**:
@@ -64,6 +67,7 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 | `/voice provider <tipo>` | Cambia de proveedor (`kokoro`, `openai`, `elevenlabs`, `custom`) |
 | `/voice voice <nombre>` | Cambia la voz (ej: `nova`, `alloy`, `echo`, `onyx`, o ID de ElevenLabs) |
 | `/voice custom <accion>` | Configura API custom (`url`, `method`, `format`, `activate`) |
+| `/voice volume <0-150>` | Ajusta el volumen de reproducción (ej: `80`, `100`, `150`) |
 | `/voice speed <numero>` | Ajusta la velocidad de habla (ej: `1.0`, `1.25`) |
 | `/voice filter <modo>` | Tratamiento de código: `omit` (ignorar), `mention` (avisar), `raw` (leer todo) |
 | `/voice key <api-key>` | Guarda la clave de API para el proveedor activo en `voice.json` |

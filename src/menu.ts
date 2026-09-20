@@ -26,7 +26,8 @@ export type MenuScreen =
   | "providers"
   | "custom_api"
   | "speed"
-  | "filter";
+  | "filter"
+  | "volume";
 
 export interface VoiceMenuOptions {
   configManager: ConfigManager;
@@ -35,6 +36,7 @@ export interface VoiceMenuOptions {
   tui: TUI;
   ctx: ExtensionContext;
   lastAssistantText?: string;
+  initialScreen?: MenuScreen;
   onClose: () => void;
   onConfigChanged: (newConfig: VoicePluginConfig) => void;
 }
@@ -75,6 +77,7 @@ export class VoiceMenuComponent extends Container {
     this.lastAssistantText = options.lastAssistantText;
     this.onClose = options.onClose;
     this.onConfigChanged = options.onConfigChanged;
+    this.currentScreen = options.initialScreen || "main";
 
     this.renderScreen();
   }
@@ -128,6 +131,7 @@ export class VoiceMenuComponent extends Container {
     else if (this.currentScreen === "custom_api") titleText = "⚙️ Integrar API Custom (HTTP)";
     else if (this.currentScreen === "speed") titleText = "⚡ Velocidad de Locución";
     else if (this.currentScreen === "filter") titleText = "🧹 Filtro de Código y Markdown";
+    else if (this.currentScreen === "volume") titleText = "🔊 Control de Volumen";
 
     this.addChild(
       new Text(this.theme.fg("accent", this.theme.bold(` ${titleText} `)), 0, 0)
@@ -212,6 +216,11 @@ export class VoiceMenuComponent extends Container {
             value: "goto_custom_api",
             label: `🔌 Integrar API Custom...`,
             description: "Conectar un endpoint REST propio o servidor local",
+          },
+          {
+            value: "goto_volume",
+            label: `🔊 Control de Volumen (${Math.round((config.volume ?? 1.0) * 100)}%)...`,
+            description: "Ajustar volumen del audio (0% a 150%)",
           },
           {
             value: "goto_speed",
@@ -447,6 +456,38 @@ export class VoiceMenuComponent extends Container {
         return items;
       }
 
+      case "volume": {
+        const currentPct = Math.round((config.volume ?? 1.0) * 100);
+        const presets = [
+          { pct: 150, desc: "Volumen amplificado (potenciado)" },
+          { pct: 100, desc: "Volumen estándar recomendado" },
+          { pct: 80, desc: "Volumen alto y claro" },
+          { pct: 60, desc: "Volumen moderado / balanceado" },
+          { pct: 40, desc: "Volumen bajo / discreto" },
+          { pct: 20, desc: "Volumen suave" },
+          { pct: 0, desc: "Silencio total (0%)" },
+        ];
+
+        const items: SelectItem[] = presets.map((p) => ({
+          value: `set_vol:${p.pct}`,
+          label: `${currentPct === p.pct ? "✓ " : "  "}${p.pct}%`,
+          description: `${p.desc} • [Clic para seleccionar]`,
+        }));
+
+        items.push({
+          value: "volume_custom_input",
+          label: "✏️ Ingresar porcentaje personalizado...",
+          description: "Escribir cualquier valor entre 0 y 150",
+        });
+
+        items.push({
+          value: "back",
+          label: "⬅️ Volver",
+          description: "Regresar al menú",
+        });
+        return items;
+      }
+
       case "filter": {
         const modes: { mode: CodeFilterMode; title: string; desc: string }[] = [
           {
@@ -515,6 +556,14 @@ export class VoiceMenuComponent extends Container {
     if (value === "goto_custom_api") {
       this.statusNotice = undefined;
       this.currentScreen = "custom_api";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "goto_volume") {
+      this.statusNotice = undefined;
+      this.currentScreen = "volume";
       this.renderScreen();
       this.tui.requestRender();
       return;
@@ -744,6 +793,42 @@ export class VoiceMenuComponent extends Container {
       this.currentScreen = "main";
       this.renderScreen();
       this.tui.requestRender();
+      return;
+    }
+
+    // Volume setting
+    if (value.startsWith("set_vol:")) {
+      const pct = parseInt(value.slice(8), 10);
+      const volFraction = Math.max(0.0, Math.min(1.5, pct / 100));
+      const updated = this.configManager.save({ volume: volFraction });
+      this.player.setVolume(volFraction);
+      this.onConfigChanged(updated);
+      this.statusNotice = `🔊 Volumen ajustado al ${pct}%. Reproduciendo muestra...`;
+      this.renderScreen();
+      this.tui.requestRender();
+
+      // Play short sample at new volume
+      this.playText(`Volumen al ${pct} por ciento.`);
+      return;
+    }
+
+    if (value === "volume_custom_input") {
+      if (this.ctx.ui.input) {
+        this.onClose();
+        const currentPct = Math.round((this.configManager.getConfig().volume ?? 1.0) * 100);
+        const inputVal = await this.ctx.ui.input(
+          "Porcentaje de volumen (0 a 150):",
+          String(currentPct)
+        );
+        const parsed = parseInt(inputVal?.trim() || "", 10);
+        if (!isNaN(parsed) && parsed >= 0 && parsed <= 150) {
+          const volFraction = parsed / 100;
+          const updated = this.configManager.save({ volume: volFraction });
+          this.player.setVolume(volFraction);
+          this.onConfigChanged(updated);
+          this.ctx.ui.notify(`Volumen configurado al ${parsed}%`, "info");
+        }
+      }
       return;
     }
 

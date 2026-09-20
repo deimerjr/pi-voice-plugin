@@ -5,6 +5,7 @@ import os from "node:os";
 
 export interface PlayerOptions {
   customCommand?: string;
+  volume?: number;
 }
 
 export class AudioPlayer {
@@ -12,9 +13,48 @@ export class AudioPlayer {
   private currentTmpFile: string | null = null;
   private detectedPlayer: string | null = null;
   private customCommand?: string;
+  private volume: number = 1.0;
 
   constructor(options: PlayerOptions = {}) {
     this.customCommand = options.customCommand;
+    if (typeof options.volume === "number") {
+      this.setVolume(options.volume);
+    }
+  }
+
+  public setVolume(vol: number): void {
+    this.volume = Math.max(0.0, Math.min(1.5, vol));
+  }
+
+  public getVolume(): number {
+    return this.volume;
+  }
+
+  /**
+   * Adjusts the volume of 16-bit PCM WAV audio samples in-place.
+   */
+  public static adjustWavVolume(wavBuffer: Buffer, volume: number): Buffer {
+    if (volume === 1.0) return wavBuffer;
+    if (wavBuffer.toString("ascii", 0, 4) !== "RIFF") return wavBuffer;
+    let offset = 12;
+    while (offset < wavBuffer.length - 8) {
+      const chunkId = wavBuffer.toString("ascii", offset, offset + 4);
+      const chunkSize = wavBuffer.readUInt32LE(offset + 4);
+      if (chunkId === "data") {
+        const copy = Buffer.from(wavBuffer);
+        const dataStart = offset + 8;
+        const dataEnd = Math.min(dataStart + chunkSize, copy.length);
+        for (let i = dataStart; i < dataEnd - 1; i += 2) {
+          let sample = copy.readInt16LE(i);
+          sample = Math.round(sample * volume);
+          sample = Math.max(-32768, Math.min(32767, sample));
+          copy.writeInt16LE(sample, i);
+        }
+        return copy;
+      }
+      offset += 8 + chunkSize;
+    }
+    return wavBuffer;
   }
 
   public setCustomCommand(cmd?: string): void {
@@ -94,7 +134,13 @@ export class AudioPlayer {
       `pi-voice-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`
     );
 
-    await fs.promises.writeFile(tmpFile, audioBuffer);
+    // Apply volume scaling if WAV
+    const bufferToPlay =
+      format === "wav" || format === ".wav"
+        ? AudioPlayer.adjustWavVolume(audioBuffer, this.volume)
+        : audioBuffer;
+
+    await fs.promises.writeFile(tmpFile, bufferToPlay);
     this.currentTmpFile = tmpFile;
 
     return new Promise<void>((resolve, reject) => {

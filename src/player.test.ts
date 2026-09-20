@@ -34,4 +34,38 @@ describe("AudioPlayer", () => {
     await player.play(buffer, "wav");
     assert.equal(player.isPlaying(), false);
   });
+
+  it("adjusts volume property and scales WAV audio buffer samples", () => {
+    const player = new AudioPlayer({ volume: 0.5 });
+    assert.equal(player.getVolume(), 0.5);
+
+    player.setVolume(0.8);
+    assert.equal(player.getVolume(), 0.8);
+
+    // Clamp boundary checks
+    player.setVolume(2.0);
+    assert.equal(player.getVolume(), 1.5);
+    player.setVolume(-0.5);
+    assert.equal(player.getVolume(), 0.0);
+
+    // Build a mock minimal 16-bit mono WAV buffer with a sample
+    const wav = Buffer.alloc(46);
+    wav.write("RIFF", 0);
+    wav.writeUInt32LE(38, 4);
+    wav.write("WAVE", 8);
+    wav.write("fmt ", 12);
+    wav.writeUInt32LE(16, 16);
+    wav.writeUInt16LE(1, 20); // PCM
+    wav.writeUInt16LE(1, 22); // 1 channel
+    wav.writeUInt32LE(24000, 24);
+    wav.writeUInt32LE(48000, 28);
+    wav.writeUInt16LE(2, 32);
+    wav.writeUInt16LE(16, 34); // 16-bit
+    wav.write("data", 36);
+    wav.writeUInt32LE(2, 40); // 2 bytes = 1 sample
+    wav.writeInt16LE(10000, 44);
+
+    const scaled = AudioPlayer.adjustWavVolume(wav, 0.5);
+    assert.equal(scaled.readInt16LE(44), 5000);
+  });
 });
