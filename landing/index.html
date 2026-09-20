@@ -15,8 +15,8 @@
   <!-- CINTA DE MARQUESINA BRUTALISTA SUPERIOR -->
   <div class="marquee-banner" id="marquee-top">
     <div class="marquee-track">
-      <span>🎙️ PI VOICE PLUGIN // NATIVE TTS PARA PI CLI ★ 100% OFFLINE KOKORO ONNX ★ MODO CUADRILLA MULTI-AGENTE ★ STT DICTADO WHISPER (ALT+R) ★ PARADA INMEDIATA (ALT+S) ★ MENÚ TUI CON SOPORTE DE MOUSE ★ ZERO LATENCY AUDIO PIPELINE ★</span>
-      <span>🎙️ PI VOICE PLUGIN // NATIVE TTS PARA PI CLI ★ 100% OFFLINE KOKORO ONNX ★ MODO CUADRILLA MULTI-AGENTE ★ STT DICTADO WHISPER (ALT+R) ★ PARADA INMEDIATA (ALT+S) ★ MENÚ TUI CON SOPORTE DE MOUSE ★ ZERO LATENCY AUDIO PIPELINE ★</span>
+      <span>[▮█▄█▮] PI VOICE PLUGIN // NATIVE TTS PARA PI CLI ◆ 100% OFFLINE KOKORO ONNX ◆ MODO CUADRILLA MULTI-AGENTE ◆ STT DICTADO WHISPER (ALT+R) ◆ PARADA INMEDIATA (ALT+S) ◆ MENÚ TUI CON SOPORTE DE MOUSE ◆ ZERO LATENCY AUDIO PIPELINE ◆</span>
+      <span>[▮█▄█▮] PI VOICE PLUGIN // NATIVE TTS PARA PI CLI ◆ 100% OFFLINE KOKORO ONNX ◆ MODO CUADRILLA MULTI-AGENTE ◆ STT DICTADO WHISPER (ALT+R) ◆ PARADA INMEDIATA (ALT+S) ◆ MENÚ TUI CON SOPORTE DE MOUSE ◆ ZERO LATENCY AUDIO PIPELINE ◆</span>
     </div>
   </div>
 
@@ -35,7 +35,13 @@
         <li><a href="#comandos">COMANDOS</a></li>
       </ul>
       <div class="nav-actions">
-        <button class="btn btn-theme" id="btn-theme-toggle" aria-label="Cambiar tema">🌙 DARK MATRIX</button>
+        <button class="btn btn-theme" id="btn-theme-toggle" aria-label="Cambiar tema">
+          <svg class="b-icon-inline" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="8" cy="8" r="6"/>
+            <path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/>
+          </svg>
+          <span class="theme-label">DARK MATRIX</span>
+        </button>
         <a href="#install" class="btn btn-nav">INSTALAR AHORA ➔</a>
       </div>
     </nav>
@@ -82,8 +88,22 @@
 
         <!-- BOTONES DE ACCIÓN HERO -->
         <div class="hero-cta-group">
-          <a href="#cuadrilla" class="btn btn-primary btn-giant">🔊 ESCUCHAR LA CUADRILLA</a>
-          <a href="#comandos" class="btn btn-secondary btn-giant">⌨️ VER ATAJOS Y COMANDOS</a>
+          <a href="#cuadrilla" class="btn btn-primary btn-giant">
+            <svg class="b-icon-inline" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <polygon points="2,5 6,5 11,1 11,15 6,11 2,11"/>
+              <rect x="13" y="4" width="2" height="8"/>
+            </svg>
+            ESCUCHAR LA CUADRILLA
+          </a>
+          <a href="#comandos" class="btn btn-secondary btn-giant">
+            <svg class="b-icon-inline" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
+              <rect x="1" y="3" width="14" height="10"/>
+              <line x1="4" y1="6" x2="6" y2="6"/>
+              <line x1="8" y1="6" x2="10" y2="6"/>
+              <line x1="4" y1="9" x2="12" y2="9"/>
+            </svg>
+            VER ATAJOS Y COMANDOS
+          </a>
         </div>
       </div>
 
@@ -125,7 +145,10 @@
           </div>
           <div class="hero-card-footer">
             <button class="btn btn-block btn-accent" id="btn-trigger-test-sound">
-              ▶ TEST AUDIO ENGINE
+              <svg class="b-icon-inline" viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                <polygon points="3,2 14,8 3,14"/>
+              </svg>
+              TEST AUDIO ENGINE
             </button>
           </div>
         </div>
@@ -147,7 +170,19 @@
       <!-- AGENTE 1: EL GENTLEMAN -->
       <article class="agent-card card-yellow" data-agent="gentleman">
         <div class="agent-badge">ORQUESTADOR</div>
-        <div class="agent-avatar">🎩</div>
+        <div class="b-avatar-box">
+          <!-- Monocle & architectural crown brutalist glyph -->
+          <svg class="b-avatar-svg" viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+            <rect x="6" y="10" width="36" height="30"/>
+            <line x1="6" y1="10" x2="24" y2="4"/>
+            <line x1="42" y1="10" x2="24" y2="4"/>
+            <rect x="14" y="20" width="8" height="8" fill="currentColor"/>
+            <circle cx="32" cy="24" r="5" stroke-width="3"/>
+            <line x1="32" y1="14" x2="32" y2="34"/>
+            <line x1="22" y1="24" x2="42" y2="24"/>
+            <line x1="6" y1="36" x2="42" y2="36"/>
+          </svg>
+        </div>
         <h3 class="agent-name">EL GENTLEMAN</h3>
         <div class="agent-voice-tag">Voz: dora_heart (Cálida y firme)</div>
         <p class="agent-role">
@@ -157,48 +192,88 @@
           "Entendido, Jefe. Pongo a la cuadrilla en marcha. Dora, relevá el terreno. Alex y Santa, atentos."
         </blockquote>
         <button class="btn btn-voice-play" data-voice="gentleman">
-          ▶ ESCUCHAR A GENTLEMAN
+          <svg class="b-icon-inline play-icon" viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+            <polygon points="3,2 14,8 3,14"/>
+          </svg>
+          <span class="btn-text">ESCUCHAR A GENTLEMAN</span>
         </button>
       </article>
 
       <!-- AGENTE 2: DORA -->
       <article class="agent-card card-cyan" data-agent="dora">
         <div class="agent-badge">EXPLORADORA / SCOUT</div>
-        <div class="agent-avatar">🧭</div>
+        <div class="b-avatar-box">
+          <!-- Radar crosshair brutalist glyph -->
+          <svg class="b-avatar-svg" viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+            <polygon points="24,4 44,24 24,44 4,24"/>
+            <polygon points="24,12 36,24 24,36 12,24"/>
+            <rect x="21" y="21" width="6" height="6" fill="currentColor"/>
+            <line x1="24" y1="4" x2="24" y2="44"/>
+            <line x1="4" y1="24" x2="44" y2="24"/>
+          </svg>
+        </div>
         <h3 class="agent-name">DORA</h3>
         <div class="agent-voice-tag">Voz: ef_dora (Ágil y descriptiva)</div>
         <p class="agent-role">
           Explora directorios, analiza la arquitectura y prepara el terreno antes de escribir código.
         </p>
         <blockquote class="agent-quote">
-          "A la orden, Gentleman. Jefe, me pongo a explorar el terreno... Alex, te dejo la cancha lista."
+          "A la orden, Gentleman. Jefe, me pongo a explorar el terreno. Alex, te dejo la cancha lista."
         </blockquote>
         <button class="btn btn-voice-play" data-voice="dora">
-          ▶ ESCUCHAR A DORA
+          <svg class="b-icon-inline play-icon" viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+            <polygon points="3,2 14,8 3,14"/>
+          </svg>
+          <span class="btn-text">ESCUCHAR A DORA</span>
         </button>
       </article>
 
       <!-- AGENTE 3: ALEX -->
       <article class="agent-card card-green" data-agent="alex">
         <div class="agent-badge">PROGRAMADOR / WORKER</div>
-        <div class="agent-avatar">⚡</div>
+        <div class="b-avatar-box">
+          <!-- Implementation logic anvil brutalist glyph -->
+          <svg class="b-avatar-svg" viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+            <rect x="6" y="8" width="36" height="12"/>
+            <rect x="10" y="12" width="6" height="4" fill="currentColor"/>
+            <rect x="21" y="12" width="6" height="4" fill="currentColor"/>
+            <rect x="32" y="12" width="6" height="4" fill="currentColor"/>
+            <rect x="18" y="20" width="12" height="22"/>
+            <line x1="18" y1="30" x2="30" y2="30"/>
+            <rect x="22" y="24" width="4" height="4" fill="currentColor"/>
+            <rect x="22" y="34" width="4" height="4" fill="currentColor"/>
+          </svg>
+        </div>
         <h3 class="agent-name">ALEX</h3>
         <div class="agent-voice-tag">Voz: em_alex (Técnica y directa)</div>
         <p class="agent-role">
           Implementa soluciones limpias, escribe los tests y emite el informe de lo modificado.
         </p>
         <blockquote class="agent-quote">
-          "Recibido Dora, tomo la posta. Jefe, arranco con la implementación... Santa, pasale la lupa."
+          "Recibido Dora, tomo la posta. Jefe, arranco con la implementación. Santa, pasale la lupa y fijate si no rompí nada."
         </blockquote>
         <button class="btn btn-voice-play" data-voice="alex">
-          ▶ ESCUCHAR A ALEX
+          <svg class="b-icon-inline play-icon" viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+            <polygon points="3,2 14,8 3,14"/>
+          </svg>
+          <span class="btn-text">ESCUCHAR A ALEX</span>
         </button>
       </article>
 
       <!-- AGENTE 4: SANTA -->
       <article class="agent-card card-pink" data-agent="santa">
         <div class="agent-badge">AUDITOR / REVIEWER</div>
-        <div class="agent-avatar">🛡️</div>
+        <div class="b-avatar-box">
+          <!-- Quality caliper & loupe brutalist glyph -->
+          <svg class="b-avatar-svg" viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+            <circle cx="20" cy="20" r="14" stroke-width="3"/>
+            <rect x="17" y="17" width="6" height="6" fill="currentColor"/>
+            <line x1="30" y1="30" x2="44" y2="44" stroke-width="5"/>
+            <line x1="10" y1="10" x2="16" y2="10"/>
+            <line x1="24" y1="10" x2="30" y2="10"/>
+            <line x1="10" y1="20" x2="30" y2="20"/>
+          </svg>
+        </div>
         <h3 class="agent-name">SANTA</h3>
         <div class="agent-voice-tag">Voz: em_santa (Grave y rigurosa)</div>
         <p class="agent-role">
@@ -208,7 +283,10 @@
           "A ver qué hiciste, Alex... Jefe, voy a auditar con lupa. Todo verificado y aprobado para el Jefe."
         </blockquote>
         <button class="btn btn-voice-play" data-voice="santa">
-          ▶ ESCUCHAR A SANTA
+          <svg class="b-icon-inline play-icon" viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+            <polygon points="3,2 14,8 3,14"/>
+          </svg>
+          <span class="btn-text">ESCUCHAR A SANTA</span>
         </button>
       </article>
     </div>
@@ -216,10 +294,13 @@
     <!-- BOTÓN REPRODUCIR DIÁLOGO COMPLETO -->
     <div class="cuadrilla-chain-box">
       <div class="chain-info">
-        <strong>CIRCUITO COMPLETO EN CADENA:</strong> Escuchá la conversación completa entre los 4 agentes simulando un ciclo de desarrollo en vivo.
+        <strong>CIRCUITO COMPLETO EN CADENA:</strong> Escuchá la conversación completa entre los 4 agentes simulando un ciclo de desarrollo en vivo con sus voces originales de Kokoro.
       </div>
       <button class="btn btn-giant btn-primary" id="btn-play-all-cuadrilla">
-        ▶ REPRODUCIR DIÁLOGO COMPLETO DE LA CUADRILLA
+        <svg class="b-icon-inline" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+          <polygon points="3,2 14,8 3,14"/>
+        </svg>
+        REPRODUCIR DIÁLOGO COMPLETO DE LA CUADRILLA
       </button>
     </div>
   </section>
@@ -246,34 +327,53 @@
           <div class="term-log">
             <span class="log-prefix">pi &gt;</span> <span class="log-cmd">/sdd-explore</span><br>
             <span class="log-subagent">[Dora - Exploradora]</span> Explorando estructura de componentes y dependencias...<br>
-            <span class="log-audio-status">🔊 Audio: "A la orden, Gentleman. Jefe, me pongo a explorar el terreno..."</span><br>
+            <span class="log-audio-status">[AUDIO] "A la orden, Gentleman. Jefe, me pongo a explorar el terreno..."</span><br>
             <span class="log-prefix">pi &gt;</span> <span class="log-cmd">/sdd-apply</span><br>
             <span class="log-subagent">[Alex - Programador]</span> Generando validadores y suites unitarias...<br>
-            <span class="log-audio-status">🔊 Audio: "Recibido Dora, tomo la posta. Jefe, arranco con la implementación..."</span><br>
+            <span class="log-audio-status">[AUDIO] "Recibido Dora, tomo la posta. Jefe, arranco con la implementación..."</span><br>
             <span class="log-prefix">pi &gt;</span> <span class="log-cmd">npm test</span><br>
             <span class="log-subagent">[Santa - Auditor]</span> 36 tests passed, 0 failures.<br>
-            <span class="log-audio-status">🔊 Audio: "Jefe, auditoría terminada: todos los tests pasaron exitosamente."</span>
+            <span class="log-audio-status">[AUDIO] "Jefe, auditoría terminada: todos los tests pasaron exitosamente."</span>
           </div>
 
           <!-- BARRA DE WIDGET INTERACTIVA EN EL SIMULADOR -->
           <div class="tui-widget-bar">
             <button class="tui-btn" id="sim-btn-voice" title="Clic: Alternar lectura / Abrir Menú">
-              🎙️ Voice: <span id="sim-voice-state">ON</span> (<span id="sim-voice-name">dora_heart</span>) • Clic: Menú ⚙️
+              <svg class="b-icon-inline" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="5" y="1" width="6" height="8" fill="currentColor"/>
+                <path d="M3 6v2a5 5 0 0 0 10 0V6"/>
+                <line x1="8" y1="13" x2="8" y2="15"/>
+                <line x1="5" y1="15" x2="11" y2="15"/>
+              </svg>
+              Voice: <span id="sim-voice-state">ON</span> (<span id="sim-voice-name">dora_heart</span>) • Clic: Menú [CFG]
             </button>
             <button class="tui-btn tui-btn-stop" id="sim-btn-stop" title="Clic: Detener audio inmediatamente (Alt+S)">
-              ⏹️ Parar
+              <svg class="b-icon-inline" viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+                <rect x="2" y="2" width="12" height="12"/>
+              </svg>
+              <span id="sim-stop-text">Parar</span>
             </button>
             <button class="tui-btn" id="sim-btn-volume" title="Clic: Subir/Bajar volumen">
-              <span id="sim-vol-icon">🔊</span> <span id="sim-vol-val">100%</span>
+              <svg class="b-icon-inline" id="sim-vol-svg" viewBox="0 0 16 16" width="13" height="13" fill="currentColor">
+                <polygon points="2,5 6,5 11,1 11,15 6,11 2,11"/>
+                <rect x="13" y="4" width="2" height="8"/>
+              </svg>
+              <span id="sim-vol-val">100%</span>
             </button>
             <button class="tui-btn tui-btn-record" id="sim-btn-record" title="Clic: Grabar audio para dictado (Alt+R)">
-              🎙️ Dictar
+              <svg class="b-icon-inline" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="5" y="1" width="6" height="8" fill="currentColor"/>
+                <path d="M3 6v2a5 5 0 0 0 10 0V6"/>
+                <line x1="8" y1="13" x2="8" y2="15"/>
+                <line x1="5" y1="15" x2="11" y2="15"/>
+              </svg>
+              <span id="sim-record-text">Dictar</span>
             </button>
           </div>
         </div>
       </div>
       <div class="simulator-legend">
-        <p><strong>💡 Probalo acá arriba:</strong> Hacé clic en <code>Voice: ON</code> para alternar el sintetizador, en <code>⏹️ Parar</code> para simular corte inmediato de audio, o en <code>🎙️ Dictar</code> para iniciar la simulación de entrada Whisper STT.</p>
+        <p><strong>[ TIP // EN VIVO ]</strong> Hacé clic en <code>Voice: ON</code> para alternar el sintetizador, en <code>Parar</code> para simular corte inmediato de audio, o en <code>Dictar</code> para iniciar la simulación de entrada Whisper STT.</p>
       </div>
     </div>
   </section>
@@ -395,7 +495,7 @@
     <div class="tables-grid">
       <!-- TABLA DE ATAJOS -->
       <div class="table-card">
-        <h3 class="table-card-title">⌨️ ATAJOS GLOBALES</h3>
+        <h3 class="table-card-title">[ AT ] ATAJOS GLOBALES</h3>
         <table class="brutalist-table">
           <thead>
             <tr>
@@ -406,23 +506,23 @@
           <tbody>
             <tr>
               <td><kbd>Alt + R</kbd></td>
-              <td>Iniciar / Detener dictado por micrófono (STT) 🎙️</td>
+              <td>Iniciar / Detener dictado por micrófono (STT) [MIC]</td>
             </tr>
             <tr>
               <td><kbd>Alt + S</kbd></td>
-              <td>Detener inmediatamente reproducción o dictado ⏹️</td>
+              <td>Detener inmediatamente reproducción o dictado [STOP]</td>
             </tr>
             <tr>
               <td><kbd>Alt + V</kbd></td>
-              <td>Abrir menú visual interactivo con soporte de mouse ⚙️</td>
+              <td>Abrir menú visual interactivo con soporte de mouse [CFG]</td>
             </tr>
             <tr>
               <td><kbd>Alt + Up</kbd></td>
-              <td>Subir volumen de audio (+10%) 🔊</td>
+              <td>Subir volumen de audio (+10%) [VOL+]</td>
             </tr>
             <tr>
               <td><kbd>Alt + Down</kbd></td>
-              <td>Bajar volumen de audio (-10%) 🔉</td>
+              <td>Bajar volumen de audio (-10%) [VOL-]</td>
             </tr>
           </tbody>
         </table>
@@ -430,7 +530,7 @@
 
       <!-- TABLA DE COMANDOS /VOICE -->
       <div class="table-card">
-        <h3 class="table-card-title">💬 COMANDOS /VOICE EN PI</h3>
+        <h3 class="table-card-title">[ CMD ] COMANDOS /VOICE EN PI</h3>
         <table class="brutalist-table">
           <thead>
             <tr>
@@ -445,7 +545,11 @@
             </tr>
             <tr>
               <td><code>/voice crew on|off</code></td>
-              <td>Activa/desactiva el Modo Cuadrilla ("Jefe")</td>
+              <td>Alterna el modo conversacional de cuadrilla ("Jefe")</td>
+            </tr>
+            <tr>
+              <td><code>/voice phases on|off</code></td>
+              <td>Alterna la locución de fases del orquestador</td>
             </tr>
             <tr>
               <td><code>/voice tldr</code></td>
