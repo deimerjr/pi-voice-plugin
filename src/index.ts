@@ -188,6 +188,7 @@ function extractTextFromResult(result: any): string {
 export default function (pi: ExtensionAPI) {
   const configManager = new ConfigManager();
   let config: VoicePluginConfig = configManager.getConfig();
+  const getUserTitle = (): string => config.subagents?.userTitle?.trim() || "Jefe";
 
   const player = new AudioPlayer({
     customCommand: config.playerCommand,
@@ -557,33 +558,34 @@ export default function (pi: ExtensionAPI) {
 
       if (config.subagents.announceStart) {
         let msg: string;
+        const userTitle = getUserTitle();
         if (config.subagents.crewMode) {
           if (role === "Exploradora") {
             msg = label
-              ? `A la orden, Gentleman. Jefe, me pongo a explorar: ${label}.`
-              : "A la orden, Gentleman. Jefe, me pongo a explorar el terreno.";
+              ? `A la orden, Gentleman. ${userTitle}, me pongo a explorar: ${label}.`
+              : `A la orden, Gentleman. ${userTitle}, me pongo a explorar el terreno.`;
           } else if (role === "Programador") {
             if (lastFinishedRole === "Exploradora") {
               msg = label
-                ? `Recibido Dora, tomo la posta. Jefe, arranco a programar: ${label}.`
-                : "Recibido Dora, tomo la posta. Jefe, arranco con la implementación.";
+                ? `Recibido Dora, tomo la posta. ${userTitle}, arranco a programar: ${label}.`
+                : `Recibido Dora, tomo la posta. ${userTitle}, arranco con la implementación.`;
             } else {
               msg = label
-                ? `A la orden, Jefe. Me pongo a programar: ${label}.`
-                : "A la orden, Jefe. Me pongo a codear.";
+                ? `A la orden, ${userTitle}. Me pongo a programar: ${label}.`
+                : `A la orden, ${userTitle}. Me pongo a codear.`;
             }
           } else if (role === "Auditor") {
             if (lastFinishedRole === "Programador") {
               msg = label
-                ? `A ver qué hiciste, Alex... Jefe, voy a auditar con lupa: ${label}.`
-                : "A ver qué hiciste, Alex... Jefe, voy a auditar y correr las pruebas.";
+                ? `A ver qué hiciste, Alex... ${userTitle}, voy a auditar con lupa: ${label}.`
+                : `A ver qué hiciste, Alex... ${userTitle}, voy a auditar y correr las pruebas.`;
             } else {
               msg = label
-                ? `Jefe, entro a auditar y verificar: ${label}.`
-                : "Jefe, entro a auditar.";
+                ? `${userTitle}, entro a auditar y verificar: ${label}.`
+                : `${userTitle}, entro a auditar.`;
             }
           } else {
-            msg = label ? `Jefe, inicio tarea: ${label}.` : "Jefe, inicio tarea.";
+            msg = label ? `${userTitle}, inicio tarea: ${label}.` : `${userTitle}, inicio tarea.`;
           }
         } else {
           msg = label ? `${role} iniciado: ${label}.` : `${role} iniciado.`;
@@ -617,8 +619,9 @@ export default function (pi: ExtensionAPI) {
 
         if (args.tasks.length > 0) {
           const count = args.tasks.length;
+          const userTitle = getUserTitle();
           const msg = config.subagents?.crewMode
-            ? `Jefe, planifiqué el trabajo en ${count} ${count === 1 ? "fase" : "fases"}. Pongo manos a la obra.`
+            ? `${userTitle}, planifiqué el trabajo en ${count} ${count === 1 ? "fase" : "fases"}. Pongo manos a la obra.`
             : `Trabajo planificado en ${count} ${count === 1 ? "fase" : "fases"}.`;
           speakText(msg, ctx, orchVoice).catch(() => {});
         }
@@ -635,13 +638,14 @@ export default function (pi: ExtensionAPI) {
         });
 
         const cleanTitle = cleanPhaseTitle(args.note || title);
+        const userTitle = getUserTitle();
 
         if (newStatus === "in_progress") {
           const phraseKey = `start:${args.id}:${cleanTitle}`;
           if (lastAnnouncedTodoPhase !== phraseKey) {
             lastAnnouncedTodoPhase = phraseKey;
             const msg = config.subagents?.crewMode
-              ? `Jefe, arranco la fase: ${cleanTitle}.`
+              ? `${userTitle}, arranco la fase: ${cleanTitle}.`
               : `Iniciando fase: ${cleanTitle}.`;
             speakText(msg, ctx, orchVoice).catch(() => {});
           }
@@ -650,16 +654,17 @@ export default function (pi: ExtensionAPI) {
           if (lastAnnouncedTodoPhase !== phraseKey) {
             lastAnnouncedTodoPhase = phraseKey;
             const msg = config.subagents?.crewMode
-              ? `Jefe, quedó lista la fase: ${cleanTitle}.`
+              ? `${userTitle}, quedó lista la fase: ${cleanTitle}.`
               : `Fase completada: ${cleanTitle}.`;
             speakText(msg, ctx, orchVoice).catch(() => {});
           }
         }
       } else if (action === "add" && args.title) {
         const cleanTitle = cleanPhaseTitle(args.title);
+        const userTitle = getUserTitle();
         if (args.status === "in_progress") {
           const msg = config.subagents?.crewMode
-            ? `Jefe, arranco la fase: ${cleanTitle}.`
+            ? `${userTitle}, arranco la fase: ${cleanTitle}.`
             : `Iniciando fase: ${cleanTitle}.`;
           speakText(msg, ctx, orchVoice).catch(() => {});
         }
@@ -677,8 +682,9 @@ export default function (pi: ExtensionAPI) {
       if (isTestCmd) {
         const orchVoice =
           config.subagents?.orchestrator || config.kokoro?.voice || "dora_heart";
+        const userTitle = getUserTitle();
         const msg = config.subagents?.crewMode
-          ? "Jefe, voy a correr las pruebas de verificación."
+          ? `${userTitle}, voy a correr las pruebas de verificación.`
           : "Ejecutando pruebas de verificación.";
         speakText(msg, ctx, orchVoice).catch(() => {});
       }
@@ -698,12 +704,13 @@ export default function (pi: ExtensionAPI) {
       if (isTestCmd) {
         const orchVoice =
           config.subagents?.orchestrator || config.kokoro?.voice || "dora_heart";
+        const userTitle = getUserTitle();
         const msg = event.isError
           ? config.subagents?.crewMode
-            ? "Jefe, atención: las pruebas fallaron."
+            ? `${userTitle}, atención: las pruebas fallaron.`
             : "Las pruebas fallaron."
           : config.subagents?.crewMode
-            ? "Jefe, pruebas verificadas y pasadas con éxito."
+            ? `${userTitle}, pruebas verificadas y pasadas con éxito.`
             : "Pruebas pasadas exitosamente.";
         speakText(msg, ctx, orchVoice).catch(() => {});
         return;
@@ -716,9 +723,10 @@ export default function (pi: ExtensionAPI) {
     lastFinishedRole = tracked.role;
 
     if (config.subagents.announceEnd) {
+      const userTitle = getUserTitle();
       if (event.isError) {
         const errorMsg = config.subagents.crewMode
-          ? `Jefe, ${tracked.name} tuvo un problema: la tarea finalizó con error.`
+          ? `${userTitle}, ${tracked.name} tuvo un problema: la tarea finalizó con error.`
           : `${tracked.role} finalizó con error.`;
         speakText(errorMsg, ctx, tracked.voice).catch(() => {});
       } else {
@@ -728,6 +736,7 @@ export default function (pi: ExtensionAPI) {
             const summary = await TldrSummarizer.summarize(rawResult, {
               role: tracked.role,
               crewMode: config.subagents.crewMode,
+              userTitle,
             });
 
             let finalMsg: string;
@@ -737,7 +746,7 @@ export default function (pi: ExtensionAPI) {
               } else if (tracked.role === "Programador") {
                 finalMsg = `${summary} Santa, pasale la lupa y fijate si no rompí nada.`;
               } else if (tracked.role === "Auditor") {
-                finalMsg = `${summary} Gentleman, todo verificado y aprobado para el Jefe.`;
+                finalMsg = `${summary} Gentleman, todo verificado y aprobado para ${userTitle}.`;
               } else {
                 finalMsg = `${summary}`;
               }
@@ -748,13 +757,13 @@ export default function (pi: ExtensionAPI) {
             speakText(finalMsg, ctx, tracked.voice).catch(() => {});
           } catch {
             const fallbackMsg = config.subagents.crewMode
-              ? `Jefe, ${tracked.name} terminó su tarea exitosamente.`
+              ? `${userTitle}, ${tracked.name} terminó su tarea exitosamente.`
               : `${tracked.role} completó su tarea.`;
             speakText(fallbackMsg, ctx, tracked.voice).catch(() => {});
           }
         } else {
           const fallbackMsg = config.subagents.crewMode
-            ? `Jefe, ${tracked.name} completó la tarea.`
+            ? `${userTitle}, ${tracked.name} completó la tarea.`
             : `${tracked.role} completó su tarea.`;
           speakText(fallbackMsg, ctx, tracked.voice).catch(() => {});
         }
@@ -874,8 +883,7 @@ export default function (pi: ExtensionAPI) {
         }
 
         case "crew":
-        case "cuadrilla":
-        case "jefe": {
+        case "cuadrilla": {
           const current = config.subagents?.crewMode ?? true;
           const next =
             val.toLowerCase() === "on" ? true : val.toLowerCase() === "off" ? false : !current;
@@ -883,10 +891,52 @@ export default function (pi: ExtensionAPI) {
           updateUiState(ctx);
           ctx.ui.notify(
             next
-              ? "🔊 Modo Cuadrilla ('Jefe') ACTIVADO"
-              : "🔇 Modo Cuadrilla ('Jefe') DESACTIVADO",
+              ? `🔊 Modo Cuadrilla ('${getUserTitle()}') ACTIVADO`
+              : `🔇 Modo Cuadrilla ('${getUserTitle()}') DESACTIVADO`,
             "info"
           );
+          break;
+        }
+
+        case "title":
+        case "titulo":
+        case "título":
+        case "apelativo": {
+          const newTitle = val.trim();
+          if (newTitle) {
+            config = configManager.updateNested("subagents", { userTitle: newTitle });
+            updateUiState(ctx);
+            ctx.ui.notify(`🫡 Apelativo de usuario configurado a: "${newTitle}"`, "info");
+          } else {
+            ctx.ui.notify(
+              `Apelativo actual: "${getUserTitle()}". Para cambiarlo: /voice title <nombre>`,
+              "info"
+            );
+          }
+          break;
+        }
+
+        case "jefe": {
+          if (val.toLowerCase() === "on" || val.toLowerCase() === "off") {
+            const next = val.toLowerCase() === "on";
+            config = configManager.updateNested("subagents", { crewMode: next });
+            updateUiState(ctx);
+            ctx.ui.notify(
+              next
+                ? `🔊 Modo Cuadrilla ('${getUserTitle()}') ACTIVADO`
+                : `🔇 Modo Cuadrilla ('${getUserTitle()}') DESACTIVADO`,
+              "info"
+            );
+          } else if (val.trim()) {
+            const newTitle = val.trim();
+            config = configManager.updateNested("subagents", { userTitle: newTitle });
+            updateUiState(ctx);
+            ctx.ui.notify(`🫡 Apelativo de usuario configurado a: "${newTitle}"`, "info");
+          } else {
+            config = configManager.updateNested("subagents", { userTitle: "Jefe" });
+            updateUiState(ctx);
+            ctx.ui.notify(`🫡 Apelativo de usuario configurado a: "Jefe"`, "info");
+          }
           break;
         }
 
@@ -1211,7 +1261,9 @@ export default function (pi: ExtensionAPI) {
             "  /voice menu            - Abre el menú visual interactivo con mouse",
             "  /voice agents [on|off] - Alterna las voces diferenciadas para subagentes",
             "  /voice phases [on|off] - Alterna la locución de fases del orquestador",
-            "  /voice crew [on|off]   - Alterna el modo conversacional de cuadrilla ('Jefe')",
+            "  /voice crew [on|off]   - Alterna el modo conversacional de cuadrilla",
+            "  /voice title <nombre>  - Cambia el apelativo del usuario (ej: Jefe, Comandante)",
+            "  /voice jefe <nombre>   - Atajo directo para cambiar tu apelativo",
             "  /voice record          - Inicia o detiene el dictado de prompts por voz (Alt+R)",
             "  /voice tldr            - Alterna el modo de resumen breve ejecutivo (TL;DR)",
             "  /voice on              - Activa la lectura automática tras cada respuesta",

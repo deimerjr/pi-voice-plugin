@@ -67,6 +67,7 @@ export interface SubagentVoicesConfig {
   scout: string;
   worker: string;
   reviewer: string;
+  userTitle?: string;
 }
 
 export interface VoicePluginConfig {
@@ -150,6 +151,7 @@ export const DEFAULT_CONFIG: VoicePluginConfig = {
     scout: "ef_dora",
     worker: "em_alex",
     reviewer: "em_santa",
+    userTitle: "Jefe",
   },
 };
 

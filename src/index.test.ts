@@ -5,6 +5,7 @@ import path from "node:path";
 import os from "node:os";
 import voiceExtension, { VoiceControlBarComponent, resolveSubagentVoice, cleanPhaseTitle } from "./index.ts";
 import { DEFAULT_CONFIG } from "./config.ts";
+import { TldrSummarizer } from "./tldr.ts";
 
 describe("Voice Extension Entrypoint", () => {
   it("registers event listeners and /voice command", async () => {
@@ -215,5 +216,93 @@ describe("Voice Extension Entrypoint", () => {
       cleanPhaseTitle(""),
       ""
     );
+  });
+
+  it("handles /voice title, /voice jefe and persists userTitle", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-title-test-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    try {
+      const listeners: Record<string, Function[]> = {};
+      let registeredCommandOpts: any = null;
+
+      const mockPi: any = {
+        on(event: string, handler: Function) {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        },
+        registerCommand(_name: string, opts: any) {
+          registeredCommandOpts = opts;
+        },
+        registerShortcut() {},
+      };
+
+      voiceExtension(mockPi);
+
+      const notifications: { msg: string; type: string }[] = [];
+      const mockCtx: any = {
+        ui: {
+          notify(msg: string, type: string) {
+            notifications.push({ msg, type });
+          },
+          setStatus() {},
+        },
+      };
+
+      // 1. Query title when default
+      await registeredCommandOpts.handler("title", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Jefe")));
+
+      // 2. Set title with /voice title Comandante
+      notifications.length = 0;
+      await registeredCommandOpts.handler("title Comandante", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Comandante")));
+
+      // Verify persistence in voice.json
+      assert.ok(fs.existsSync(configPath));
+      let saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.subagents?.userTitle, "Comandante");
+
+      // 3. Set title with /voice jefe Sensei
+      notifications.length = 0;
+      await registeredCommandOpts.handler("jefe Sensei", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Sensei")));
+
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.subagents?.userTitle, "Sensei");
+
+      // 4. Set title with /voice apelativo Capitán
+      notifications.length = 0;
+      await registeredCommandOpts.handler("apelativo Capitán", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Capitán")));
+
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.subagents?.userTitle, "Capitán");
+
+      // 5. Query title again
+      notifications.length = 0;
+      await registeredCommandOpts.handler("title", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Capitán")));
+
+      // 6. Test TldrSummarizer uses custom userTitle in fallback
+      const summary = await TldrSummarizer.summarize(
+        "Technical verification report: All tests passed and completed. Running suites check duration and build files found.",
+        {
+          crewMode: true,
+          userTitle: "Capitán",
+          baseUrl: "http://127.0.0.1:9999",
+          timeoutMs: 1,
+        }
+      );
+      assert.ok(summary.startsWith("Capitán,"));
+    } finally {
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
   });
 });

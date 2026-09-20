@@ -10,6 +10,7 @@ export interface TldrOptions {
   timeoutMs?: number;
   role?: string;
   crewMode?: boolean;
+  userTitle?: string;
 }
 
 export class TldrSummarizer {
@@ -41,10 +42,11 @@ export class TldrSummarizer {
       // Fallback to heuristic extractive summary + rule-based dictionary
     }
 
+    const userTitle = options.userTitle || "Jefe";
     const heuristic = this.extractHeuristicSummary(clean);
     const translated = this.quickTranslateCommonEnglish(heuristic);
-    if (options.crewMode && !translated.toLowerCase().includes("jefe")) {
-      return `Jefe, ${translated}`;
+    if (options.crewMode && !translated.toLowerCase().includes(userTitle.toLowerCase())) {
+      return `${userTitle}, ${translated}`;
     }
     return translated;
   }
@@ -144,9 +146,10 @@ export class TldrSummarizer {
       const url = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
       const model = options.model || (baseUrl.includes("8317") ? "gemini-3.8-flash-high" : "gpt-4o-mini");
 
+      const userTitle = options.userTitle || "Jefe";
       const systemContent =
         options.crewMode && options.role
-          ? `Sos ${options.role} de un equipo técnico en terminal reportándole a tu "Jefe". Generá un reporte oral de lo que lograste en máximo 2 oraciones directas, 100% en español rioplatense natural. Dirigite a él como "Jefe" con camaradería profesional y pasale la palabra al equipo si corresponde. Sin introducciones innecesarias ni markdown.`
+          ? `Sos ${options.role} de un equipo técnico en terminal reportándole a tu "${userTitle}". Generá un reporte oral de lo que lograste en máximo 2 oraciones directas, 100% en español rioplatense natural. Dirigite a él como "${userTitle}" con camaradería profesional y pasale la palabra al equipo si corresponde. Sin introducciones innecesarias ni markdown.`
           : "Sos un asistente de voz en español. Traducí y sintetizá la información técnica en máximo 2 oraciones breves, 100% en idioma español natural, para ser leídas por voz. Aunque la entrada esté en inglés o sea un reporte técnico, respondé SIEMPRE en español fluido. Sin introducciones ni markdown.";
 
       const payload = {

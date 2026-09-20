@@ -33,7 +33,8 @@ export type MenuScreen =
   | "shortcuts"
   | "subagents"
   | "speed"
-  | "filter";
+  | "filter"
+  | "user_title";
 
 export interface VoiceMenuOptions {
   configManager: ConfigManager;
@@ -132,6 +133,13 @@ export class VoiceMenuComponent extends Container {
   }
 
   private goBackOrClose(): void {
+    if (this.currentScreen === "user_title") {
+      this.statusNotice = undefined;
+      this.currentScreen = "subagents";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
     if (this.currentScreen !== "main" && this.initialScreen !== this.currentScreen) {
       this.statusNotice = undefined;
       this.currentScreen = "main";
@@ -164,6 +172,7 @@ export class VoiceMenuComponent extends Container {
     else if (this.currentScreen === "volume") titleText = "Control de Volumen";
     else if (this.currentScreen === "shortcuts") titleText = "Atajos de Teclado y Teclas";
     else if (this.currentScreen === "subagents") titleText = "Voces de Agentes y Roles";
+    else if (this.currentScreen === "user_title") titleText = "Apelativo de Usuario (Modo Cuadrilla)";
     else if (this.currentScreen === "speed") titleText = "Velocidad de Locución";
     else if (this.currentScreen === "filter") titleText = "Filtro de Código y Formato";
 
@@ -575,6 +584,7 @@ export class VoiceMenuComponent extends Container {
           scout: "ef_dora",
           worker: "em_alex",
           reviewer: "em_santa",
+          userTitle: "Jefe",
         };
 
         return [
@@ -582,6 +592,11 @@ export class VoiceMenuComponent extends Container {
             value: "sub_toggle_enabled",
             label: `${sub.enabled ? "●" : "○"} Voces de Agentes: ${sub.enabled ? "ACTIVADO" : "DESACTIVADO"}`,
             description: "Activa voces diferenciadas para cada subagente",
+          },
+          {
+            value: "goto_user_title",
+            label: `▸ Apelativo / Título: [ ${sub.userTitle || "Jefe"} ]`,
+            description: "Cómo te llaman los agentes (Jefe, Comandante, Líder, etc.)",
           },
           {
             value: "sub_toggle_start",
@@ -629,6 +644,35 @@ export class VoiceMenuComponent extends Container {
             description: "Regresar a las opciones principales",
           },
         ];
+      }
+
+      case "user_title": {
+        const currentTitle = config.subagents?.userTitle || "Jefe";
+        const presets = ["Jefe", "Comandante", "Líder", "Sensei", "Capitán"];
+        const items: SelectItem[] = presets.map((preset) => {
+          const isSelected = currentTitle.trim().toLowerCase() === preset.toLowerCase();
+          return {
+            value: `set_user_title:${preset}`,
+            label: `${isSelected ? "●" : "○"} ${preset}`,
+            description: isSelected
+              ? `Apelativo actualmente activo (${preset})`
+              : `Llamarme "${preset}" en locuciones de agentes`,
+          };
+        });
+
+        items.push({
+          value: "set_user_title_custom",
+          label: "✏️ Personalizado...",
+          description: `Ingresar apelativo a medida (actual: ${currentTitle})`,
+        });
+
+        items.push({
+          value: "back_to_subagents",
+          label: "⬅ Volver a Voces de Agentes",
+          description: "Regresar a la configuración de subagentes",
+        });
+
+        return items;
       }
 
       case "speed": {
@@ -725,6 +769,14 @@ export class VoiceMenuComponent extends Container {
     if (value === "goto_subagents") {
       this.statusNotice = undefined;
       this.currentScreen = "subagents";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "goto_user_title") {
+      this.statusNotice = undefined;
+      this.currentScreen = "user_title";
       this.renderScreen();
       this.tui.requestRender();
       return;
@@ -1194,11 +1246,53 @@ export class VoiceMenuComponent extends Container {
         scout: "ef_dora",
         worker: "em_alex",
         reviewer: "em_santa",
+        userTitle: "Jefe",
       });
       this.onConfigChanged(updated);
-      this.statusNotice = "Voces en español restauradas por defecto";
+      this.statusNotice = "Voces y apelativo en español restaurados por defecto";
       this.renderScreen();
       this.tui.requestRender();
+      return;
+    }
+
+    if (value === "back_to_subagents") {
+      this.statusNotice = undefined;
+      this.currentScreen = "subagents";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value.startsWith("set_user_title:")) {
+      const preset = value.slice(15);
+      const updated = this.configManager.updateNested("subagents", {
+        userTitle: preset,
+      });
+      this.onConfigChanged(updated);
+      this.statusNotice = `Apelativo configurado: "${preset}"`;
+      this.currentScreen = "subagents";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "set_user_title_custom") {
+      if (this.ctx.ui.input) {
+        this.onClose();
+        const currentTitle = this.configManager.getConfig().subagents?.userTitle || "Jefe";
+        const newTitle = await this.ctx.ui.input(
+          "Ingresá el apelativo con el que te llamarán los agentes (ej: Jefe, Comandante, Alex):",
+          currentTitle
+        );
+        if (newTitle && newTitle.trim()) {
+          const cleanTitle = newTitle.trim();
+          const updated = this.configManager.updateNested("subagents", {
+            userTitle: cleanTitle,
+          });
+          this.onConfigChanged(updated);
+          this.ctx.ui.notify(`Apelativo configurado: "${cleanTitle}"`, "info");
+        }
+      }
       return;
     }
 
