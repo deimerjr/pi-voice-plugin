@@ -419,6 +419,8 @@ export class VoiceMenuComponent extends Container {
             { id: "em_alex", name: "Alex (Español)", desc: "Masculina, clara y cercana" },
             { id: "em_santa", name: "Santa (Español)", desc: "Masculina, tono narrador" },
             { id: "dora_heart", name: "Dora Heart (Híbrida)", desc: "Español con toque Heart suave" },
+            { id: "eleven_voice", name: "Eleven Voice (Clonada)", desc: "Clon de ElevenLabs 7GCLDRn3tm42Ra1CZCPL" },
+            { id: "voz1", name: "Voz 1 (Clonada)", desc: "Clon local de voz1elevenlab.mp4" },
             { id: "af_heart", name: "Heart (Inglés)", desc: "Femenina, máxima calidad y realismo" },
             { id: "af_nova", name: "Nova (Inglés)", desc: "Femenina, expresiva y enérgica" },
             { id: "af_alloy", name: "Alloy (Inglés)", desc: "Neutra, balanceada" },
