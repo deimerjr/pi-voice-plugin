@@ -105,6 +105,17 @@ export default function (pi: ExtensionAPI) {
 
   let lastAssistantText = "";
   let isSynthesizing = false;
+  let currentAbortController: AbortController | null = null;
+
+  const stopPlayback = (ctx?: ExtensionContext) => {
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = null;
+    }
+    player.stop();
+    isSynthesizing = false;
+    updateUiState(ctx);
+  };
 
   const updateUiState = (ctx?: ExtensionContext) => {
     if (!ctx?.ui) return;
@@ -136,12 +147,10 @@ export default function (pi: ExtensionAPI) {
             () => isSynthesizing || player.isPlaying(),
             () => config.volume ?? 1.0,
             () => {
-              player.stop();
-              isSynthesizing = false;
+              stopPlayback(ctx);
               if (ctx.ui) {
                 ctx.ui.notify("⏹️ Audio detenido", "info");
               }
-              updateUiState(ctx);
             },
             () => {
               openVoiceMenu(ctx, "volume").catch(() => {});
@@ -215,24 +224,53 @@ export default function (pi: ExtensionAPI) {
       return;
     }
 
-    isSynthesizing = true;
-    updateUiState(ctx);
-    if (ctx?.ui) {
-      ctx.ui.setStatus("pi-voice", "🔊 Sintetizando...");
+    // Abort prior stream if running
+    if (currentAbortController) {
+      currentAbortController.abort();
     }
+    currentAbortController = new AbortController();
+    const signal = currentAbortController.signal;
+
+    const chunks = TextSanitizer.splitSentences(cleanText, 70);
+    if (chunks.length === 0) return;
 
     try {
-      const result = await provider.synthesize(cleanText);
-      isSynthesizing = false;
-      updateUiState(ctx);
+      // Pipeline: start synthesizing chunk 0
+      let nextPromise = provider.synthesize(chunks[0], signal);
 
-      if (ctx?.ui) {
-        ctx.ui.setStatus("pi-voice", "🔊 Reproduciendo...");
+      for (let i = 0; i < chunks.length; i++) {
+        if (signal.aborted) break;
+
+        isSynthesizing = true;
+        updateUiState(ctx);
+        if (ctx?.ui && i === 0) {
+          ctx.ui.setStatus("pi-voice", "🔊 Sintetizando...");
+        }
+
+        const currentResult = await nextPromise;
+        isSynthesizing = false;
+
+        // Immediately start synthesizing chunk i + 1 while chunk i plays!
+        if (i + 1 < chunks.length && !signal.aborted) {
+          nextPromise = provider.synthesize(chunks[i + 1], signal);
+        }
+
+        if (signal.aborted) break;
+
+        if (ctx?.ui) {
+          ctx.ui.setStatus(
+            "pi-voice",
+            chunks.length > 1
+              ? `🔊 Reproduciendo (${i + 1}/${chunks.length})...`
+              : "🔊 Reproduciendo..."
+          );
+        }
+        updateUiState(ctx);
+
+        await player.play(currentResult.audioBuffer, currentResult.format);
       }
-
-      await player.play(result.audioBuffer, result.format);
     } catch (err: any) {
-      if (ctx?.ui) {
+      if (!signal.aborted && ctx?.ui) {
         ctx.ui.notify(`[Voice] Error de reproducción: ${err.message}`, "error");
       }
     } finally {
@@ -264,16 +302,12 @@ export default function (pi: ExtensionAPI) {
 
   // User input cancels ongoing speech immediately
   pi.on("input", async (_event, _ctx) => {
-    if (player.isPlaying() || isSynthesizing) {
-      player.stop();
-      isSynthesizing = false;
-    }
+    stopPlayback();
   });
 
   // Session shutdown cleanup
   pi.on("session_shutdown", async () => {
-    player.stop();
-    isSynthesizing = false;
+    stopPlayback();
   });
 
   // Agent finishes response
@@ -307,12 +341,10 @@ export default function (pi: ExtensionAPI) {
     (pi as any).registerShortcut("alt+s", {
       description: "Detener reproducción de voz inmediatamente",
       handler: async (ctx: ExtensionContext) => {
-        player.stop();
-        isSynthesizing = false;
+        stopPlayback(ctx);
         if (ctx.ui) {
           ctx.ui.notify("⏹️ Audio detenido", "info");
         }
-        updateUiState(ctx);
       },
     });
 
@@ -389,9 +421,7 @@ export default function (pi: ExtensionAPI) {
         }
 
         case "stop": {
-          player.stop();
-          isSynthesizing = false;
-          updateUiState(ctx);
+          stopPlayback(ctx);
           ctx.ui.notify("⏹️ Reproducción de voz detenida", "info");
           break;
         }

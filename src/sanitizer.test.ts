@@ -95,4 +95,12 @@ Lista de tareas:
     assert.ok(result.includes("Tarea uno"));
     assert.ok(result.includes("Tarea dos"));
   });
+
+  it("splits text into balanced sentence chunks for streaming speech", () => {
+    const text = "Primera oración clara. Segunda oración con más detalle. Tercera oración final.";
+    const chunks = TextSanitizer.splitSentences(text, 30);
+
+    assert.ok(chunks.length >= 2);
+    assert.ok(chunks[0].includes("Primera oración"));
+  });
 });

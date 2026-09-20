@@ -93,4 +93,35 @@ export class TextSanitizer {
 
     return clean;
   }
+
+  /**
+   * Splits sanitized text into logical sentence chunks for low-latency pipelined speech.
+   */
+  public static splitSentences(text: string, minChunkChars: number = 60): string[] {
+    if (!text || typeof text !== "string") return [];
+
+    const rawSentences = text.split(/(?<=[.!?\n])\s+/);
+    const chunks: string[] = [];
+    let current = "";
+
+    for (const raw of rawSentences) {
+      const sentence = raw.trim();
+      if (!sentence) continue;
+
+      if (!current) {
+        current = sentence;
+      } else if (current.length + sentence.length < minChunkChars) {
+        current += ` ${sentence}`;
+      } else {
+        chunks.push(current);
+        current = sentence;
+      }
+    }
+
+    if (current) {
+      chunks.push(current);
+    }
+
+    return chunks.length > 0 ? chunks : [text.trim()];
+  }
 }
