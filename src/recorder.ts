@@ -140,25 +140,30 @@ export class AudioRecorder {
         }
       };
 
-      if (!proc.killed) {
-        proc.once("close", () => {
-          finish();
-        });
-        proc.kill("SIGINT"); // SIGINT gracefully flushes WAV headers in pw-record & arecord
-
-        // Force kill fallback if process hangs
-        setTimeout(() => {
-          if (proc && !proc.killed) {
-            try {
-              proc.kill("SIGKILL");
-            } catch {
-              // ignore
-            }
-          }
-        }, 500);
-      } else {
+      let closed = false;
+      proc.once("close", () => {
+        closed = true;
         finish();
+      });
+
+      try {
+        proc.kill("SIGINT"); // SIGINT gracefully flushes WAV headers in pw-record & arecord
+      } catch {
+        finish();
+        return;
       }
+
+      // Force kill fallback if process hangs
+      setTimeout(() => {
+        if (!closed) {
+          try {
+            proc.kill("SIGKILL");
+          } catch {
+            // ignore
+          }
+          finish();
+        }
+      }, 500);
     });
   }
 
