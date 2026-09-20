@@ -633,6 +633,42 @@ body {
   max-width: 600px;
 }
 
+/* THEATER PROMO BANNER */
+.theater-promo-banner {
+  background: var(--c-black);
+  color: var(--c-white);
+  border: var(--border-thick);
+  box-shadow: var(--shadow-hard-lg);
+  padding: 28px;
+  margin-bottom: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-left: 12px solid #FF4F9A;
+}
+
+.theater-promo-content h3 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 900;
+  color: #F0D28A;
+  margin-bottom: 8px;
+}
+
+.theater-promo-content p {
+  font-size: 15px;
+  color: #d0d0d0;
+  max-width: 680px;
+}
+
+body.dark-mode .theater-promo-banner {
+  background: #100a12;
+  border-color: #FF4F9A;
+  box-shadow: 6px 6px 0px #FF4F9A;
+}
+
 /* SIMULATOR WINDOW */
 .simulator-wrapper {
   background: var(--c-white);
