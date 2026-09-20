@@ -16,3 +16,7 @@ dist/
 # Audio temp files
 *.tmp.wav
 *.tmp.mp3
+
+# Playground tests
+playground/
+

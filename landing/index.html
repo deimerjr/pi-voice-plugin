@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PI VOICE PLUGIN — TTS Universal & Modo Cuadrilla para Pi CLI</title>
+  <meta name="description" content="Plugin universal de síntesis de voz y entrada STT para Pi CLI con Modo Cuadrilla en español nativo, Kokoro TTS local offline y Whisper.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;0,800;1,400&family=Space+Grotesk:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- CINTA DE MARQUESINA BRUTALISTA SUPERIOR -->
+  <div class="marquee-banner" id="marquee-top">
+    <div class="marquee-track">
+      <span>🎙️ PI VOICE PLUGIN // NATIVE TTS PARA PI CLI ★ 100% OFFLINE KOKORO ONNX ★ MODO CUADRILLA MULTI-AGENTE ★ STT DICTADO WHISPER (ALT+R) ★ PARADA INMEDIATA (ALT+S) ★ MENÚ TUI CON SOPORTE DE MOUSE ★ ZERO LATENCY AUDIO PIPELINE ★</span>
+      <span>🎙️ PI VOICE PLUGIN // NATIVE TTS PARA PI CLI ★ 100% OFFLINE KOKORO ONNX ★ MODO CUADRILLA MULTI-AGENTE ★ STT DICTADO WHISPER (ALT+R) ★ PARADA INMEDIATA (ALT+S) ★ MENÚ TUI CON SOPORTE DE MOUSE ★ ZERO LATENCY AUDIO PIPELINE ★</span>
+    </div>
+  </div>
+
+  <!-- NAVEGACIÓN PRINCIPAL -->
+  <header class="navbar-wrapper">
+    <nav class="navbar container">
+      <div class="brand">
+        <span class="brand-badge">EXT::VOICE</span>
+        <span class="brand-title">PI_VOICE<span class="dot">.</span>EXE</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#cuadrilla">CUADRILLA</a></li>
+        <li><a href="#features">FEATURES</a></li>
+        <li><a href="#tui-simulator">SIMULADOR TUI</a></li>
+        <li><a href="#pipeline">ARQUITECTURA</a></li>
+        <li><a href="#comandos">COMANDOS</a></li>
+      </ul>
+      <a href="#install" class="btn btn-nav">INSTALAR AHORA ➔</a>
+    </nav>
+  </header>
+
+  <!-- SECCIÓN HERO -->
+  <section class="hero-section container">
+    <div class="hero-grid">
+      <div class="hero-content">
+        <div class="badge-tag">v1.0.0 // PRODUCCIÓN LISTA</div>
+        <h1 class="hero-title">
+          TU TERMINAL NO SOLO PIENSA.<br>
+          <mark class="highlight-yellow">AHORA TIENE VOZ.</mark>
+        </h1>
+        <p class="hero-lead">
+          Extensión modular y universal para <strong>Pi CLI</strong>. Sintetiza respuestas en voz en tiempo real, habilita el <strong>Modo Cuadrilla</strong> con agentes conversacionales que te llaman <em>"Jefe"</em>, corre modelos locales <strong>Kokoro TTS 100% offline</strong> y transcribe tu voz con Whisper.
+        </p>
+
+        <!-- TAGS DE CAPACIDADES -->
+        <div class="tech-pills">
+          <span class="pill pill-green">● KOKORO ONNX OFFLINE</span>
+          <span class="pill pill-cyan">● MODO CUADRILLA</span>
+          <span class="pill pill-pink">● STT WHISPER (ALT+R)</span>
+          <span class="pill pill-yellow">● AUDIO TL;DR</span>
+          <span class="pill pill-white">● ZERO API TOKENS REQ</span>
+        </div>
+
+        <!-- SNIPPET DE INSTALACIÓN RÁPIDA -->
+        <div class="install-box">
+          <div class="install-header">
+            <span class="term-dot red"></span>
+            <span class="term-dot yellow"></span>
+            <span class="term-dot green"></span>
+            <span class="term-title">BASH / TERMINAL QUICKSTART</span>
+          </div>
+          <div class="install-body">
+            <span class="prompt-sym">$</span>
+            <code id="cmd-install">pi install /home/hermes/Desarrollos/Automatizacion/Gentle/Plugin/Voz</code>
+            <button class="btn-copy" id="btn-copy-install" aria-label="Copiar comando">
+              <span class="copy-text">COPIAR</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- BOTONES DE ACCIÓN HERO -->
+        <div class="hero-cta-group">
+          <a href="#cuadrilla" class="btn btn-primary btn-giant">🔊 ESCUCHAR LA CUADRILLA</a>
+          <a href="#comandos" class="btn btn-secondary btn-giant">⌨️ VER ATAJOS Y COMANDOS</a>
+        </div>
+      </div>
+
+      <!-- TARJETA LATERAL HERO / MONITOR EN VIVO -->
+      <aside class="hero-card">
+        <div class="hero-card-header">
+          <span class="card-status-dot"></span>
+          <span>ESTADO DEL SISTEMA :: ACTIVO</span>
+        </div>
+        <div class="hero-card-body">
+          <pre class="ascii-art">
+  ___ _____  __   _____ ___ ___ ___ 
+ | _ \_ _\ \/ /  / / _ \_ _/ __| __|
+ |  _/| | \  /  / / (_) | | (__| _| 
+ |_| |___| \/  /_/ \___/___\___|___|
+ [ UNIVERSAL VOICE ENGINE FOR PI ]
+          </pre>
+          <div class="spec-table">
+            <div class="spec-row">
+              <span class="spec-key">DAEMON LOCAL</span>
+              <span class="spec-val status-green">kokoro-tts.service (8880)</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-key">AUDIO BACKEND</span>
+              <span class="spec-val">PipeWire (pw-play) / ALSA</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-key">MODO CUADRILLA</span>
+              <span class="spec-val status-yellow">ACTIVO (Jefe / 4 Voces)</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-key">WHISPER STT</span>
+              <span class="spec-val">Alt+R (Push to Talk)</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-key">LATENCIA PIPELINE</span>
+              <span class="spec-val status-cyan">&lt; 350ms (Streaming)</span>
+            </div>
+          </div>
+          <div class="hero-card-footer">
+            <button class="btn btn-block btn-accent" id="btn-trigger-test-sound">
+              ▶ TEST AUDIO ENGINE
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- SECCIÓN MODO CUADRILLA (SOUNDBOARD INTERACTIVO) -->
+  <section class="section-container container" id="cuadrilla">
+    <div class="section-header">
+      <div class="section-tag">AGENTS &amp; VOICES</div>
+      <h2 class="section-title">MODO CUADRILLA: DIÁLOGO EN VIVO ENTRE AGENTES</h2>
+      <p class="section-desc">
+        No más voces monótonas ni agentes mudos. En Pi CLI, cada subagente tiene personalidad, rol y timbre de voz en español nativo, dirigiéndose a vos como <strong>"Jefe"</strong> y pasándose la posta en tiempo real.
+      </p>
+    </div>
+
+    <div class="cuadrilla-grid">
+      <!-- AGENTE 1: EL GENTLEMAN -->
+      <article class="agent-card card-yellow" data-agent="gentleman">
+        <div class="agent-badge">ORQUESTADOR</div>
+        <div class="agent-avatar">🎩</div>
+        <h3 class="agent-name">EL GENTLEMAN</h3>
+        <div class="agent-voice-tag">Voz: dora_heart (Cálida y firme)</div>
+        <p class="agent-role">
+          Coordina las fases, recibe las órdenes del Jefe y asigna el trabajo a cada especialista.
+        </p>
+        <blockquote class="agent-quote">
+          "Entendido, Jefe. Pongo a la cuadrilla en marcha. Dora, relevá el terreno. Alex y Santa, atentos."
+        </blockquote>
+        <button class="btn btn-voice-play" data-voice="gentleman">
+          ▶ ESCUCHAR A GENTLEMAN
+        </button>
+      </article>
+
+      <!-- AGENTE 2: DORA -->
+      <article class="agent-card card-cyan" data-agent="dora">
+        <div class="agent-badge">EXPLORADORA / SCOUT</div>
+        <div class="agent-avatar">🧭</div>
+        <h3 class="agent-name">DORA</h3>
+        <div class="agent-voice-tag">Voz: ef_dora (Ágil y descriptiva)</div>
+        <p class="agent-role">
+          Explora directorios, analiza la arquitectura y prepara el terreno antes de escribir código.
+        </p>
+        <blockquote class="agent-quote">
+          "A la orden, Gentleman. Jefe, me pongo a explorar el terreno... Alex, te dejo la cancha lista."
+        </blockquote>
+        <button class="btn btn-voice-play" data-voice="dora">
+          ▶ ESCUCHAR A DORA
+        </button>
+      </article>
+
+      <!-- AGENTE 3: ALEX -->
+      <article class="agent-card card-green" data-agent="alex">
+        <div class="agent-badge">PROGRAMADOR / WORKER</div>
+        <div class="agent-avatar">⚡</div>
+        <h3 class="agent-name">ALEX</h3>
+        <div class="agent-voice-tag">Voz: em_alex (Técnica y directa)</div>
+        <p class="agent-role">
+          Implementa soluciones limpias, escribe los tests y emite el informe de lo modificado.
+        </p>
+        <blockquote class="agent-quote">
+          "Recibido Dora, tomo la posta. Jefe, arranco con la implementación... Santa, pasale la lupa."
+        </blockquote>
+        <button class="btn btn-voice-play" data-voice="alex">
+          ▶ ESCUCHAR A ALEX
+        </button>
+      </article>
+
+      <!-- AGENTE 4: SANTA -->
+      <article class="agent-card card-pink" data-agent="santa">
+        <div class="agent-badge">AUDITOR / REVIEWER</div>
+        <div class="agent-avatar">🛡️</div>
+        <h3 class="agent-name">SANTA</h3>
+        <div class="agent-voice-tag">Voz: em_santa (Grave y rigurosa)</div>
+        <p class="agent-role">
+          Ejecuta las suites de pruebas, valida que no haya regresiones y aprueba la entrega al Jefe.
+        </p>
+        <blockquote class="agent-quote">
+          "A ver qué hiciste, Alex... Jefe, voy a auditar con lupa. Todo verificado y aprobado para el Jefe."
+        </blockquote>
+        <button class="btn btn-voice-play" data-voice="santa">
+          ▶ ESCUCHAR A SANTA
+        </button>
+      </article>
+    </div>
+
+    <!-- BOTÓN REPRODUCIR DIÁLOGO COMPLETO -->
+    <div class="cuadrilla-chain-box">
+      <div class="chain-info">
+        <strong>CIRCUITO COMPLETO EN CADENA:</strong> Escuchá la conversación completa entre los 4 agentes simulando un ciclo de desarrollo en vivo.
+      </div>
+      <button class="btn btn-giant btn-primary" id="btn-play-all-cuadrilla">
+        ▶ REPRODUCIR DIÁLOGO COMPLETO DE LA CUADRILLA
+      </button>
+    </div>
+  </section>
+
+  <!-- SECCIÓN SIMULADOR TUI INTERACTIVO -->
+  <section class="section-container container" id="tui-simulator">
+    <div class="section-header">
+      <div class="section-tag">TERMINAL UI EXPERIENCE</div>
+      <h2 class="section-title">CONTROL INTEGRADO DIRECTO EN PI CLI</h2>
+      <p class="section-desc">
+        Widget interactivo al pie del editor que podés clickear directamente con el mouse o controlar mediante atajos globales.
+      </p>
+    </div>
+
+    <div class="simulator-wrapper">
+      <div class="simulator-window">
+        <div class="simulator-titlebar">
+          <span class="term-dot red"></span>
+          <span class="term-dot yellow"></span>
+          <span class="term-dot green"></span>
+          <span class="titlebar-text">pi-session // terminal-422f40e3 — 120x34</span>
+        </div>
+        <div class="simulator-screen">
+          <div class="term-log">
+            <span class="log-prefix">pi &gt;</span> <span class="log-cmd">/sdd-explore</span><br>
+            <span class="log-subagent">[Dora - Exploradora]</span> Explorando estructura de componentes y dependencias...<br>
+            <span class="log-audio-status">🔊 Audio: "A la orden, Gentleman. Jefe, me pongo a explorar el terreno..."</span><br>
+            <span class="log-prefix">pi &gt;</span> <span class="log-cmd">/sdd-apply</span><br>
+            <span class="log-subagent">[Alex - Programador]</span> Generando validadores y suites unitarias...<br>
+            <span class="log-audio-status">🔊 Audio: "Recibido Dora, tomo la posta. Jefe, arranco con la implementación..."</span><br>
+            <span class="log-prefix">pi &gt;</span> <span class="log-cmd">npm test</span><br>
+            <span class="log-subagent">[Santa - Auditor]</span> 36 tests passed, 0 failures.<br>
+            <span class="log-audio-status">🔊 Audio: "Jefe, auditoría terminada: todos los tests pasaron exitosamente."</span>
+          </div>
+
+          <!-- BARRA DE WIDGET INTERACTIVA EN EL SIMULADOR -->
+          <div class="tui-widget-bar">
+            <button class="tui-btn" id="sim-btn-voice" title="Clic: Alternar lectura / Abrir Menú">
+              🎙️ Voice: <span id="sim-voice-state">ON</span> (<span id="sim-voice-name">dora_heart</span>) • Clic: Menú ⚙️
+            </button>
+            <button class="tui-btn tui-btn-stop" id="sim-btn-stop" title="Clic: Detener audio inmediatamente (Alt+S)">
+              ⏹️ Parar
+            </button>
+            <button class="tui-btn" id="sim-btn-volume" title="Clic: Subir/Bajar volumen">
+              <span id="sim-vol-icon">🔊</span> <span id="sim-vol-val">100%</span>
+            </button>
+            <button class="tui-btn tui-btn-record" id="sim-btn-record" title="Clic: Grabar audio para dictado (Alt+R)">
+              🎙️ Dictar
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="simulator-legend">
+        <p><strong>💡 Probalo acá arriba:</strong> Hacé clic en <code>Voice: ON</code> para alternar el sintetizador, en <code>⏹️ Parar</code> para simular corte inmediato de audio, o en <code>🎙️ Dictar</code> para iniciar la simulación de entrada Whisper STT.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN GRID DE CARACTERÍSTICAS TÉCNICAS -->
+  <section class="section-container container" id="features">
+    <div class="section-header">
+      <div class="section-tag">CORE CAPABILITIES</div>
+      <h2 class="section-title">INGENIERÍA PARA DESARROLLADORES EXIGENTES</h2>
+      <p class="section-desc">
+        Diseñado para trabajar a fondo sin fricción: cero bloqueos de I/O, sin llamadas innecesarias a APIs pagas y con control total del flujo.
+      </p>
+    </div>
+
+    <div class="features-grid">
+      <!-- CARD 1 -->
+      <div class="feature-card">
+        <div class="feature-num">01 // LOCAL</div>
+        <h3 class="feature-title">KOKORO TTS LOCAL OFFLINE</h3>
+        <p class="feature-text">
+          Servidor local en Python/ONNX administrado por <code>systemd</code> en <code>http://127.0.0.1:8880</code>. Cero costo por token, sin telemetría, latencia ultrabaja y voces naturales en español (Dora, Alex, Santa).
+        </p>
+      </div>
+
+      <!-- CARD 2 -->
+      <div class="feature-card">
+        <div class="feature-num">02 // DICTADO</div>
+        <h3 class="feature-title">WHISPER STT DIRECTO (ALT+R)</h3>
+        <p class="feature-text">
+          Apretá <code>Alt + R</code>, hablá a tu micrófono y al soltar, Whisper transcribe tu voz al prompt de Pi CLI al instante. Incluye filtro inteligente de silencios y alucinaciones.
+        </p>
+      </div>
+
+      <!-- CARD 3 -->
+      <div class="feature-card">
+        <div class="feature-num">03 // SÍNTESIS</div>
+        <h3 class="feature-title">MODO AUDIO TL;DR RESUMIDO</h3>
+        <p class="feature-text">
+          ¿La IA respondió un reporte de 5 páginas? El modo <code>/voice tldr</code> sintetiza en 1 o 2 frases contundentes el logro principal antes de hablar, ahorrándote minutos de locución innecesaria.
+        </p>
+      </div>
+
+      <!-- CARD 4 -->
+      <div class="feature-card">
+        <div class="feature-num">04 // ROBUSTEZ</div>
+        <h3 class="feature-title">PIPELINE STREAMING SIN BLOQUEO</h3>
+        <p class="feature-text">
+          Fragmentación inteligente por oraciones: mientras una oración se reproduce por el parlante, la siguiente ya se está sintetizando en paralelo. Cancelación inmediata con <code>AbortController</code> sin crashear.
+        </p>
+      </div>
+
+      <!-- CARD 5 -->
+      <div class="feature-card">
+        <div class="feature-num">05 // LIMPIEZA</div>
+        <h3 class="feature-title">SANITIZACIÓN DE CÓDIGO Y MARKDOWN</h3>
+        <p class="feature-text">
+          Filtra bloques de código, tablas ASCII, enlaces y etiquetas internas <code>&lt;think&gt;</code> para que el motor lea solo explicaciones fluidas y no caracteres crudos molestos.
+        </p>
+      </div>
+
+      <!-- CARD 6 -->
+      <div class="feature-card">
+        <div class="feature-num">06 // UNIVERSAL</div>
+        <h3 class="feature-title">SOPORTE MULTI-PROVEEDOR</h3>
+        <p class="feature-text">
+          Intercambiable al vuelo entre Kokoro Local, OpenAI TTS (tts-1/hd), ElevenLabs con clonación de voz o cualquier endpoint REST HTTP custom con una sola instrucción.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN ARQUITECTURA DEL PIPELINE (ASCII) -->
+  <section class="section-container container" id="pipeline">
+    <div class="section-header">
+      <div class="section-tag">ARCHITECTURE SCHEMATIC</div>
+      <h2 class="section-title">FLUJO DE DATOS DEL MOTOR DE AUDIO</h2>
+    </div>
+
+    <div class="ascii-diagram-card">
+      <div class="diagram-header">
+        <span>DATA PIPELINE :: PI_VOICE_CORE</span>
+        <span class="badge-tag">STREAMING V3</span>
+      </div>
+      <pre class="ascii-diagram">
+┌─────────────────────────┐
+│     Respuesta de Pi     │ (assistant_end / tool_execution_end)
+└────────────┬────────────┘
+             ▼
+┌─────────────────────────┐
+│   TextSanitizer Core    │  ➔ Limpia markdown, bloques ```code``` y tags &lt;think&gt;
+└────────────┬────────────┘
+             ▼
+┌─────────────────────────┐
+│    TldrSummarizer       │  ➔ ¿Modo TL;DR activo? Sintetiza a 1-2 oraciones
+└────────────┬────────────┘
+             ▼
+┌─────────────────────────┐
+│  Sentence Chunking (70) │  ➔ Divide texto en oraciones balanceadas
+└────────────┬────────────┘
+             ▼
+┌─────────────────────────────────────────────────────────────┐
+│ PIPELINE PIPING: Sintetizar N+1 mientras N está reproduciendo│
+├──────────────────────────────┬──────────────────────────────┤
+│ Provider (Kokoro / OpenAI)   │ AudioPlayer (pw-play / aplay)│
+└──────────────────────────────┴──────────────────────────────┘
+             ▲                                ▲
+             └─────── [ AbortController ] ────┴──── (Interrupción inmediata en Alt+S)
+      </pre>
+    </div>
+  </section>
+
+  <!-- SECCIÓN ATAJOS Y COMANDOS -->
+  <section class="section-container container" id="comandos">
+    <div class="section-header">
+      <div class="section-tag">CHEAT SHEET</div>
+      <h2 class="section-title">COMANDOS &amp; ATAJOS DE TECLADO</h2>
+    </div>
+
+    <div class="tables-grid">
+      <!-- TABLA DE ATAJOS -->
+      <div class="table-card">
+        <h3 class="table-card-title">⌨️ ATAJOS GLOBALES</h3>
+        <table class="brutalist-table">
+          <thead>
+            <tr>
+              <th>ATAJO</th>
+              <th>ACCIÓN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><kbd>Alt + R</kbd></td>
+              <td>Iniciar / Detener dictado por micrófono (STT) 🎙️</td>
+            </tr>
+            <tr>
+              <td><kbd>Alt + S</kbd></td>
+              <td>Detener inmediatamente reproducción o dictado ⏹️</td>
+            </tr>
+            <tr>
+              <td><kbd>Alt + V</kbd></td>
+              <td>Abrir menú visual interactivo con soporte de mouse ⚙️</td>
+            </tr>
+            <tr>
+              <td><kbd>Alt + Up</kbd></td>
+              <td>Subir volumen de audio (+10%) 🔊</td>
+            </tr>
+            <tr>
+              <td><kbd>Alt + Down</kbd></td>
+              <td>Bajar volumen de audio (-10%) 🔉</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TABLA DE COMANDOS /VOICE -->
+      <div class="table-card">
+        <h3 class="table-card-title">💬 COMANDOS /VOICE EN PI</h3>
+        <table class="brutalist-table">
+          <thead>
+            <tr>
+              <th>COMANDO</th>
+              <th>DESCRIPCIÓN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/voice menu</code></td>
+              <td>Abre la interfaz TUI navegable con mouse</td>
+            </tr>
+            <tr>
+              <td><code>/voice crew on|off</code></td>
+              <td>Activa/desactiva el Modo Cuadrilla ("Jefe")</td>
+            </tr>
+            <tr>
+              <td><code>/voice tldr</code></td>
+              <td>Alterna el resumen ejecutivo breve antes de hablar</td>
+            </tr>
+            <tr>
+              <td><code>/voice on | off</code></td>
+              <td>Activa o desactiva la lectura automática</td>
+            </tr>
+            <tr>
+              <td><code>/voice provider &lt;t&gt;</code></td>
+              <td>Cambia a <code>kokoro</code>, <code>openai</code>, <code>elevenlabs</code></td>
+            </tr>
+            <tr>
+              <td><code>/voice volume &lt;0-150&gt;</code></td>
+              <td>Ajusta el volumen en porcentaje exacto</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN INSTALACIÓN -->
+  <section class="section-container container" id="install">
+    <div class="install-banner">
+      <div class="install-banner-header">
+        <div class="badge-tag">GET STARTED</div>
+        <h2 class="banner-title">LISTO PARA DARLE VOZ A TU DESARROLLO</h2>
+        <p class="banner-desc">
+          Instalalo como extensión en Pi CLI en 5 segundos. 100% libre, de código abierto y compatible con Linux, macOS y Windows.
+        </p>
+      </div>
+
+      <div class="install-options-grid">
+        <div class="install-option-card">
+          <div class="option-badge">OPCIÓN 1 // GLOBAL</div>
+          <h4>Instalar permanentemente</h4>
+          <p>Se vincula a tu configuración de Pi para estar disponible en todos tus proyectos.</p>
+          <div class="code-box">
+            <code>pi install /home/hermes/Desarrollos/Automatizacion/Gentle/Plugin/Voz</code>
+          </div>
+        </div>
+
+        <div class="install-option-card">
+          <div class="option-badge">OPCIÓN 2 // PROBAR</div>
+          <h4>Probar en sesión actual</h4>
+          <p>Carga la extensión de forma temporal sin modificar la configuración global.</p>
+          <div class="code-box">
+            <code>pi -e /home/hermes/Desarrollos/Automatizacion/Gentle/Plugin/Voz</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER BRUTALISTA -->
+  <footer class="footer-wrapper">
+    <div class="container footer-content">
+      <div class="footer-brand">
+        <div class="footer-logo">PI_VOICE_PLUGIN</div>
+        <p class="footer-tagline">
+          Desarrollado con arquitectura ODD (Organic Driven Development) y el harness de el Gentleman.
+        </p>
+      </div>
+      <div class="footer-meta">
+        <div class="footer-badge">LICENCIA MIT // 100% OPEN SOURCE</div>
+        <p class="footer-copy">
+          © 2026 Hermes &amp; Gentleman Programming. Construido con rigor arquitectónico.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
