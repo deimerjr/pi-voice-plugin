@@ -183,7 +183,9 @@ export class VoiceMenuComponent extends Container {
       const volPct = Math.round((config.volume ?? 1.0) * 100);
       const statusLine = ` [TTS: ${config.provider} (${activeVoice}) • STT: ${
         config.stt?.provider || "openai"
-      } • Auto: ${config.autoRead ? "ON" : "OFF"} • Vol: ${volPct}%]`;
+      } • Auto: ${config.autoRead ? "ON" : "OFF"} • TL;DR: ${
+        config.tldr ? "ON" : "OFF"
+      } • Vol: ${volPct}%]`;
       this.addChild(new Text(this.theme.fg("dim", statusLine), 0, 0));
     }
 
@@ -191,9 +193,13 @@ export class VoiceMenuComponent extends Container {
 
     // Build items for current screen
     const items = this.getItemsForScreen(config);
-    const maxVisible = Math.min(items.length, 11);
+    const maxVisible = Math.min(items.length, 12);
 
-    const list = new SelectList(items, maxVisible, selectTheme);
+    const selectLayout = {
+      minPrimaryColumnWidth: 38,
+      maxPrimaryColumnWidth: 54,
+    };
+    const list = new SelectList(items, maxVisible, selectTheme, selectLayout);
     list.onSelect = (selectedItem: SelectItem) => {
       this.handleItemSelection(selectedItem.value);
     };
@@ -237,6 +243,11 @@ export class VoiceMenuComponent extends Container {
             value: "toggle_autoread",
             label: `${config.autoRead ? "●" : "○"} Auto-lectura: ${config.autoRead ? "ACTIVADA" : "DESACTIVADA"}`,
             description: "Lee automáticamente cada respuesta generada",
+          },
+          {
+            value: "toggle_tldr",
+            label: `${config.tldr ? "●" : "○"} Modo Resumen (TL;DR): ${config.tldr ? "ACTIVADO" : "DESACTIVADO"}`,
+            description: "Sintetiza respuestas largas en 1-2 frases antes de hablar",
           },
           {
             value: "trigger_dictate",
@@ -670,6 +681,18 @@ export class VoiceMenuComponent extends Container {
       this.statusNotice = updated.autoRead
         ? "Auto-lectura ACTIVADA tras cada respuesta"
         : "Auto-lectura DESACTIVADA (modo manual)";
+      this.onConfigChanged(updated);
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "toggle_tldr") {
+      const config = this.configManager.getConfig();
+      const updated = this.configManager.save({ tldr: !config.tldr });
+      this.statusNotice = updated.tldr
+        ? "Modo Resumen TL;DR ACTIVADO (hablará en síntesis breve)"
+        : "Modo Resumen TL;DR DESACTIVADO (hablará respuesta completa)";
       this.onConfigChanged(updated);
       this.renderScreen();
       this.tui.requestRender();

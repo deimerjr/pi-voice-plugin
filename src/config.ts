@@ -60,6 +60,7 @@ export interface VoiceShortcutsConfig {
 export interface VoicePluginConfig {
   enabled: boolean;
   autoRead: boolean;
+  tldr: boolean;
   mode: SpeechMode;
   filterCode: CodeFilterMode;
   provider: SpeechProviderType;
@@ -77,6 +78,7 @@ export interface VoicePluginConfig {
 export const DEFAULT_CONFIG: VoicePluginConfig = {
   enabled: true,
   autoRead: false,
+  tldr: false,
   mode: "final",
   filterCode: "omit",
   provider: "openai",
@@ -231,6 +233,7 @@ export class ConfigManager {
     return {
       ...base,
       ...incoming,
+      tldr: typeof incoming.tldr === "boolean" ? incoming.tldr : base.tldr ?? false,
       volume:
         typeof incoming.volume === "number"
           ? Math.max(0.0, Math.min(1.5, incoming.volume))

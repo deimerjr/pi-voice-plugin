@@ -12,6 +12,7 @@ import { createTTSProvider } from "./providers/factory.ts";
 import { AudioPlayer } from "./player.ts";
 import { AudioRecorder } from "./recorder.ts";
 import { AudioTranscriber } from "./transcriber.ts";
+import { TldrSummarizer } from "./tldr.ts";
 import { VoiceMenuComponent, type MenuScreen } from "./menu.ts";
 
 export class VoiceControlBarComponent implements Component {
@@ -221,6 +222,7 @@ export default function (pi: ExtensionAPI) {
         : "custom";
 
     const volPct = Math.round((config.volume ?? 1.0) * 100);
+    const tldrTag = config.tldr ? " • TL;DR" : "";
 
     // 1. Footer status
     if (recorder.isRecording()) {
@@ -228,7 +230,7 @@ export default function (pi: ExtensionAPI) {
     } else {
       ctx.ui.setStatus(
         "pi-voice",
-        `Voice: ${statusIcon} ${config.autoRead ? "ON" : "OFF"} (${providerLabel} • ${volPct}%)`
+        `Voice: ${statusIcon} ${config.autoRead ? "ON" : "OFF"} (${providerLabel} • ${volPct}%${tldrTag})`
       );
     }
 
@@ -295,8 +297,8 @@ export default function (pi: ExtensionAPI) {
         overlay: true,
         overlayOptions: {
           anchor: "center",
-          width: 88,
-          maxHeight: 24,
+          width: 98,
+          maxHeight: 25,
         },
       }
     );
@@ -334,7 +336,19 @@ export default function (pi: ExtensionAPI) {
     currentAbortController = new AbortController();
     const signal = currentAbortController.signal;
 
-    const chunks = TextSanitizer.splitSentences(cleanText, 70);
+    let textToSpeak = cleanText;
+    if (config.tldr && textToSpeak.length > 200) {
+      if (ctx?.ui) {
+        ctx.ui.setStatus("pi-voice", "⏳ Generando resumen TL;DR...");
+      }
+      try {
+        textToSpeak = await TldrSummarizer.summarize(cleanText);
+      } catch {
+        textToSpeak = cleanText;
+      }
+    }
+
+    const chunks = TextSanitizer.splitSentences(textToSpeak, 70);
     if (chunks.length === 0) return;
 
     try {
@@ -523,6 +537,20 @@ export default function (pi: ExtensionAPI) {
         case "menu":
         case "gui": {
           await openVoiceMenu(ctx);
+          break;
+        }
+
+        case "tldr":
+        case "resumen": {
+          const nextState = !config.tldr;
+          config = configManager.save({ tldr: nextState });
+          updateUiState(ctx);
+          ctx.ui.notify(
+            nextState
+              ? "🔊 Modo Resumen TL;DR ACTIVADO (hablará en síntesis breve)"
+              : "🔊 Modo Resumen TL;DR DESACTIVADO (hablará respuesta completa)",
+            "info"
+          );
           break;
         }
 
@@ -797,6 +825,7 @@ export default function (pi: ExtensionAPI) {
             "  /voice                 - Abre el menú visual interactivo con mouse",
             "  /voice menu            - Abre el menú visual interactivo con mouse",
             "  /voice record          - Inicia o detiene el dictado de prompts por voz (Alt+R)",
+            "  /voice tldr            - Alterna el modo de resumen breve ejecutivo (TL;DR)",
             "  /voice on              - Activa la lectura automática tras cada respuesta",
             "  /voice off             - Desactiva la lectura automática",
             "  /voice toggle          - Alterna entre lectura automática on/off",

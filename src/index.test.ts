@@ -70,6 +70,10 @@ describe("Voice Extension Entrypoint", () => {
       await registeredCommandOpts.handler("volume 80", mockCtx);
       assert.ok(notifications.some((n) => n.msg.includes("80%")));
 
+      // Run /voice tldr
+      await registeredCommandOpts.handler("tldr", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("TL;DR ACTIVADO")));
+
       // Test input cancels speech
       assert.doesNotThrow(() => {
         listeners["input"][0]({}, mockCtx);
