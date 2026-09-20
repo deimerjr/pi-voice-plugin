@@ -19,3 +19,4 @@ Plugin/Extensión para Pi CLI que sintetiza en voz las respuestas del asistente 
 - [x] Task 13: Redesign menu UI (pure black background, monochrome icons, single unified API hub, wider dialog, and Whisper silence/hallucination filter) [commit: b6636df]
 - [x] Task 14: Implement Audio TL;DR executive summary mode and expand menu width to eliminate overlapping text [commit: 2289602]
 - [x] Task 15: Implement Multi-Agent Spanish Voice Personas with start/end task announcements and synthesis (`dora_heart`, `ef_dora`, `em_alex`, `em_santa`) [commit: 2b9fdd4]
+- [x] Task 16: Ensure 100% Spanish translation for subagent start announcements and end summaries (`TldrSummarizer.quickTranslateCommonEnglish` and LLM translation) [commit: 7612b23]
