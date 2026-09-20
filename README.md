@@ -47,7 +47,11 @@ O con `npx serve`:
 npx serve landing -l 3000
 ```
 
-#### 🌐 Acceso desde Windows u otro equipo en la red local:
+#### 🌐 Acceso Público en Internet (Cloudflare HTTPS):
+Cualquier compañero en cualquier dispositivo o red puede ingresar directamente a:
+👉 **`https://style-emissions-collect-fuji.trycloudflare.com`**
+
+#### 🏠 Acceso desde Windows u otro equipo en la red local (LAN):
 Abrí tu navegador en Windows (Chrome, Edge, Firefox) e ingresá a:
 👉 **`http://192.168.18.29:3000`**
 
