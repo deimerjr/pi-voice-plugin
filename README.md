@@ -75,6 +75,17 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 
 ---
 
+## ⌨️ Atajos de Teclado (Disponibles en cualquier modo)
+
+| Atajo | Acción |
+| :--- | :--- |
+| `Alt + S` | Detiene inmediatamente la reproducción de voz |
+| `Alt + V` | Abre el menú visual interactivo de Pi Voice |
+| `Alt + Up` | Sube el volumen de voz (+10%) |
+| `Alt + Down` | Baja el volumen de voz (-10%) |
+
+---
+
 ## 🖥️ Servidor Kokoro TTS Local en Ubuntu
 
 El servidor local de Kokoro TTS corre de forma continua en tu sistema administrado por `systemd`:

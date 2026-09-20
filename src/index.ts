@@ -297,14 +297,14 @@ export default function (pi: ExtensionAPI) {
 
   // Register shortcuts for quick keyboard control in any mode
   if (typeof (pi as any).registerShortcut === "function") {
-    (pi as any).registerShortcut("ctrl+alt+v", {
+    (pi as any).registerShortcut("alt+v", {
       description: "Abrir menú interactivo de Pi Voice",
       handler: async (ctx: ExtensionContext) => {
         await openVoiceMenu(ctx);
       },
     });
 
-    (pi as any).registerShortcut("ctrl+alt+s", {
+    (pi as any).registerShortcut("alt+s", {
       description: "Detener reproducción de voz inmediatamente",
       handler: async (ctx: ExtensionContext) => {
         player.stop();
@@ -316,7 +316,7 @@ export default function (pi: ExtensionAPI) {
       },
     });
 
-    (pi as any).registerShortcut("ctrl+alt+up", {
+    (pi as any).registerShortcut("alt+up", {
       description: "Subir volumen de voz (+10%)",
       handler: async (ctx: ExtensionContext) => {
         const current = config.volume ?? 1.0;
@@ -330,7 +330,7 @@ export default function (pi: ExtensionAPI) {
       },
     });
 
-    (pi as any).registerShortcut("ctrl+alt+down", {
+    (pi as any).registerShortcut("alt+down", {
       description: "Bajar volumen de voz (-10%)",
       handler: async (ctx: ExtensionContext) => {
         const current = config.volume ?? 1.0;
