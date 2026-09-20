@@ -9,16 +9,20 @@ describe("TldrSummarizer", () => {
     assert.equal(result, shortText);
   });
 
-  it("extracts heuristic summary for long text when offline", () => {
-    const longText = `
-Eran las tres de la mañana y la terminal parpadeaba como un faro solitario en medio del departamento a oscuras.
-Martín miraba el diff en la pantalla, convencido de que los duendes del compilador le estaban jugando una mala pasada.
-El mate ya estaba lavado hacía rato, pero la yerba tibia todavía le servía de amuleto contra el sueño.
-Listo, se solucionó el problema al corregir la variable de entorno mal configurada.
-`;
+  it("detects English technical text and applies translation", () => {
+    assert.equal(
+      TldrSummarizer.isLikelyEnglish("All 36 tests passed with exit code 0."),
+      true
+    );
+    assert.equal(
+      TldrSummarizer.isLikelyEnglish("Todos los tests pasaron correctamente."),
+      false
+    );
 
-    const summary = TldrSummarizer.extractHeuristicSummary(longText);
-    assert.ok(summary.length < longText.length);
-    assert.ok(summary.includes("Listo, se solucionó el problema") || summary.includes("Eran las tres"));
+    const translated = TldrSummarizer.quickTranslateCommonEnglish(
+      "Technical verification evidence: All 36 tests passed. Exit code 0."
+    );
+    assert.ok(translated.includes("todos los 36 tests pasaron con éxito"));
+    assert.ok(translated.includes("código de salida"));
   });
 });

@@ -495,9 +495,12 @@ export default function (pi: ExtensionAPI) {
     ) {
       const agentName = String(event.args?.agent || event.args?.name || "");
       const { role, voice } = resolveSubagentVoice(agentName, config);
-      const label =
+      const rawLabel =
         event.args?.label ||
         (event.args?.task ? String(event.args.task).slice(0, 80) : undefined);
+      const label = rawLabel
+        ? TldrSummarizer.quickTranslateCommonEnglish(rawLabel)
+        : undefined;
 
       activeSubagents.set(event.toolCallId, { role, voice, label });
 
