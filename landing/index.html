@@ -28,12 +28,12 @@
         <span class="brand-title">PI_VOICE<span class="dot">.</span>EXE</span>
       </div>
       <ul class="nav-links">
-        <li><a href="theater.html" style="color: var(--c-pink); font-weight: 900;">
-          <svg class="b-icon-inline" viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><rect x="2" y="2" width="12" height="12"/><polygon points="6,5 11,8 6,11" fill="var(--c-black)"/></svg>THEATER
+        <li><a href="#tui-simulator" style="color: var(--c-pink); font-weight: 900;">
+          <svg class="b-icon-inline" viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><rect x="2" y="2" width="12" height="12"/><polygon points="6,5 11,8 6,11" fill="var(--c-black)"/></svg>ANIMACIÓN THEATER
         </a></li>
         <li><a href="#cuadrilla">CUADRILLA</a></li>
         <li><a href="#features">FEATURES</a></li>
-        <li><a href="#tui-simulator">SIMULADOR TUI</a></li>
+        <li><a href="#tui-simulator">TERMINAL PI</a></li>
         <li><a href="#pipeline">ARQUITECTURA</a></li>
         <li><a href="#comandos">COMANDOS</a></li>
       </ul>
@@ -91,7 +91,7 @@
 
         <!-- BOTONES DE ACCIÓN HERO -->
         <div class="hero-cta-group">
-          <a href="theater.html" class="btn btn-primary btn-giant" style="background: var(--c-pink); color: #fff;">
+          <a href="#tui-simulator" class="btn btn-primary btn-giant" style="background: var(--c-pink); color: #fff;">
             <svg class="b-icon-inline" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
               <polygon points="3,2 14,8 3,14"/>
             </svg>
@@ -314,84 +314,209 @@
     </div>
   </section>
 
-  <!-- SECCIÓN SIMULADOR TUI INTERACTIVO -->
+  <!-- SECCIÓN SIMULADOR TUI INTERACTIVO & THEATER ANIMATION -->
   <section class="section-container container" id="tui-simulator">
     <div class="section-header">
-      <div class="section-tag">TERMINAL UI EXPERIENCE</div>
-      <h2 class="section-title">CONTROL INTEGRADO DIRECTO EN PI CLI</h2>
+      <div class="section-tag">TERMINAL THEATER EXPERIENCE</div>
+      <h2 class="section-title">ANIMACIÓN DE LA TERMINAL DE PI EN VIVO</h2>
       <p class="section-desc">
-        Widget interactivo al pie del editor que podés clickear directamente con el mouse o controlar mediante atajos globales.
+        Viví la interacción de la cuadrilla con el tema oficial <strong>Gentleman-Sexy-Djr</strong> de Pi CLI, osciloscopio de audio reactivo en tiempo real y voces neuronales en español.
       </p>
     </div>
 
-    <div class="theater-promo-banner">
-      <div class="theater-promo-content">
-        <span class="badge-tag" style="background: var(--c-pink); color: #fff;">NUEVO // EXPERIENCIA CINEMATOGRÁFICA</span>
-        <h3>ANIMACIÓN DE LA TERMINAL DE PI EN VIVO [GENTLEMAN-SEXY-DJR]</h3>
-        <p>Observá el diálogo en tiempo real entre el Gentleman, Dora, Alex y Santa con el tema obsidian-rose de Pi, osciloscopio en vivo y exportador de video WebM.</p>
+    <!-- TERMINAL WRAPPER (GENTLEMAN-SEXY-DJR) -->
+    <div class="theater-terminal-wrapper" id="terminal-capture-area">
+      <!-- TITLEBAR -->
+      <div class="terminal-titlebar">
+        <div class="titlebar-left">
+          <div class="window-dots">
+            <span class="w-dot red"></span>
+            <span class="w-dot yellow"></span>
+            <span class="w-dot green"></span>
+          </div>
+          <div class="titlebar-title">
+            <span>π pi</span> // interactive session — 120x36
+          </div>
+        </div>
+        <div class="titlebar-meta">
+          <span class="pill-session">session: 422f40e3</span>
+          <span class="pill-model">gpt-5.5 (openai-codex)</span>
+          <span class="pill-theme">[ Theme: Gentleman-Sexy-Djr ]</span>
+        </div>
       </div>
-      <a href="theater.html" class="btn btn-primary btn-giant">
-        ▶ ABRIR PI TERMINAL THEATER ➔
-      </a>
+
+      <!-- SPEAKER HUD & OSCILLOSCOPE -->
+      <div class="speaker-hud" id="speaker-hud">
+        <div class="speaker-info">
+          <div class="speaker-avatar-wrap" id="hud-avatar">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="5" width="18" height="14"/>
+              <circle cx="8" cy="11" r="2" fill="currentColor"/>
+              <circle cx="16" cy="11" r="2" stroke-width="2"/>
+              <line x1="3" y1="15" x2="21" y2="15"/>
+            </svg>
+          </div>
+          <div class="speaker-name-role">
+            <div class="speaker-name" id="hud-name">el Gentleman</div>
+            <div class="speaker-role" id="hud-role">Orquestador // dora_heart</div>
+          </div>
+        </div>
+        <div class="wave-container">
+          <canvas id="wave-canvas" width="140" height="28"></canvas>
+        </div>
+      </div>
+
+      <!-- TERMINAL BODY STREAM -->
+      <div class="terminal-stream-body" id="terminal-body">
+        <!-- MENSAJE INICIAL DEL JEFE -->
+        <div class="user-msg-box">
+          <div class="msg-author">
+            <span>◆</span> JEFE [PROMPT]
+          </div>
+          <div>
+            Jefe al habla. Pongan en marcha la cuadrilla para implementar el validador de contraseñas y correr las pruebas unitarias.
+          </div>
+        </div>
+
+        <!-- ESCENA 1: EL GENTLEMAN -->
+        <div class="agent-msg-box agent-gentleman visible" id="scene-gentleman">
+          <div class="agent-badge-line">
+            <span class="agent-tag-badge">[ ORCH ] EL GENTLEMAN</span>
+            <span class="agent-voice-info">voice: dora_heart (24kHz Kokoro)</span>
+          </div>
+          <div class="agent-spoken-text">
+            "Entendido, Jefe. Pongo a la cuadrilla en marcha. Dora, relevá el terreno. Alex y Santa, atentos."
+          </div>
+          <div class="tool-artifact-box">
+            <div class="tool-header-line">▶ subagent_run(agent: "gentle-ai-explore", label: "relevar estructura para validador")</div>
+            <div>Task dispatched to Dora. Mode: foreground task. Role: Exploradora.</div>
+          </div>
+        </div>
+
+        <!-- ESCENA 2: DORA (EXPLORADORA) -->
+        <div class="agent-msg-box agent-dora visible" id="scene-dora">
+          <div class="agent-badge-line">
+            <span class="agent-tag-badge">[ SCOUT ] DORA (EXPLORADORA)</span>
+            <span class="agent-voice-info">voice: ef_dora (24kHz Kokoro)</span>
+          </div>
+          <div class="agent-spoken-text">
+            "A la orden, Gentleman. Jefe, me pongo a explorar el terreno. Alex, te dejo la cancha lista."
+          </div>
+          <div class="tool-artifact-box">
+            <div class="tool-header-line">[ DIR ] Relevamiento de estructura completado:</div>
+            <div>playground/validador/</div>
+            <div>├── <span class="diff-add">validador.js</span> (función pura validarPassword &amp; REGLAS_DEFAULT)</div>
+            <div>└── <span class="diff-add">validador.test.js</span> (suite exhaustiva con node:test y node:assert)</div>
+          </div>
+        </div>
+
+        <!-- ESCENA 3: ALEX (PROGRAMADOR) -->
+        <div class="agent-msg-box agent-alex visible" id="scene-alex">
+          <div class="agent-badge-line">
+            <span class="agent-tag-badge">[ DEV ] ALEX (PROGRAMADOR)</span>
+            <span class="agent-voice-info">voice: em_alex (24kHz Kokoro)</span>
+          </div>
+          <div class="agent-spoken-text">
+            "Recibido Dora, tomo la posta. Jefe, arranco con la implementación. Santa, pasale la lupa y fijate si no rompí nada."
+          </div>
+          <div class="tool-artifact-box">
+            <div class="tool-header-line">[ DIFF ] Implementation diff (playground/validador/validador.js):</div>
+            <div class="diff-add">+ export function validarPassword(password, opciones = {}) {</div>
+            <div class="diff-add">+   if (typeof password !== "string") return { valido: false, errores: ["TIPO_INVALIDO"] };</div>
+            <div class="diff-add">+   // Validación longitud, mayúsculas, minúsculas, números y símbolos</div>
+            <div class="diff-add">+   return { valido: errores.length === 0, errores };</div>
+            <div class="diff-add">+ }</div>
+          </div>
+        </div>
+
+        <!-- ESCENA 4: SANTA (AUDITOR) -->
+        <div class="agent-msg-box agent-santa visible" id="scene-santa">
+          <div class="agent-badge-line">
+            <span class="agent-tag-badge">[ AUDIT ] SANTA (AUDITOR)</span>
+            <span class="agent-voice-info">voice: em_santa (24kHz Kokoro)</span>
+          </div>
+          <div class="agent-spoken-text">
+            "A ver qué hiciste, Alex... Jefe, voy a auditar con lupa. Todo verificado y aprobado para el Jefe."
+          </div>
+          <div class="tool-artifact-box">
+            <div class="tool-header-line">[ TEST ] node --test playground/validador/validador.test.js</div>
+            <div>TAP version 13</div>
+            <div># Subtest: validarPassword (Happy path, Reglas, Edge cases, Inmutabilidad)</div>
+            <div class="tap-pass">✓ 40 tests passed, 0 failures (147 ms)</div>
+            <div class="tap-pass">✓ Dictamen: Implementación aprobada para el Jefe.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WIDGET CONTROL BAR -->
+      <div class="tui-widget-bar">
+        <div class="widget-buttons">
+          <button class="t-btn t-btn-voice" id="sim-btn-voice" title="Clic: Alternar lectura / Abrir Menú">
+            <svg class="b-icon-inline" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="1" width="6" height="8" fill="currentColor"/>
+              <path d="M3 6v2a5 5 0 0 0 10 0V6"/>
+              <line x1="8" y1="13" x2="8" y2="15"/>
+              <line x1="5" y1="15" x2="11" y2="15"/>
+            </svg>
+            Voice: <span id="widget-active-voice">ON (dora_heart)</span> • Alt+V
+          </button>
+          <button class="t-btn t-btn-stop" id="sim-btn-stop" title="Clic: Detener audio inmediatamente (Alt+S)">
+            <svg class="b-icon-inline" viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+              <rect x="2" y="2" width="12" height="12"/>
+            </svg>
+            <span id="sim-stop-text">Parar</span>
+          </button>
+          <button class="t-btn t-btn-vol" id="sim-btn-volume" title="Clic: Subir/Bajar volumen">
+            <svg class="b-icon-inline" id="sim-vol-svg" viewBox="0 0 16 16" width="13" height="13" fill="currentColor">
+              <polygon points="2,5 6,5 11,1 11,15 6,11 2,11"/>
+              <rect x="13" y="4" width="2" height="8"/>
+            </svg>
+            <span id="widget-vol-val">100%</span>
+          </button>
+          <button class="t-btn t-btn-dict" id="sim-btn-record" title="Clic: Grabar audio para dictado (Alt+R)">
+            <svg class="b-icon-inline" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="1" width="6" height="8" fill="currentColor"/>
+              <path d="M3 6v2a5 5 0 0 0 10 0V6"/>
+              <line x1="8" y1="13" x2="8" y2="15"/>
+              <line x1="5" y1="15" x2="11" y2="15"/>
+            </svg>
+            <span id="sim-record-text">Dictar (Alt+R)</span>
+          </button>
+        </div>
+        <div class="widget-status-text">
+          <span class="status-badge-live"></span>
+          <span id="widget-status-label">Cuadrilla lista en vivo</span>
+        </div>
+      </div>
+
+      <!-- PLAYBACK CONTROLS (THEATER) -->
+      <div class="theater-playback-bar">
+        <div class="playback-btn-group">
+          <button class="c-btn-play" id="btn-play-theater">
+            ▶ INICIAR ANIMACIÓN
+          </button>
+          <button class="c-btn-action" id="btn-restart-theater">
+            ↺ REINICIAR
+          </button>
+          <button class="c-btn-record" id="btn-record-video" title="Graba el canvas y audio en un archivo WebM descargable">
+            [REC] GRABAR VIDEO (.WEBM)
+          </button>
+        </div>
+
+        <div class="scene-jump-group">
+          <span class="scene-jump-label">IR A AGENTE:</span>
+          <button class="scene-pill" data-scene="gentleman">1. Gentleman</button>
+          <button class="scene-pill" data-scene="dora">2. Dora</button>
+          <button class="scene-pill" data-scene="alex">3. Alex</button>
+          <button class="scene-pill" data-scene="santa">4. Santa</button>
+        </div>
+      </div>
+
+      <div class="simulator-legend">
+        <p><strong>[ CONTROLES EN VIVO ]</strong> Dale a <code>▶ INICIAR ANIMACIÓN</code> para ver la terminal cobrar vida con el tema <em>Gentleman-Sexy-Djr</em> y escuchar a cada especialista hablar y pasarse la posta en tiempo real.</p>
+      </div>
     </div>
-
-    <div class="simulator-wrapper">
-      <div class="simulator-window">
-        <div class="simulator-titlebar">
-          <span class="term-dot red"></span>
-          <span class="term-dot yellow"></span>
-          <span class="term-dot green"></span>
-          <span class="titlebar-text">pi-session // terminal-422f40e3 — 120x34</span>
-        </div>
-        <div class="simulator-screen">
-          <div class="term-log">
-            <span class="log-prefix">pi &gt;</span> <span class="log-cmd">/sdd-explore</span><br>
-            <span class="log-subagent">[Dora - Exploradora]</span> Explorando estructura de componentes y dependencias...<br>
-            <span class="log-audio-status">[AUDIO] "A la orden, Gentleman. Jefe, me pongo a explorar el terreno..."</span><br>
-            <span class="log-prefix">pi &gt;</span> <span class="log-cmd">/sdd-apply</span><br>
-            <span class="log-subagent">[Alex - Programador]</span> Generando validadores y suites unitarias...<br>
-            <span class="log-audio-status">[AUDIO] "Recibido Dora, tomo la posta. Jefe, arranco con la implementación..."</span><br>
-            <span class="log-prefix">pi &gt;</span> <span class="log-cmd">npm test</span><br>
-            <span class="log-subagent">[Santa - Auditor]</span> 36 tests passed, 0 failures.<br>
-            <span class="log-audio-status">[AUDIO] "Jefe, auditoría terminada: todos los tests pasaron exitosamente."</span>
-          </div>
-
-          <!-- BARRA DE WIDGET INTERACTIVA EN EL SIMULADOR -->
-          <div class="tui-widget-bar">
-            <button class="tui-btn" id="sim-btn-voice" title="Clic: Alternar lectura / Abrir Menú">
-              <svg class="b-icon-inline" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="5" y="1" width="6" height="8" fill="currentColor"/>
-                <path d="M3 6v2a5 5 0 0 0 10 0V6"/>
-                <line x1="8" y1="13" x2="8" y2="15"/>
-                <line x1="5" y1="15" x2="11" y2="15"/>
-              </svg>
-              Voice: <span id="sim-voice-state">ON</span> (<span id="sim-voice-name">dora_heart</span>) • Clic: Menú [CFG]
-            </button>
-            <button class="tui-btn tui-btn-stop" id="sim-btn-stop" title="Clic: Detener audio inmediatamente (Alt+S)">
-              <svg class="b-icon-inline" viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
-                <rect x="2" y="2" width="12" height="12"/>
-              </svg>
-              <span id="sim-stop-text">Parar</span>
-            </button>
-            <button class="tui-btn" id="sim-btn-volume" title="Clic: Subir/Bajar volumen">
-              <svg class="b-icon-inline" id="sim-vol-svg" viewBox="0 0 16 16" width="13" height="13" fill="currentColor">
-                <polygon points="2,5 6,5 11,1 11,15 6,11 2,11"/>
-                <rect x="13" y="4" width="2" height="8"/>
-              </svg>
-              <span id="sim-vol-val">100%</span>
-            </button>
-            <button class="tui-btn tui-btn-record" id="sim-btn-record" title="Clic: Grabar audio para dictado (Alt+R)">
-              <svg class="b-icon-inline" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="5" y="1" width="6" height="8" fill="currentColor"/>
-                <path d="M3 6v2a5 5 0 0 0 10 0V6"/>
-                <line x1="8" y1="13" x2="8" y2="15"/>
-                <line x1="5" y1="15" x2="11" y2="15"/>
-              </svg>
-              <span id="sim-record-text">Dictar</span>
-            </button>
-          </div>
-        </div>
-      </div>
+  </section>
       <div class="simulator-legend">
         <p><strong>[ TIP // EN VIVO ]</strong> Hacé clic en <code>Voice: ON</code> para alternar el sintetizador, en <code>Parar</code> para simular corte inmediato de audio, o en <code>Dictar</code> para iniciar la simulación de entrada Whisper STT.</p>
       </div>
