@@ -5,6 +5,7 @@ import {
   Spacer,
   matchesKey,
   Key,
+  visibleWidth,
   type SelectItem,
   type SelectListTheme,
   type Theme,
@@ -26,12 +27,11 @@ import { createTTSProvider } from "./providers/factory.ts";
 export type MenuScreen =
   | "main"
   | "voices"
-  | "providers"
-  | "custom_api"
-  | "speed"
-  | "filter"
+  | "api_hub"
   | "volume"
-  | "shortcuts";
+  | "shortcuts"
+  | "speed"
+  | "filter";
 
 export interface VoiceMenuOptions {
   configManager: ConfigManager;
@@ -91,6 +91,17 @@ export class VoiceMenuComponent extends Container {
     this.renderScreen();
   }
 
+  public override render(width: number): string[] {
+    const rawLines = super.render(width);
+    const safeWidth = Math.max(10, width);
+    // Render with 100% solid, opaque pure black background (\x1b[48;2;0;0;0m)
+    return rawLines.map((line) => {
+      const len = visibleWidth(line);
+      const pad = " ".repeat(Math.max(0, safeWidth - len));
+      return `\x1b[48;2;0;0;0m${line}${pad}\x1b[49m`;
+    });
+  }
+
   public handleInput(keyData: string): void {
     if (
       matchesKey(keyData, "escape") ||
@@ -110,6 +121,14 @@ export class VoiceMenuComponent extends Container {
     }
   }
 
+  public override handleMouse(event: TuiMouseEvent): TuiMouseEventResult | undefined {
+    const result = super.handleMouse(event);
+    if (result) {
+      this.tui.requestRender();
+    }
+    return result;
+  }
+
   private goBackOrClose(): void {
     if (this.currentScreen !== "main" && this.initialScreen !== this.currentScreen) {
       this.statusNotice = undefined;
@@ -119,14 +138,6 @@ export class VoiceMenuComponent extends Container {
       return;
     }
     this.onClose();
-  }
-
-  public override handleMouse(event: TuiMouseEvent): TuiMouseEventResult | undefined {
-    const result = super.handleMouse(event);
-    if (result) {
-      this.tui.requestRender();
-    }
-    return result;
   }
 
   private renderScreen(): void {
@@ -144,23 +155,22 @@ export class VoiceMenuComponent extends Container {
     // Top border
     this.addChild(new HorizontalLine((s: string) => this.theme.fg("accent", s)));
 
-    // Header title
-    let titleText = "🎙️ Menú de Voz de Pi CLI";
-    if (this.currentScreen === "voices") titleText = "🎙️ Voces y Muestras de Audio";
-    else if (this.currentScreen === "providers") titleText = "🌐 Seleccionar Proveedor de IA";
-    else if (this.currentScreen === "custom_api") titleText = "⚙️ Integrar API Custom (HTTP)";
-    else if (this.currentScreen === "speed") titleText = "⚡ Velocidad de Locución";
-    else if (this.currentScreen === "filter") titleText = "🧹 Filtro de Código y Markdown";
-    else if (this.currentScreen === "volume") titleText = "🔊 Control de Volumen";
-    else if (this.currentScreen === "shortcuts") titleText = "⌨️ Configurar Atajos y Comandos";
+    // Header title (monochrome diamond)
+    let titleText = "Menú de Voz (Pi CLI)";
+    if (this.currentScreen === "voices") titleText = "Catálogo de Voces y Muestras";
+    else if (this.currentScreen === "api_hub") titleText = "Configuración de APIs y Proveedores";
+    else if (this.currentScreen === "volume") titleText = "Control de Volumen";
+    else if (this.currentScreen === "shortcuts") titleText = "Atajos de Teclado y Teclas";
+    else if (this.currentScreen === "speed") titleText = "Velocidad de Locución";
+    else if (this.currentScreen === "filter") titleText = "Filtro de Código y Formato";
 
     this.addChild(
-      new Text(this.theme.fg("accent", this.theme.bold(` ${titleText} `)), 0, 0)
+      new Text(this.theme.fg("accent", this.theme.bold(` ◈ ${titleText} `)), 0, 0)
     );
 
     // Status notice or subtitle
     if (this.statusNotice) {
-      this.addChild(new Text(this.theme.fg("warning", ` ℹ️  ${this.statusNotice}`), 0, 0));
+      this.addChild(new Text(this.theme.fg("warning", ` ℹ ${this.statusNotice}`), 0, 0));
     } else {
       const activeVoice =
         config.provider === "openai"
@@ -170,9 +180,10 @@ export class VoiceMenuComponent extends Container {
           : config.provider === "elevenlabs"
           ? config.elevenlabs.voiceId
           : "custom";
-      const statusLine = ` [Proveedor: ${config.provider} | Voz: ${activeVoice} | Auto: ${
-        config.autoRead ? "ON" : "OFF"
-      }]`;
+      const volPct = Math.round((config.volume ?? 1.0) * 100);
+      const statusLine = ` [TTS: ${config.provider} (${activeVoice}) • STT: ${
+        config.stt?.provider || "openai"
+      } • Auto: ${config.autoRead ? "ON" : "OFF"} • Vol: ${volPct}%]`;
       this.addChild(new Text(this.theme.fg("dim", statusLine), 0, 0));
     }
 
@@ -180,7 +191,7 @@ export class VoiceMenuComponent extends Container {
 
     // Build items for current screen
     const items = this.getItemsForScreen(config);
-    const maxVisible = Math.min(items.length, 10);
+    const maxVisible = Math.min(items.length, 11);
 
     const list = new SelectList(items, maxVisible, selectTheme);
     list.onSelect = (selectedItem: SelectItem) => {
@@ -199,7 +210,7 @@ export class VoiceMenuComponent extends Container {
       new Text(
         this.theme.fg(
           "dim",
-          "  ↑/↓ o Clic para elegir • Enter para confirmar • Esc para volver/cerrar"
+          "  ↑/↓ Navegar • Enter Seleccionar • Esc Volver / Cerrar"
         ),
         0,
         0
@@ -219,72 +230,128 @@ export class VoiceMenuComponent extends Container {
             : config.provider === "elevenlabs"
             ? config.elevenlabs.voiceId
             : "custom";
+        const volPct = Math.round((config.volume ?? 1.0) * 100);
 
         return [
           {
             value: "toggle_autoread",
-            label: `🔊 Auto-lectura: ${config.autoRead ? "ACTIVADA" : "DESACTIVADA"}`,
+            label: `${config.autoRead ? "●" : "○"} Auto-lectura: ${config.autoRead ? "ACTIVADA" : "DESACTIVADA"}`,
             description: "Lee automáticamente cada respuesta generada",
           },
           {
             value: "trigger_dictate",
-            label: `🎙️ Dictar Prompt por Voz (Alt+R)`,
-            description: "Hablá por el micrófono y Pi escribirá tu mensaje",
+            label: "▸ Dictar Prompt por Voz",
+            description: "Hablá por el micrófono y Pi transcribirá tu mensaje [Alt+R]",
           },
           {
             value: "goto_voices",
-            label: `🎙️ Seleccionar Voz y Escuchar Muestra...`,
-            description: `Voz actual: ${activeVoice}. Probá las voces en vivo`,
+            label: "◆ Catálogo de Voces...",
+            description: `Voz actual: ${activeVoice} • Escuchá muestras en vivo`,
           },
           {
-            value: "goto_providers",
-            label: `🌐 Proveedor de IA (${config.provider})...`,
-            description: "Alternar entre OpenAI, ElevenLabs o Custom API",
-          },
-          {
-            value: "goto_custom_api",
-            label: `🔌 Integrar API Custom...`,
-            description: "Conectar un endpoint REST propio o servidor local",
+            value: "goto_api_hub",
+            label: "◆ APIs y Proveedores (TTS / STT)...",
+            description: "Servicios de voz saliente y dictado por micrófono",
           },
           {
             value: "goto_volume",
-            label: `🔊 Control de Volumen (${Math.round((config.volume ?? 1.0) * 100)}%)...`,
-            description: "Ajustar volumen del audio (0% a 150%)",
+            label: `◆ Control de Volumen (${volPct}%)...`,
+            description: "Ajustar volumen de la locución (0% a 150%)",
           },
           {
             value: "goto_shortcuts",
-            label: "⌨️ Configurar Atajos de Teclado y Teclas...",
-            description: "Personalizar las teclas para dictar, parar, volumen y menú",
+            label: "◆ Atajos de Teclado...",
+            description: "Personalizar teclas para dictar, parar, volumen y menú",
           },
           {
             value: "goto_speed",
-            label: `⚡ Velocidad de habla (${config.openai.speed}x)...`,
+            label: `◆ Velocidad de habla (${config.openai.speed}x)...`,
             description: "Ajustar rapidez de locución",
           },
           {
             value: "goto_filter",
-            label: `🧹 Filtro de código (${config.filterCode})...`,
+            label: `◆ Filtro de código (${config.filterCode})...`,
             description: "Omitir código, mencionar bloques o leer todo",
           },
           {
-            value: "set_key",
-            label: `🔑 Configurar Clave de API`,
-            description: "Ingresar o actualizar API Key del proveedor activo",
-          },
-          {
             value: "read_last",
-            label: `▶️ Leer última respuesta del asistente`,
+            label: "▸ Leer última respuesta",
             description: "Reproducir la última respuesta por audio",
           },
           {
             value: "stop_audio",
-            label: `⏹️ Detener reproducción de audio`,
-            description: "Cortar el audio en curso inmediatamente",
+            label: "■ Detener audio en curso",
+            description: "Cortar el audio en reproducción de inmediato [Alt+S]",
           },
           {
             value: "close",
-            label: `❌ Cerrar Menú`,
-            description: "Salir a la terminal de Pi CLI",
+            label: "✕ Cerrar Menú",
+            description: "Salir a la terminal de Pi CLI [Esc]",
+          },
+        ];
+      }
+
+      case "api_hub": {
+        const ttsKeyConfigured = Boolean(this.configManager.getActiveApiKey());
+        const sttKeyConfigured = Boolean(this.configManager.getActiveSTTApiKey());
+        const sttProv = config.stt?.provider || "openai";
+
+        return [
+          {
+            value: "api_tts_provider",
+            label: `● [TTS] Proveedor Saliente: ${config.provider}`,
+            description: "Clic para alternar: kokoro (Local), openai, elevenlabs, custom",
+          },
+          {
+            value: "api_tts_key",
+            label: `○ [TTS] Clave API TTS: ${
+              config.provider === "kokoro"
+                ? "No requerida (Local)"
+                : ttsKeyConfigured
+                ? "Configurada"
+                : "No configurada"
+            }`,
+            description: "Ingresar o actualizar API Key de OpenAI o ElevenLabs",
+          },
+          {
+            value: "api_tts_url",
+            label: `○ [TTS] URL Endpoint Custom: ${config.custom.url}`,
+            description: "Editar URL de servidor TTS local o custom",
+          },
+          {
+            value: "api_tts_method",
+            label: `○ [TTS] Método Custom: ${config.custom.method}`,
+            description: "Alternar método HTTP (POST o GET)",
+          },
+          {
+            value: "api_stt_provider",
+            label: `● [STT] Proveedor Dictado: ${sttProv}`,
+            description: "Clic para alternar: openai (Whisper), groq, custom",
+          },
+          {
+            value: "api_stt_key",
+            label: `○ [STT] Clave API STT: ${sttKeyConfigured ? "Configurada" : "No configurada"}`,
+            description: "Ingresar clave de API para Whisper (OpenAI / Groq)",
+          },
+          {
+            value: "api_stt_url",
+            label: `○ [STT] URL Endpoint STT: ${config.stt?.baseUrl || "https://api.openai.com/v1"}`,
+            description: "Editar URL de API para transcripción",
+          },
+          {
+            value: "api_stt_model",
+            label: `○ [STT] Modelo STT: ${config.stt?.model || "whisper-1"}`,
+            description: "Cambiar modelo (ej: whisper-1, whisper-large-v3-turbo)",
+          },
+          {
+            value: "api_stt_lang",
+            label: `○ [STT] Idioma Dictado: ${config.stt?.language || "es"}`,
+            description: "Cambiar código de idioma (ej: es, en)",
+          },
+          {
+            value: "back",
+            label: "⬅ Volver al menú principal",
+            description: "Regresar a las opciones principales",
           },
         ];
       }
@@ -307,14 +374,14 @@ export class VoiceMenuComponent extends Container {
             const isCurrent = config.openai.voice === v.name;
             return {
               value: `voice:${v.name}`,
-              label: `${isCurrent ? "✓ " : "  "}${v.name}`,
-              description: `${v.desc} • [Clic: escuchar muestra y activar]`,
+              label: `${isCurrent ? "● " : "○ "}${v.name}`,
+              description: `${v.desc} • [Clic: escuchar y activar]`,
             };
           });
 
           items.push({
             value: "back",
-            label: "⬅️ Volver al menú principal",
+            label: "⬅ Volver al menú principal",
             description: "Regresar a las opciones principales",
           });
           return items;
@@ -323,6 +390,7 @@ export class VoiceMenuComponent extends Container {
             { id: "ef_dora", name: "Dora (Español)", desc: "Femenina, natural y fluida" },
             { id: "em_alex", name: "Alex (Español)", desc: "Masculina, clara y cercana" },
             { id: "em_santa", name: "Santa (Español)", desc: "Masculina, tono narrador" },
+            { id: "dora_heart", name: "Dora Heart (Híbrida)", desc: "Español con toque Heart suave" },
             { id: "af_heart", name: "Heart (Inglés)", desc: "Femenina, máxima calidad y realismo" },
             { id: "af_nova", name: "Nova (Inglés)", desc: "Femenina, expresiva y enérgica" },
             { id: "af_alloy", name: "Alloy (Inglés)", desc: "Neutra, balanceada" },
@@ -336,19 +404,19 @@ export class VoiceMenuComponent extends Container {
             const isCurrent = config.kokoro.voice === v.id;
             return {
               value: `voice:${v.id}`,
-              label: `${isCurrent ? "✓ " : "  "}${v.name}`,
+              label: `${isCurrent ? "● " : "○ "}${v.name}`,
               description: `${v.desc} • [Clic: escuchar y activar]`,
             };
           });
 
           items.push({
             value: "kokoro_custom_voice",
-            label: "✨ Crear voz personalizada o mezclar (Blend)...",
+            label: "▸ Crear voz personalizada o mezclar (Blend)...",
             description: "Ingresá un nombre guardado o fórmula (ej: ef_dora:0.6,af_heart:0.4)",
           });
           items.push({
             value: "back",
-            label: "⬅️ Volver al menú principal",
+            label: "⬅ Volver al menú principal",
             description: "Regresar a las opciones principales",
           });
           return items;
@@ -367,19 +435,19 @@ export class VoiceMenuComponent extends Container {
             const isCurrent = config.elevenlabs.voiceId === v.id;
             return {
               value: `voice:${v.id}`,
-              label: `${isCurrent ? "✓ " : "  "}${v.name}`,
+              label: `${isCurrent ? "● " : "○ "}${v.name}`,
               description: `${v.desc} • [Clic: escuchar y activar]`,
             };
           });
 
           items.push({
             value: "eleven_custom_id",
-            label: "✏️ Ingresar otro Voice ID de ElevenLabs...",
+            label: "▸ Ingresar otro Voice ID de ElevenLabs...",
             description: "Ingresar el ID de una voz clonada o diseñada",
           });
           items.push({
             value: "back",
-            label: "⬅️ Volver al menú principal",
+            label: "⬅ Volver al menú principal",
             description: "Regresar a las opciones principales",
           });
           return items;
@@ -387,107 +455,16 @@ export class VoiceMenuComponent extends Container {
           return [
             {
               value: "custom_test_voice",
-              label: "🔊 Probar síntesis con Custom API",
+              label: "▸ Probar síntesis con Custom API",
               description: "Envía una muestra al endpoint configurado",
             },
             {
               value: "back",
-              label: "⬅️ Volver al menú principal",
+              label: "⬅ Volver al menú principal",
               description: "Regresar a las opciones principales",
             },
           ];
         }
-      }
-
-      case "providers": {
-        return [
-          {
-            value: "set_prov:kokoro",
-            label: `${config.provider === "kokoro" ? "✓ " : "  "}Kokoro TTS Local (100% Offline, Gratis)`,
-            description: "Servidor local ONNX en http://127.0.0.1:8880 (sin límites ni costo)",
-          },
-          {
-            value: "set_prov:openai",
-            label: `${config.provider === "openai" ? "✓ " : "  "}OpenAI / Compatible`,
-            description: "Endpoint estándar /v1/audio/speech (tts-1, Groq, Kokoro)",
-          },
-          {
-            value: "set_prov:elevenlabs",
-            label: `${config.provider === "elevenlabs" ? "✓ " : "  "}ElevenLabs`,
-            description: "Voces clonadas y de ultra alta fidelidad",
-          },
-          {
-            value: "set_prov:custom",
-            label: `${config.provider === "custom" ? "✓ " : "  "}Custom HTTP API`,
-            description: "Endpoint propio o servidor local configurable",
-          },
-          {
-            value: "back",
-            label: "⬅️ Volver al menú principal",
-            description: "Regresar a las opciones principales",
-          },
-        ];
-      }
-
-      case "custom_api": {
-        const isCustomActive = config.provider === "custom";
-        const hasHeaders =
-          config.custom.headers && Object.keys(config.custom.headers).length > 0;
-
-        return [
-          {
-            value: "custom:activate",
-            label: `${isCustomActive ? "✓ Activo: " : "  "}Usar Custom API como Proveedor`,
-            description: isCustomActive
-              ? "Custom API ya está seleccionada"
-              : "Activar Custom API para todas las locuciones",
-          },
-          {
-            value: "custom:url",
-            label: `🌐 URL: ${config.custom.url}`,
-            description: "Editar la dirección del endpoint HTTP/REST",
-          },
-          {
-            value: "custom:method",
-            label: `🔄 Método HTTP: ${config.custom.method}`,
-            description: "Alternar entre POST y GET",
-          },
-          {
-            value: "custom:format",
-            label: `🎵 Formato de audio: ${config.custom.format}`,
-            description: "Alternar entre wav y mp3",
-          },
-          {
-            value: "custom:headers",
-            label: `📋 Headers (${hasHeaders ? "Configurados" : "Vacíos"})`,
-            description: "Configurar Authorization, Tokens o Content-Type",
-          },
-          {
-            value: "custom:test",
-            label: `▶ Probar Endpoint Custom Ahora`,
-            description: "Envía una frase de prueba para verificar conectividad y audio",
-          },
-          {
-            value: "back",
-            label: "⬅️ Volver al menú principal",
-            description: "Regresar a las opciones principales",
-          },
-        ];
-      }
-
-      case "speed": {
-        const speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
-        const items: SelectItem[] = speeds.map((s) => ({
-          value: `set_speed:${s}`,
-          label: `${config.openai.speed === s ? "✓ " : "  "}${s}x`,
-          description: s === 1.0 ? "Velocidad normal" : s < 1 ? "Pausada" : "Rápida",
-        }));
-        items.push({
-          value: "back",
-          label: "⬅️ Volver al menú principal",
-          description: "Regresar a las opciones principales",
-        });
-        return items;
       }
 
       case "volume": {
@@ -504,19 +481,19 @@ export class VoiceMenuComponent extends Container {
 
         const items: SelectItem[] = presets.map((p) => ({
           value: `set_vol:${p.pct}`,
-          label: `${currentPct === p.pct ? "✓ " : "  "}${p.pct}%`,
+          label: `${currentPct === p.pct ? "● " : "○ "}${p.pct}%`,
           description: `${p.desc} • [Clic para seleccionar]`,
         }));
 
         items.push({
           value: "volume_custom_input",
-          label: "✏️ Ingresar porcentaje personalizado...",
+          label: "▸ Ingresar porcentaje personalizado...",
           description: "Escribir cualquier valor entre 0 y 150",
         });
 
         items.push({
           value: "back",
-          label: "⬅️ Volver",
+          label: "⬅ Volver",
           description: "Regresar al menú",
         });
         return items;
@@ -534,27 +511,27 @@ export class VoiceMenuComponent extends Container {
         return [
           {
             value: "change_sc:record",
-            label: `🎙️ Dictado de voz: [ ${sc.record} ]`,
+            label: `▸ Dictado de voz: [ ${sc.record} ]`,
             description: "Clic para cambiar la tecla de inicio/parada de dictado",
           },
           {
             value: "change_sc:stop",
-            label: `⏹️ Detener audio: [ ${sc.stop} ]`,
+            label: `▸ Detener audio: [ ${sc.stop} ]`,
             description: "Clic para cambiar la tecla de parada inmediata de audio",
           },
           {
             value: "change_sc:menu",
-            label: `⚙️ Abrir Menú: [ ${sc.menu} ]`,
+            label: `▸ Abrir Menú: [ ${sc.menu} ]`,
             description: "Clic para cambiar la tecla de acceso rápido al menú",
           },
           {
             value: "change_sc:volumeUp",
-            label: `🔊 Subir volumen: [ ${sc.volumeUp} ]`,
+            label: `▸ Subir volumen: [ ${sc.volumeUp} ]`,
             description: "Clic para cambiar la tecla para subir volumen (+10%)",
           },
           {
             value: "change_sc:volumeDown",
-            label: `🔉 Bajar volumen: [ ${sc.volumeDown} ]`,
+            label: `▸ Bajar volumen: [ ${sc.volumeDown} ]`,
             description: "Clic para cambiar la tecla para bajar volumen (-10%)",
           },
           {
@@ -564,10 +541,25 @@ export class VoiceMenuComponent extends Container {
           },
           {
             value: "back",
-            label: "⬅️ Volver al menú principal",
+            label: "⬅ Volver al menú principal",
             description: "Regresar a las opciones principales",
           },
         ];
+      }
+
+      case "speed": {
+        const speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
+        const items: SelectItem[] = speeds.map((s) => ({
+          value: `set_speed:${s}`,
+          label: `${config.openai.speed === s ? "● " : "○ "}${s}x`,
+          description: s === 1.0 ? "Velocidad normal" : s < 1 ? "Pausada" : "Rápida",
+        }));
+        items.push({
+          value: "back",
+          label: "⬅ Volver al menú principal",
+          description: "Regresar a las opciones principales",
+        });
+        return items;
       }
 
       case "filter": {
@@ -591,12 +583,12 @@ export class VoiceMenuComponent extends Container {
 
         const items: SelectItem[] = modes.map((m) => ({
           value: `set_filter:${m.mode}`,
-          label: `${config.filterCode === m.mode ? "✓ " : "  "}${m.title}`,
+          label: `${config.filterCode === m.mode ? "● " : "○ "}${m.title}`,
           description: m.desc,
         }));
         items.push({
           value: "back",
-          label: "⬅️ Volver al menú principal",
+          label: "⬅ Volver al menú principal",
           description: "Regresar a las opciones principales",
         });
         return items;
@@ -630,17 +622,9 @@ export class VoiceMenuComponent extends Container {
       return;
     }
 
-    if (value === "goto_providers") {
+    if (value === "goto_api_hub") {
       this.statusNotice = undefined;
-      this.currentScreen = "providers";
-      this.renderScreen();
-      this.tui.requestRender();
-      return;
-    }
-
-    if (value === "goto_custom_api") {
-      this.statusNotice = undefined;
-      this.currentScreen = "custom_api";
+      this.currentScreen = "api_hub";
       this.renderScreen();
       this.tui.requestRender();
       return;
@@ -684,8 +668,8 @@ export class VoiceMenuComponent extends Container {
       const updated = this.configManager.save({ autoRead: !config.autoRead });
       if (!updated.autoRead) this.player.stop();
       this.statusNotice = updated.autoRead
-        ? "🔊 Auto-lectura ACTIVADA tras cada respuesta"
-        : "🔇 Auto-lectura DESACTIVADA (modo manual)";
+        ? "Auto-lectura ACTIVADA tras cada respuesta"
+        : "Auto-lectura DESACTIVADA (modo manual)";
       this.onConfigChanged(updated);
       this.renderScreen();
       this.tui.requestRender();
@@ -694,7 +678,7 @@ export class VoiceMenuComponent extends Container {
 
     if (value === "stop_audio") {
       this.player.stop();
-      this.statusNotice = "⏹️ Audio detenido";
+      this.statusNotice = "Audio detenido";
       this.renderScreen();
       this.tui.requestRender();
       return;
@@ -702,15 +686,175 @@ export class VoiceMenuComponent extends Container {
 
     if (value === "read_last") {
       if (!this.lastAssistantText) {
-        this.statusNotice = "⚠️ No hay ninguna respuesta previa para leer";
+        this.statusNotice = "No hay ninguna respuesta previa para leer";
         this.renderScreen();
         this.tui.requestRender();
         return;
       }
-      this.statusNotice = "🔊 Leyendo última respuesta...";
+      this.statusNotice = "Leyendo última respuesta...";
       this.renderScreen();
       this.tui.requestRender();
       this.playText(this.lastAssistantText);
+      return;
+    }
+
+    // API Hub actions
+    if (value === "api_tts_provider") {
+      const config = this.configManager.getConfig();
+      const order: SpeechProviderType[] = ["kokoro", "openai", "elevenlabs", "custom"];
+      const currentIndex = order.indexOf(config.provider);
+      const nextProvider = order[(currentIndex + 1) % order.length] || "kokoro";
+      const updated = this.configManager.save({ provider: nextProvider });
+      this.onConfigChanged(updated);
+      this.statusNotice = `Proveedor TTS cambiado a: ${nextProvider}`;
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "api_tts_key") {
+      if (this.ctx.ui.input) {
+        this.onClose();
+        const provider = this.configManager.getConfig().provider;
+        const inputKey = await this.ctx.ui.input(
+          `Ingresá API Key para TTS (${provider}):`
+        );
+        if (inputKey) {
+          const cleanedKey = ConfigManager.cleanApiKey(inputKey);
+          if (cleanedKey) {
+            let updated: VoicePluginConfig;
+            if (provider === "openai") {
+              updated = this.configManager.updateNested("openai", { apiKey: cleanedKey });
+            } else if (provider === "elevenlabs") {
+              updated = this.configManager.updateNested("elevenlabs", { apiKey: cleanedKey });
+            } else {
+              updated = this.configManager.getConfig();
+            }
+            this.onConfigChanged(updated);
+            this.ctx.ui.notify(`Clave TTS guardada correctamente`, "info");
+          }
+        }
+      }
+      return;
+    }
+
+    if (value === "api_tts_url") {
+      if (this.ctx.ui.input) {
+        this.onClose();
+        const newUrl = await this.ctx.ui.input(
+          "URL endpoint Custom TTS:",
+          this.configManager.getConfig().custom.url
+        );
+        if (newUrl && newUrl.trim()) {
+          const updated = this.configManager.updateNested("custom", {
+            url: newUrl.trim(),
+          });
+          this.onConfigChanged(updated);
+          this.ctx.ui.notify(`URL TTS actualizada: ${newUrl.trim()}`, "info");
+        }
+      }
+      return;
+    }
+
+    if (value === "api_tts_method") {
+      const currentMethod = this.configManager.getConfig().custom.method;
+      const newMethod = currentMethod === "POST" ? "GET" : "POST";
+      const updated = this.configManager.updateNested("custom", { method: newMethod });
+      this.onConfigChanged(updated);
+      this.statusNotice = `Método TTS cambiado a: ${newMethod}`;
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "api_stt_provider") {
+      const config = this.configManager.getConfig();
+      const current = config.stt?.provider || "openai";
+      const next = current === "openai" ? "groq" : current === "groq" ? "custom" : "openai";
+      const baseUrl =
+        next === "groq"
+          ? "https://api.groq.com/openai/v1"
+          : next === "openai"
+          ? "https://api.openai.com/v1"
+          : config.stt?.baseUrl || "https://api.openai.com/v1";
+      const model =
+        next === "groq"
+          ? "whisper-large-v3-turbo"
+          : next === "openai"
+          ? "whisper-1"
+          : config.stt?.model || "whisper-1";
+
+      const updated = this.configManager.updateNested("stt", {
+        provider: next,
+        baseUrl,
+        model,
+      });
+      this.onConfigChanged(updated);
+      this.statusNotice = `Proveedor Dictado (STT) cambiado a: ${next} (${model})`;
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "api_stt_key") {
+      if (this.ctx.ui.input) {
+        this.onClose();
+        const prov = this.configManager.getConfig().stt?.provider || "openai";
+        const inputKey = await this.ctx.ui.input(
+          `Ingresá API Key para Dictado STT (${prov}):`
+        );
+        if (inputKey) {
+          const cleanedKey = ConfigManager.cleanApiKey(inputKey);
+          if (cleanedKey) {
+            const updated = this.configManager.updateNested("stt", { apiKey: cleanedKey });
+            this.onConfigChanged(updated);
+            this.ctx.ui.notify(`Clave STT guardada correctamente`, "info");
+          }
+        }
+      }
+      return;
+    }
+
+    if (value === "api_stt_url") {
+      if (this.ctx.ui.input) {
+        this.onClose();
+        const currentUrl =
+          this.configManager.getConfig().stt?.baseUrl || "https://api.openai.com/v1";
+        const newUrl = await this.ctx.ui.input("URL endpoint STT:", currentUrl);
+        if (newUrl && newUrl.trim()) {
+          const updated = this.configManager.updateNested("stt", { baseUrl: newUrl.trim() });
+          this.onConfigChanged(updated);
+          this.ctx.ui.notify(`URL STT actualizada`, "info");
+        }
+      }
+      return;
+    }
+
+    if (value === "api_stt_model") {
+      if (this.ctx.ui.input) {
+        this.onClose();
+        const currentModel = this.configManager.getConfig().stt?.model || "whisper-1";
+        const newModel = await this.ctx.ui.input("Modelo Whisper STT:", currentModel);
+        if (newModel && newModel.trim()) {
+          const updated = this.configManager.updateNested("stt", { model: newModel.trim() });
+          this.onConfigChanged(updated);
+          this.ctx.ui.notify(`Modelo STT actualizado a: ${newModel.trim()}`, "info");
+        }
+      }
+      return;
+    }
+
+    if (value === "api_stt_lang") {
+      if (this.ctx.ui.input) {
+        this.onClose();
+        const currentLang = this.configManager.getConfig().stt?.language || "es";
+        const newLang = await this.ctx.ui.input("Código de idioma STT (ej: es, en):", currentLang);
+        if (newLang && newLang.trim()) {
+          const updated = this.configManager.updateNested("stt", { language: newLang.trim() });
+          this.onConfigChanged(updated);
+          this.ctx.ui.notify(`Idioma STT actualizado a: ${newLang.trim()}`, "info");
+        }
+      }
       return;
     }
 
@@ -729,11 +873,10 @@ export class VoiceMenuComponent extends Container {
       }
 
       this.onConfigChanged(updated);
-      this.statusNotice = `🔊 Voz '${voiceName}' activada. Reproduciendo muestra...`;
+      this.statusNotice = `Voz '${voiceName}' activada. Reproduciendo muestra...`;
       this.renderScreen();
       this.tui.requestRender();
 
-      // Play audio sample in background
       this.playVoiceSample(voiceName, config.provider);
       return;
     }
@@ -776,104 +919,10 @@ export class VoiceMenuComponent extends Container {
     }
 
     if (value === "custom_test_voice") {
-      this.statusNotice = "🔊 Enviando prueba al endpoint Custom...";
+      this.statusNotice = "Enviando prueba al endpoint Custom...";
       this.renderScreen();
       this.tui.requestRender();
       this.playText("Probando síntesis con Custom API.");
-      return;
-    }
-
-    // Provider switching
-    if (value.startsWith("set_prov:")) {
-      const prov = value.slice(9) as SpeechProviderType;
-      const updated = this.configManager.save({ provider: prov });
-      this.onConfigChanged(updated);
-      this.statusNotice = `✓ Proveedor cambiado a: ${prov}`;
-      this.currentScreen = "main";
-      this.renderScreen();
-      this.tui.requestRender();
-      return;
-    }
-
-    // Custom API actions
-    if (value === "custom:activate") {
-      const updated = this.configManager.save({ provider: "custom" });
-      this.onConfigChanged(updated);
-      this.statusNotice = "✓ Custom API seleccionada como proveedor activo";
-      this.renderScreen();
-      this.tui.requestRender();
-      return;
-    }
-
-    if (value === "custom:url") {
-      if (this.ctx.ui.input) {
-        this.onClose();
-        const newUrl = await this.ctx.ui.input(
-          "URL del endpoint Custom HTTP:",
-          this.configManager.getConfig().custom.url
-        );
-        if (newUrl && newUrl.trim()) {
-          const updated = this.configManager.updateNested("custom", {
-            url: newUrl.trim(),
-          });
-          this.onConfigChanged(updated);
-          this.ctx.ui.notify(`URL Custom actualizada: ${newUrl.trim()}`, "info");
-        }
-      }
-      return;
-    }
-
-    if (value === "custom:method") {
-      const currentMethod = this.configManager.getConfig().custom.method;
-      const newMethod = currentMethod === "POST" ? "GET" : "POST";
-      const updated = this.configManager.updateNested("custom", { method: newMethod });
-      this.onConfigChanged(updated);
-      this.statusNotice = `Método HTTP cambiado a: ${newMethod}`;
-      this.renderScreen();
-      this.tui.requestRender();
-      return;
-    }
-
-    if (value === "custom:format") {
-      const currentFormat = this.configManager.getConfig().custom.format;
-      const newFormat = currentFormat === "wav" ? "mp3" : "wav";
-      const updated = this.configManager.updateNested("custom", { format: newFormat });
-      this.onConfigChanged(updated);
-      this.statusNotice = `Formato cambiado a: ${newFormat}`;
-      this.renderScreen();
-      this.tui.requestRender();
-      return;
-    }
-
-    if (value === "custom:headers") {
-      if (this.ctx.ui.input) {
-        this.onClose();
-        const currentHeaders = JSON.stringify(
-          this.configManager.getConfig().custom.headers || {}
-        );
-        const inputHeaders = await this.ctx.ui.input(
-          "Headers JSON (ej: {\"Authorization\": \"Bearer token\"}):",
-          currentHeaders
-        );
-        if (inputHeaders && inputHeaders.trim()) {
-          try {
-            const parsed = JSON.parse(inputHeaders.trim());
-            const updated = this.configManager.updateNested("custom", { headers: parsed });
-            this.onConfigChanged(updated);
-            this.ctx.ui.notify("Headers actualizados correctamente", "info");
-          } catch {
-            this.ctx.ui.notify("Error: el formato ingresado no es un JSON válido", "error");
-          }
-        }
-      }
-      return;
-    }
-
-    if (value === "custom:test") {
-      this.statusNotice = "🔊 Probando síntesis en endpoint Custom...";
-      this.renderScreen();
-      this.tui.requestRender();
-      this.playText("Probando conexión y sonido del endpoint custom.");
       return;
     }
 
@@ -896,11 +945,10 @@ export class VoiceMenuComponent extends Container {
       const updated = this.configManager.save({ volume: volFraction });
       this.player.setVolume(volFraction);
       this.onConfigChanged(updated);
-      this.statusNotice = `🔊 Volumen ajustado al ${pct}%. Reproduciendo muestra...`;
+      this.statusNotice = `Volumen ajustado al ${pct}%. Reproduciendo muestra...`;
       this.renderScreen();
       this.tui.requestRender();
 
-      // Play short sample at new volume
       this.playText(`Volumen al ${pct} por ciento.`);
       return;
     }
@@ -925,6 +973,7 @@ export class VoiceMenuComponent extends Container {
       return;
     }
 
+    // Shortcuts setting
     if (value.startsWith("change_sc:")) {
       const actionKey = value.slice(10) as keyof VoiceShortcutsConfig;
       if (this.ctx.ui.input) {
@@ -957,7 +1006,7 @@ export class VoiceMenuComponent extends Container {
         },
       });
       this.onConfigChanged(updated);
-      this.statusNotice = "✓ Atajos restaurados a los valores por defecto";
+      this.statusNotice = "Atajos restaurados a los valores por defecto";
       this.renderScreen();
       this.tui.requestRender();
       return;
@@ -974,33 +1023,6 @@ export class VoiceMenuComponent extends Container {
       this.tui.requestRender();
       return;
     }
-
-    // API Key input
-    if (value === "set_key") {
-      if (this.ctx.ui.input) {
-        this.onClose();
-        const provider = this.configManager.getConfig().provider;
-        const inputKey = await this.ctx.ui.input(
-          `Ingresá tu API Key para ${provider}:`
-        );
-        if (inputKey) {
-          const cleanedKey = ConfigManager.cleanApiKey(inputKey);
-          if (cleanedKey) {
-            let updated: VoicePluginConfig;
-            if (provider === "openai") {
-              updated = this.configManager.updateNested("openai", { apiKey: cleanedKey });
-            } else if (provider === "elevenlabs") {
-              updated = this.configManager.updateNested("elevenlabs", { apiKey: cleanedKey });
-            } else {
-              updated = this.configManager.getConfig();
-            }
-            this.onConfigChanged(updated);
-            this.ctx.ui.notify(`Clave para ${provider} guardada correctamente`, "info");
-          }
-        }
-      }
-      return;
-    }
   }
 
   private async playVoiceSample(voiceName: string, providerType: string): Promise<void> {
@@ -1009,14 +1031,14 @@ export class VoiceMenuComponent extends Container {
     }
     this.isPreviewing = true;
     try {
-      const sampleText = `¡Hola! Soy la voz ${voiceName} en Pi CLI.`;
+      const sampleText = `Hola, soy la voz ${voiceName} en Pi CLI.`;
       const config = this.configManager.getConfig();
       const apiKey = this.configManager.getActiveApiKey();
       const provider = createTTSProvider(config, apiKey);
       const res = await provider.synthesize(sampleText);
       await this.player.play(res.audioBuffer, res.format);
     } catch (err: any) {
-      this.statusNotice = `❌ Error de muestra: ${err.message}`;
+      this.statusNotice = `Error de muestra: ${err.message}`;
       this.renderScreen();
       this.tui.requestRender();
     } finally {
@@ -1032,7 +1054,7 @@ export class VoiceMenuComponent extends Container {
       const res = await provider.synthesize(text);
       await this.player.play(res.audioBuffer, res.format);
     } catch (err: any) {
-      this.statusNotice = `❌ Error: ${err.message}`;
+      this.statusNotice = `Error: ${err.message}`;
       this.renderScreen();
       this.tui.requestRender();
     }

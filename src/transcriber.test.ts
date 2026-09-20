@@ -37,13 +37,46 @@ describe("AudioTranscriber", () => {
       language: "es",
     });
 
-    const fakeWav = Buffer.from("RIFFfakeaudioWAVE");
+    const fakeWav = Buffer.alloc(46);
+    fakeWav.write("RIFF", 0);
+    fakeWav.writeUInt32LE(38, 4);
+    fakeWav.write("WAVEfmt ", 8);
+    fakeWav.writeUInt32LE(16, 16);
+    fakeWav.writeUInt16LE(1, 20);
+    fakeWav.writeUInt16LE(1, 22);
+    fakeWav.writeUInt32LE(16000, 24);
+    fakeWav.writeUInt32LE(32000, 28);
+    fakeWav.writeUInt16LE(2, 32);
+    fakeWav.writeUInt16LE(16, 34);
+    fakeWav.write("data", 36);
+    fakeWav.writeUInt32LE(2, 40);
+    fakeWav.writeInt16LE(5000, 44);
+
     const result = await transcriber.transcribe(fakeWav);
 
     assert.equal(result, "Esta es una transcripción de prueba");
     assert.equal(interceptedUrl, "https://api.openai.com/v1/audio/transcriptions");
     assert.equal(interceptedHeaders["Authorization"], "Bearer sk-test-stt-key");
     assert.ok(interceptedBody instanceof FormData);
+  });
+
+  it("detects silence and filters Whisper hallucinations", () => {
+    assert.equal(
+      AudioTranscriber.isHallucination("Subtítulos realizados por la comunidad de Amara.org"),
+      true
+    );
+    assert.equal(
+      AudioTranscriber.isHallucination("Subtitulado por la comunidad de Amara.org."),
+      true
+    );
+    assert.equal(
+      AudioTranscriber.isHallucination("Amara.org"),
+      true
+    );
+    assert.equal(
+      AudioTranscriber.isHallucination("Creá una función de ordenamiento rápido"),
+      false
+    );
   });
 
   it("throws error if audio buffer is empty", async () => {

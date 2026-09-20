@@ -13,12 +13,76 @@ export class AudioTranscriber {
     this.config = config;
   }
 
+  /**
+   * Detects if a WAV buffer contains only silence or very low noise.
+   */
+  public static isBufferSilent(wavBuffer: Buffer, threshold: number = 180): boolean {
+    if (!wavBuffer || wavBuffer.length < 44) return true;
+    if (wavBuffer.toString("ascii", 0, 4) !== "RIFF") return false;
+
+    let offset = 12;
+    while (offset < wavBuffer.length - 8) {
+      const chunkId = wavBuffer.toString("ascii", offset, offset + 4);
+      const chunkSize = wavBuffer.readUInt32LE(offset + 4);
+      if (chunkId === "data") {
+        const dataStart = offset + 8;
+        const dataEnd = Math.min(dataStart + chunkSize, wavBuffer.length);
+        let sum = 0;
+        let count = 0;
+        for (let i = dataStart; i < dataEnd - 1; i += 2) {
+          sum += Math.abs(wavBuffer.readInt16LE(i));
+          count++;
+        }
+        const avg = count > 0 ? sum / count : 0;
+        return avg < threshold;
+      }
+      offset += 8 + chunkSize;
+    }
+    return false;
+  }
+
+  /**
+   * Filters out common Whisper hallucinations generated on silence or low noise.
+   */
+  public static isHallucination(text: string): boolean {
+    if (!text) return true;
+    const norm = text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+
+    if (!norm || norm.length < 2) return true;
+
+    const blacklist = [
+      "amaraorg",
+      "subtitulosrealizadosporlacomunidaddeamaraorg",
+      "subtituladoporlacomunidaddeamaraorg",
+      "subtitulosporlacomunidaddeamaraorg",
+      "suscribetealcanal",
+      "suscribeteamicanal",
+      "graciasporverelvideo",
+      "hastalaproxima",
+      "yesoestodo",
+      "transcripcionpor",
+      "subtitulospor",
+      "subtituladopor",
+    ];
+
+    return blacklist.some((b) => norm.includes(b) || (b.length > 12 && b.includes(norm)));
+  }
+
   public async transcribe(
     audioBuffer: Buffer,
     options: { signal?: AbortSignal } = {}
   ): Promise<string> {
     if (!audioBuffer || audioBuffer.length === 0) {
       throw new Error("El buffer de audio está vacío.");
+    }
+
+    // Short-circuit if microphone captured pure silence
+    if (AudioTranscriber.isBufferSilent(audioBuffer)) {
+      return "";
     }
 
     const normalizedBaseUrl = (this.config.baseUrl || "https://api.openai.com/v1").replace(/\/+$/, "");
@@ -53,6 +117,12 @@ export class AudioTranscriber {
     }
 
     const json = (await res.json()) as { text?: string };
-    return (json.text || "").trim();
+    const rawText = (json.text || "").trim();
+
+    if (AudioTranscriber.isHallucination(rawText)) {
+      return "";
+    }
+
+    return rawText;
   }
 }

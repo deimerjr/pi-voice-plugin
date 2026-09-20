@@ -295,8 +295,8 @@ export default function (pi: ExtensionAPI) {
         overlay: true,
         overlayOptions: {
           anchor: "center",
-          width: 72,
-          maxHeight: 22,
+          width: 88,
+          maxHeight: 24,
         },
       }
     );
