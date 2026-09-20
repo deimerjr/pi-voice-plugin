@@ -15,3 +15,4 @@ Plugin/Extensión para Pi CLI que sintetiza en voz las respuestas del asistente 
 - [x] Task 9: Deploy local Kokoro ONNX TTS server (`~/.kokoro-tts`, systemd service, `kokoro-tts` cli) and connect as native provider [commit: c4c744e]
 - [x] Task 10: Implement one-click Stop button and Speaker volume control in Pi Voice Plugin [commit: f42b8ce]
 - [x] Task 11: Implement Speech-to-Text (STT) voice input with native recorder, Whisper transcription, and Alt+R shortcut [commit: 20f7148]
+- [x] Task 12: Fix Theme.bg crash on record button press and add customizable voice shortcuts in visual menu and CLI [commit: e55b3ea]
