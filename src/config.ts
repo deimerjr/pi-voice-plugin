@@ -40,6 +40,15 @@ export interface CustomProviderConfig {
   format: "wav" | "mp3";
 }
 
+export interface STTConfig {
+  enabled: boolean;
+  provider: "openai" | "groq" | "custom";
+  apiKey?: string;
+  baseUrl: string;
+  model: string;
+  language?: string;
+}
+
 export interface VoicePluginConfig {
   enabled: boolean;
   autoRead: boolean;
@@ -53,6 +62,7 @@ export interface VoicePluginConfig {
   elevenlabs: ElevenLabsProviderConfig;
   kokoro: KokoroProviderConfig;
   custom: CustomProviderConfig;
+  stt: STTConfig;
 }
 
 export const DEFAULT_CONFIG: VoicePluginConfig = {
@@ -91,6 +101,13 @@ export const DEFAULT_CONFIG: VoicePluginConfig = {
     headers: {
       "Content-Type": "application/json",
     },
+  },
+  stt: {
+    enabled: true,
+    provider: "openai",
+    baseUrl: "https://api.openai.com/v1",
+    model: "whisper-1",
+    language: "es",
   },
 };
 
@@ -141,6 +158,15 @@ export class ConfigManager {
     return ConfigManager.cleanApiKey(rawKey);
   }
 
+  public getActiveSTTApiKey(): string | undefined {
+    return ConfigManager.cleanApiKey(
+      this.currentConfig.stt?.apiKey ||
+      process.env.GROQ_API_KEY ||
+      this.currentConfig.openai?.apiKey ||
+      process.env.OPENAI_API_KEY
+    );
+  }
+
   public load(): VoicePluginConfig {
     try {
       if (fs.existsSync(this.configPath)) {
@@ -174,7 +200,7 @@ export class ConfigManager {
     return this.currentConfig;
   }
 
-  public updateNested<K extends "openai" | "elevenlabs" | "kokoro" | "custom">(
+  public updateNested<K extends "openai" | "elevenlabs" | "kokoro" | "custom" | "stt">(
     section: K,
     updates: Partial<VoicePluginConfig[K]>
   ): VoicePluginConfig {
@@ -208,6 +234,10 @@ export class ConfigManager {
       custom: {
         ...base.custom,
         ...(incoming.custom || {}),
+      },
+      stt: {
+        ...base.stt,
+        ...(incoming.stt || {}),
       },
     };
   }

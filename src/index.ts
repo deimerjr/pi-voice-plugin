@@ -10,35 +10,46 @@ import {
 import { TextSanitizer } from "./sanitizer.ts";
 import { createTTSProvider } from "./providers/factory.ts";
 import { AudioPlayer } from "./player.ts";
+import { AudioRecorder } from "./recorder.ts";
+import { AudioTranscriber } from "./transcriber.ts";
 import { VoiceMenuComponent, type MenuScreen } from "./menu.ts";
 
 export class VoiceControlBarComponent implements Component {
   private theme: Theme;
   private isPlaying: () => boolean;
+  private isRecording: () => boolean;
   private getVolume: () => number;
   private onStop: () => void;
+  private onRecordClick: () => void;
   private onVolumeClick: () => void;
 
   private stopWidth: number = 0;
-  private gapWidth: number = 2;
+  private recStart: number = 0;
+  private recWidth: number = 0;
+  private volStart: number = 0;
   private volWidth: number = 0;
 
   constructor(
     theme: Theme,
     isPlaying: () => boolean,
+    isRecording: () => boolean,
     getVolume: () => number,
     onStop: () => void,
+    onRecordClick: () => void,
     onVolumeClick: () => void
   ) {
     this.theme = theme;
     this.isPlaying = isPlaying;
+    this.isRecording = isRecording;
     this.getVolume = getVolume;
     this.onStop = onStop;
+    this.onRecordClick = onRecordClick;
     this.onVolumeClick = onVolumeClick;
   }
 
   render(_width: number): string[] {
     const playing = this.isPlaying();
+    const recording = this.isRecording();
     const vol = this.getVolume();
     const pct = Math.round(vol * 100);
 
@@ -51,15 +62,21 @@ export class VoiceControlBarComponent implements Component {
       : this.theme.fg("dim", stopRaw);
     this.stopWidth = visibleWidth(stopRaw);
 
-    // 2. Speaker / Volume button
+    // 2. Dictate / Record button
+    const recRaw = recording ? " [ 🔴 Grabando... ] " : " [ 🎙️ Dictar ] ";
+    const recFormatted = recording
+      ? this.theme.bg("error", this.theme.fg("text", this.theme.bold(recRaw)))
+      : this.theme.fg("accent", recRaw);
+    this.recStart = this.stopWidth + 1;
+    this.recWidth = visibleWidth(recRaw);
+
+    // 3. Speaker / Volume button
     const volRaw = ` [ ${speakerIcon} ${pct}% ] `;
     const volFormatted = this.theme.fg(playing ? "accent" : "muted", volRaw);
+    this.volStart = this.recStart + this.recWidth + 1;
     this.volWidth = visibleWidth(volRaw);
 
-    this.gapWidth = 2;
-    const gap = "  ";
-
-    return [stopFormatted + gap + volFormatted];
+    return [`${stopFormatted} ${recFormatted} ${volFormatted}`];
   }
 
   handleMouse(event: TuiMouseEvent): TuiMouseEventResult | undefined {
@@ -67,11 +84,10 @@ export class VoiceControlBarComponent implements Component {
 
     const clickX = event.x;
     const isOverStop = clickX >= 0 && clickX <= this.stopWidth;
-    const volStart = this.stopWidth;
-    const volEnd = volStart + this.gapWidth + this.volWidth + 4;
-    const isOverVol = clickX > volStart && clickX <= volEnd;
+    const isOverRec = clickX > this.stopWidth && clickX <= this.recStart + this.recWidth;
+    const isOverVol = clickX > this.recStart + this.recWidth;
 
-    if (!isOverStop && !isOverVol) return undefined;
+    if (!isOverStop && !isOverRec && !isOverVol) return undefined;
 
     if (event.type === "press") {
       return { handled: true };
@@ -80,6 +96,10 @@ export class VoiceControlBarComponent implements Component {
     if (event.type === "click") {
       if (isOverStop) {
         this.onStop();
+        return { handled: true };
+      }
+      if (isOverRec) {
+        this.onRecordClick();
         return { handled: true };
       }
       if (isOverVol) {
@@ -103,6 +123,8 @@ export default function (pi: ExtensionAPI) {
     volume: config.volume ?? 1.0,
   });
 
+  const recorder = new AudioRecorder();
+
   let lastAssistantText = "";
   let isSynthesizing = false;
   let currentAbortController: AbortController | null = null;
@@ -112,9 +134,74 @@ export default function (pi: ExtensionAPI) {
       currentAbortController.abort();
       currentAbortController = null;
     }
+    if (recorder.isRecording()) {
+      recorder.cancelRecording();
+      if (ctx?.ui) {
+        ctx.ui.notify("⏹️ Grabación cancelada", "info");
+      }
+    }
     player.stop();
     isSynthesizing = false;
     updateUiState(ctx);
+  };
+
+  const toggleRecording = async (ctx: ExtensionContext): Promise<void> => {
+    if (recorder.isRecording()) {
+      // Stop and transcribe
+      if (ctx.ui) {
+        ctx.ui.setStatus("pi-voice", "⏳ Transcribiendo dictado...");
+        ctx.ui.notify("⏳ Transcribiendo voz con Whisper...", "info");
+      }
+      updateUiState(ctx);
+
+      try {
+        const audioBuffer = await recorder.stopRecording();
+        const apiKey = configManager.getActiveSTTApiKey();
+        const transcriber = new AudioTranscriber({
+          ...config.stt,
+          apiKey,
+        });
+        const text = await transcriber.transcribe(audioBuffer);
+        if (text && text.trim()) {
+          const cleanText = text.trim();
+          if (ctx.ui?.pasteToEditor) {
+            ctx.ui.pasteToEditor(cleanText);
+          } else if (ctx.ui?.setEditorText) {
+            const current = ctx.ui.getEditorText ? ctx.ui.getEditorText() : "";
+            const combined = current.trim() ? `${current} ${cleanText}` : cleanText;
+            ctx.ui.setEditorText(combined);
+          }
+          if (ctx.ui) {
+            ctx.ui.notify(`🎙️ Transcripción: "${cleanText}"`, "info");
+          }
+        } else {
+          if (ctx.ui) {
+            ctx.ui.notify("No se detectó voz en la grabación.", "warning");
+          }
+        }
+      } catch (err: any) {
+        if (ctx.ui) {
+          ctx.ui.notify(`[STT] Error de transcripción: ${err.message}`, "error");
+        }
+      } finally {
+        updateUiState(ctx);
+      }
+    } else {
+      // Start recording
+      stopPlayback(ctx);
+      try {
+        await recorder.startRecording();
+        if (ctx.ui) {
+          ctx.ui.setStatus("pi-voice", "🔴 GRABANDO... (Alt+R para enviar)");
+          ctx.ui.notify("🎙️ Grabando... Hablá y presioná Alt+R para transcribir", "info");
+        }
+        updateUiState(ctx);
+      } catch (err: any) {
+        if (ctx.ui) {
+          ctx.ui.notify(`[STT] Error al iniciar grabación: ${err.message}`, "error");
+        }
+      }
+    }
   };
 
   const updateUiState = (ctx?: ExtensionContext) => {
@@ -131,11 +218,15 @@ export default function (pi: ExtensionAPI) {
 
     const volPct = Math.round((config.volume ?? 1.0) * 100);
 
-    // 1. Footer status (visible in the bottom bar)
-    ctx.ui.setStatus(
-      "pi-voice",
-      `Voice: ${statusIcon} ${config.autoRead ? "ON" : "OFF"} (${providerLabel} • ${volPct}%)`
-    );
+    // 1. Footer status
+    if (recorder.isRecording()) {
+      ctx.ui.setStatus("pi-voice", "🔴 GRABANDO AUDIO... (Alt+R para enviar)");
+    } else {
+      ctx.ui.setStatus(
+        "pi-voice",
+        `Voice: ${statusIcon} ${config.autoRead ? "ON" : "OFF"} (${providerLabel} • ${volPct}%)`
+      );
+    }
 
     // 2. Interactive control bar widget below editor
     if (ctx.hasUI && ctx.mode === "tui") {
@@ -145,12 +236,16 @@ export default function (pi: ExtensionAPI) {
           return new VoiceControlBarComponent(
             theme,
             () => isSynthesizing || player.isPlaying(),
+            () => recorder.isRecording(),
             () => config.volume ?? 1.0,
             () => {
               stopPlayback(ctx);
               if (ctx.ui) {
                 ctx.ui.notify("⏹️ Audio detenido", "info");
               }
+            },
+            () => {
+              toggleRecording(ctx).catch(() => {});
             },
             () => {
               openVoiceMenu(ctx, "volume").catch(() => {});
@@ -182,6 +277,9 @@ export default function (pi: ExtensionAPI) {
           lastAssistantText,
           initialScreen,
           onClose: done,
+          onDictate: () => {
+            toggleRecording(ctx).catch(() => {});
+          },
           onConfigChanged: (newConfig) => {
             config = newConfig;
             updateUiState(ctx);
@@ -348,6 +446,13 @@ export default function (pi: ExtensionAPI) {
       },
     });
 
+    (pi as any).registerShortcut("alt+r", {
+      description: "Alternar grabación de voz para dictado de prompts",
+      handler: async (ctx: ExtensionContext) => {
+        await toggleRecording(ctx);
+      },
+    });
+
     (pi as any).registerShortcut("alt+up", {
       description: "Subir volumen de voz (+10%)",
       handler: async (ctx: ExtensionContext) => {
@@ -434,6 +539,13 @@ export default function (pi: ExtensionAPI) {
           }
           ctx.ui.notify("🔊 Leyendo última respuesta...", "info");
           speakText(lastAssistantText, ctx).catch(() => {});
+          break;
+        }
+
+        case "record":
+        case "mic":
+        case "dictar": {
+          await toggleRecording(ctx);
           break;
         }
 
@@ -601,6 +713,7 @@ export default function (pi: ExtensionAPI) {
             "Comandos de Pi Voice:",
             "  /voice                 - Abre el menú visual interactivo con mouse",
             "  /voice menu            - Abre el menú visual interactivo con mouse",
+            "  /voice record          - Inicia o detiene el dictado de prompts por voz (Alt+R)",
             "  /voice on              - Activa la lectura automática tras cada respuesta",
             "  /voice off             - Desactiva la lectura automática",
             "  /voice toggle          - Alterna entre lectura automática on/off",

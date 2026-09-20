@@ -92,14 +92,19 @@ describe("Voice Extension Entrypoint", () => {
     };
 
     let stopped = false;
+    let recorded = false;
     let volumeClicked = false;
 
     const bar = new VoiceControlBarComponent(
       mockTheme,
       () => true, // isPlaying: true
+      () => false, // isRecording: false
       () => 0.8, // volume: 80%
       () => {
         stopped = true;
+      },
+      () => {
+        recorded = true;
       },
       () => {
         volumeClicked = true;
@@ -109,6 +114,7 @@ describe("Voice Extension Entrypoint", () => {
     const rendered = bar.render(80);
     assert.equal(rendered.length, 1);
     assert.ok(rendered[0].includes("Detener"));
+    assert.ok(rendered[0].includes("Dictar"));
     assert.ok(rendered[0].includes("80%"));
 
     // Click on stop button area (x = 2)
@@ -127,15 +133,31 @@ describe("Voice Extension Entrypoint", () => {
     });
     assert.equal(stopped, true);
 
-    // Click on volume button area (x = 22)
+    // Click on dictate button area (x = 20)
     bar.handleMouse({
       type: "click",
       button: "left",
-      x: 22,
+      x: 20,
       y: 0,
       width: 80,
       height: 1,
-      screenX: 22,
+      screenX: 20,
+      screenY: 0,
+      shift: false,
+      alt: false,
+      ctrl: false,
+    });
+    assert.equal(recorded, true);
+
+    // Click on volume button area (x = 35)
+    bar.handleMouse({
+      type: "click",
+      button: "left",
+      x: 35,
+      y: 0,
+      width: 80,
+      height: 1,
+      screenX: 35,
       screenY: 0,
       shift: false,
       alt: false,

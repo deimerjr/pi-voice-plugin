@@ -10,6 +10,8 @@ Plugin / Extensión modular para **Pi CLI** que sintetiza en voz las respuestas 
   - Un botón widget interactivo colocado al pie del editor `[ 🎙️ Voice: ON/OFF (voz) • Clic: Menú ⚙️ ]` que podés clickear directamente con el ratón.
   - Interfaz visual por overlays con navegación por mouse y teclado (flechas, Enter, Escape).
   - Atajo rápido global `ctrl+alt+v` o comando `/voice menu` / `/voice`.
+- **Entrada Directa de Voz (Dictado de Prompts / STT)**:
+  - Presionás **`Alt + R`** (o hacés clic en `[ 🎙️ Dictar ]` o `/voice record`), hablás al micrófono y al volver a presionar la tecla, transcribe automáticamente con Whisper e inserta el texto directo en tu prompt de Pi CLI.
 - **Botón de Parada con un Clic e Indicador de Volumen**:
   - Un botón de parada dedicado `[ ⏹️ Parar ]` que se ilumina en rojo `[ ⏹️ Detener ]` durante la reproducción y detiene el audio al instante con un solo clic.
   - Un botón de volumen `[ 🔊 100% ]` con icono de parlante dinámico que al hacerle clic abre el diálogo interactivo para subir, bajar o silenciar el volumen (de 0% a 150%).
@@ -57,6 +59,7 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 | Comando | Descripción |
 | :--- | :--- |
 | `/voice` / `/voice menu` | Abre el menú visual interactivo con soporte de mouse |
+| `/voice record` / `/voice dictar` | Inicia o finaliza la grabación de voz para dictar prompts (`Alt + R`) |
 | `/voice on` | Activa la lectura automática tras cada respuesta |
 | `/voice off` | Desactiva la lectura automática (modo silencioso) |
 | `/voice toggle` | Alterna entre lectura automática ON / OFF |
@@ -79,10 +82,11 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 
 | Atajo | Acción |
 | :--- | :--- |
-| `Alt + S` | Detiene inmediatamente la reproducción de voz |
-| `Alt + V` | Abre el menú visual interactivo de Pi Voice |
-| `Alt + Up` | Sube el volumen de voz (+10%) |
-| `Alt + Down` | Baja el volumen de voz (-10%) |
+| `Alt + R` | Inicia o detiene la grabación del micrófono para dictar el prompt 🎙️ |
+| `Alt + S` | Detiene inmediatamente la reproducción de voz o cancela la grabación ⏹️ |
+| `Alt + V` | Abre el menú visual interactivo de Pi Voice ⚙️ |
+| `Alt + Up` | Sube el volumen de voz (+10%) 🔊 |
+| `Alt + Down` | Baja el volumen de voz (-10%) 🔉 |
 
 ---
 

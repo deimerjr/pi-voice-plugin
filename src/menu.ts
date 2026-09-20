@@ -41,6 +41,7 @@ export interface VoiceMenuOptions {
   initialScreen?: MenuScreen;
   onClose: () => void;
   onConfigChanged: (newConfig: VoicePluginConfig) => void;
+  onDictate?: () => void;
 }
 
 class HorizontalLine {
@@ -63,6 +64,7 @@ export class VoiceMenuComponent extends Container {
   private lastAssistantText?: string;
   private onClose: () => void;
   private onConfigChanged: (newConfig: VoicePluginConfig) => void;
+  private onDictate?: () => void;
 
   private initialScreen: MenuScreen = "main";
   private currentScreen: MenuScreen = "main";
@@ -80,6 +82,7 @@ export class VoiceMenuComponent extends Container {
     this.lastAssistantText = options.lastAssistantText;
     this.onClose = options.onClose;
     this.onConfigChanged = options.onConfigChanged;
+    this.onDictate = options.onDictate;
     this.initialScreen = options.initialScreen || "main";
     this.currentScreen = this.initialScreen;
 
@@ -219,6 +222,11 @@ export class VoiceMenuComponent extends Container {
             value: "toggle_autoread",
             label: `🔊 Auto-lectura: ${config.autoRead ? "ACTIVADA" : "DESACTIVADA"}`,
             description: "Lee automáticamente cada respuesta generada",
+          },
+          {
+            value: "trigger_dictate",
+            label: `🎙️ Dictar Prompt por Voz (Alt+R)`,
+            description: "Hablá por el micrófono y Pi escribirá tu mensaje",
           },
           {
             value: "goto_voices",
@@ -552,6 +560,12 @@ export class VoiceMenuComponent extends Container {
     }
 
     // Submenu navigations
+    if (value === "trigger_dictate") {
+      this.onClose();
+      this.onDictate?.();
+      return;
+    }
+
     if (value === "goto_voices") {
       this.statusNotice = undefined;
       this.currentScreen = "voices";
