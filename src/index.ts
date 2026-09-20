@@ -119,13 +119,20 @@ export class VoiceControlBarComponent implements Component {
   invalidate(): void {}
 }
 
+export interface SubagentRoleInfo {
+  role: string;
+  name: string;
+  voice: string;
+}
+
 export function resolveSubagentVoice(
   agentName: string,
   config: VoicePluginConfig
-): { role: string; voice: string } {
+): SubagentRoleInfo {
   const lower = (agentName || "").toLowerCase();
   const sub = config.subagents || {
     enabled: true,
+    crewMode: true,
     announceStart: true,
     announceEnd: true,
     orchestrator: "dora_heart",
@@ -135,16 +142,16 @@ export function resolveSubagentVoice(
   };
 
   if (/scout|explore|plan|investig/i.test(lower)) {
-    return { role: "Explorador", voice: sub.scout || "ef_dora" };
+    return { role: "Exploradora", name: "Dora", voice: sub.scout || "ef_dora" };
   }
   if (/verify|reviewer|judge|audit|review/i.test(lower)) {
-    return { role: "Auditor", voice: sub.reviewer || "em_santa" };
+    return { role: "Auditor", name: "Santa", voice: sub.reviewer || "em_santa" };
   }
   if (/worker|implement|apply|code|dev/i.test(lower)) {
-    return { role: "Programador", voice: sub.worker || "em_alex" };
+    return { role: "Programador", name: "Alex", voice: sub.worker || "em_alex" };
   }
 
-  return { role: "Agente", voice: sub.worker || "em_alex" };
+  return { role: "Agente", name: "Alex", voice: sub.worker || "em_alex" };
 }
 
 function extractTextFromResult(result: any): string {
@@ -483,8 +490,12 @@ export default function (pi: ExtensionAPI) {
     stopPlayback();
   });
 
-  // Track active subagents for audio notifications
-  const activeSubagents = new Map<string, { role: string; voice: string; label?: string }>();
+  // Track active subagents and role sequences for conversational crew mode
+  const activeSubagents = new Map<
+    string,
+    { role: string; name: string; voice: string; label?: string }
+  >();
+  let lastFinishedRole: string | null = null;
 
   pi.on("tool_execution_start", async (event: any, ctx: ExtensionContext) => {
     if (!config.subagents?.enabled) return;
@@ -494,7 +505,7 @@ export default function (pi: ExtensionAPI) {
       event.toolName === "subagent_continue"
     ) {
       const agentName = String(event.args?.agent || event.args?.name || "");
-      const { role, voice } = resolveSubagentVoice(agentName, config);
+      const { role, name, voice } = resolveSubagentVoice(agentName, config);
       const rawLabel =
         event.args?.label ||
         (event.args?.task ? String(event.args.task).slice(0, 80) : undefined);
@@ -502,10 +513,42 @@ export default function (pi: ExtensionAPI) {
         ? TldrSummarizer.quickTranslateCommonEnglish(rawLabel)
         : undefined;
 
-      activeSubagents.set(event.toolCallId, { role, voice, label });
+      activeSubagents.set(event.toolCallId, { role, name, voice, label });
 
       if (config.subagents.announceStart) {
-        const msg = label ? `${role} iniciado: ${label}.` : `${role} iniciado.`;
+        let msg: string;
+        if (config.subagents.crewMode) {
+          if (role === "Exploradora") {
+            msg = label
+              ? `A la orden, Gentleman. Jefe, me pongo a explorar: ${label}.`
+              : "A la orden, Gentleman. Jefe, me pongo a explorar el terreno.";
+          } else if (role === "Programador") {
+            if (lastFinishedRole === "Exploradora") {
+              msg = label
+                ? `Recibido Dora, tomo la posta. Jefe, arranco a programar: ${label}.`
+                : "Recibido Dora, tomo la posta. Jefe, arranco con la implementación.";
+            } else {
+              msg = label
+                ? `A la orden, Jefe. Me pongo a programar: ${label}.`
+                : "A la orden, Jefe. Me pongo a codear.";
+            }
+          } else if (role === "Auditor") {
+            if (lastFinishedRole === "Programador") {
+              msg = label
+                ? `A ver qué hiciste, Alex... Jefe, voy a auditar con lupa: ${label}.`
+                : "A ver qué hiciste, Alex... Jefe, voy a auditar y correr las pruebas.";
+            } else {
+              msg = label
+                ? `Jefe, entro a auditar y verificar: ${label}.`
+                : "Jefe, entro a auditar.";
+            }
+          } else {
+            msg = label ? `Jefe, inicio tarea: ${label}.` : "Jefe, inicio tarea.";
+          }
+        } else {
+          msg = label ? `${role} iniciado: ${label}.` : `${role} iniciado.`;
+        }
+
         speakText(msg, ctx, voice).catch(() => {});
       }
     }
@@ -516,21 +559,50 @@ export default function (pi: ExtensionAPI) {
     const tracked = activeSubagents.get(event.toolCallId);
     if (!tracked) return;
     activeSubagents.delete(event.toolCallId);
+    lastFinishedRole = tracked.role;
 
     if (config.subagents.announceEnd) {
       if (event.isError) {
-        speakText(`${tracked.role} finalizó con error.`, ctx, tracked.voice).catch(() => {});
+        const errorMsg = config.subagents.crewMode
+          ? `Jefe, ${tracked.name} tuvo un problema: la tarea finalizó con error.`
+          : `${tracked.role} finalizó con error.`;
+        speakText(errorMsg, ctx, tracked.voice).catch(() => {});
       } else {
         const rawResult = extractTextFromResult(event.result);
         if (rawResult && rawResult.trim()) {
           try {
-            const summary = await TldrSummarizer.summarize(rawResult);
-            speakText(`${tracked.role} completado: ${summary}`, ctx, tracked.voice).catch(() => {});
+            const summary = await TldrSummarizer.summarize(rawResult, {
+              role: tracked.role,
+              crewMode: config.subagents.crewMode,
+            });
+
+            let finalMsg: string;
+            if (config.subagents.crewMode) {
+              if (tracked.role === "Exploradora") {
+                finalMsg = `${summary} Alex, te dejo la cancha lista.`;
+              } else if (tracked.role === "Programador") {
+                finalMsg = `${summary} Santa, pasale la lupa y fijate si no rompí nada.`;
+              } else if (tracked.role === "Auditor") {
+                finalMsg = `${summary} Gentleman, todo verificado y aprobado para el Jefe.`;
+              } else {
+                finalMsg = `${summary}`;
+              }
+            } else {
+              finalMsg = `${tracked.role} completado: ${summary}`;
+            }
+
+            speakText(finalMsg, ctx, tracked.voice).catch(() => {});
           } catch {
-            speakText(`${tracked.role} completó su tarea.`, ctx, tracked.voice).catch(() => {});
+            const fallbackMsg = config.subagents.crewMode
+              ? `Jefe, ${tracked.name} terminó su tarea exitosamente.`
+              : `${tracked.role} completó su tarea.`;
+            speakText(fallbackMsg, ctx, tracked.voice).catch(() => {});
           }
         } else {
-          speakText(`${tracked.role} completó su tarea.`, ctx, tracked.voice).catch(() => {});
+          const fallbackMsg = config.subagents.crewMode
+            ? `Jefe, ${tracked.name} completó la tarea.`
+            : `${tracked.role} completó su tarea.`;
+          speakText(fallbackMsg, ctx, tracked.voice).catch(() => {});
         }
       }
     }
@@ -644,6 +716,23 @@ export default function (pi: ExtensionAPI) {
         case "menu":
         case "gui": {
           await openVoiceMenu(ctx);
+          break;
+        }
+
+        case "crew":
+        case "cuadrilla":
+        case "jefe": {
+          const current = config.subagents?.crewMode ?? true;
+          const next =
+            val.toLowerCase() === "on" ? true : val.toLowerCase() === "off" ? false : !current;
+          config = configManager.updateNested("subagents", { crewMode: next });
+          updateUiState(ctx);
+          ctx.ui.notify(
+            next
+              ? "🔊 Modo Cuadrilla ('Jefe') ACTIVADO"
+              : "🔇 Modo Cuadrilla ('Jefe') DESACTIVADO",
+            "info"
+          );
           break;
         }
 
@@ -951,6 +1040,7 @@ export default function (pi: ExtensionAPI) {
             "  /voice                 - Abre el menú visual interactivo con mouse",
             "  /voice menu            - Abre el menú visual interactivo con mouse",
             "  /voice agents [on|off] - Alterna las voces diferenciadas para subagentes",
+            "  /voice crew [on|off]   - Alterna el modo conversacional de cuadrilla ('Jefe')",
             "  /voice record          - Inicia o detiene el dictado de prompts por voz (Alt+R)",
             "  /voice tldr            - Alterna el modo de resumen breve ejecutivo (TL;DR)",
             "  /voice on              - Activa la lectura automática tras cada respuesta",

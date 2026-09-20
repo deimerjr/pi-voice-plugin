@@ -176,15 +176,18 @@ describe("Voice Extension Entrypoint", () => {
 
   it("resolves subagent roles and distinct Spanish voices correctly", () => {
     const scout = resolveSubagentVoice("gentle-ai-explore", DEFAULT_CONFIG);
-    assert.equal(scout.role, "Explorador");
+    assert.equal(scout.role, "Exploradora");
+    assert.equal(scout.name, "Dora");
     assert.equal(scout.voice, "ef_dora");
 
     const worker = resolveSubagentVoice("gentle-ai-worker", DEFAULT_CONFIG);
     assert.equal(worker.role, "Programador");
+    assert.equal(worker.name, "Alex");
     assert.equal(worker.voice, "em_alex");
 
     const reviewer = resolveSubagentVoice("gentle-ai-verify", DEFAULT_CONFIG);
     assert.equal(reviewer.role, "Auditor");
+    assert.equal(reviewer.name, "Santa");
     assert.equal(reviewer.voice, "em_santa");
   });
 });

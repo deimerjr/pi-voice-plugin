@@ -8,6 +8,8 @@ export interface TldrOptions {
   baseUrl?: string;
   model?: string;
   timeoutMs?: number;
+  role?: string;
+  crewMode?: boolean;
 }
 
 export class TldrSummarizer {
@@ -40,7 +42,11 @@ export class TldrSummarizer {
     }
 
     const heuristic = this.extractHeuristicSummary(clean);
-    return this.quickTranslateCommonEnglish(heuristic);
+    const translated = this.quickTranslateCommonEnglish(heuristic);
+    if (options.crewMode && !translated.toLowerCase().includes("jefe")) {
+      return `Jefe, ${translated}`;
+    }
+    return translated;
   }
 
   /**
@@ -133,21 +139,25 @@ export class TldrSummarizer {
       const url = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
       const model = options.model || (baseUrl.includes("8317") ? "gemini-3.8-flash-high" : "gpt-4o-mini");
 
+      const systemContent =
+        options.crewMode && options.role
+          ? `Sos ${options.role} de un equipo técnico en terminal reportándole a tu "Jefe". Generá un reporte oral de lo que lograste en máximo 2 oraciones directas, 100% en español rioplatense natural. Dirigite a él como "Jefe" con camaradería profesional y pasale la palabra al equipo si corresponde. Sin introducciones innecesarias ni markdown.`
+          : "Sos un asistente de voz en español. Traducí y sintetizá la información técnica en máximo 2 oraciones breves, 100% en idioma español natural, para ser leídas por voz. Aunque la entrada esté en inglés o sea un reporte técnico, respondé SIEMPRE en español fluido. Sin introducciones ni markdown.";
+
       const payload = {
         model,
         messages: [
           {
             role: "system",
-            content:
-              "Sos un asistente de voz en español. Traducí y sintetizá la información técnica en máximo 2 oraciones breves, 100% en idioma español natural, para ser leídas por voz. Aunque la entrada esté en inglés o sea un reporte técnico, respondé SIEMPRE en español fluido. Sin introducciones ni markdown.",
+            content: systemContent,
           },
           {
             role: "user",
             content: text,
           },
         ],
-        max_tokens: 90,
-        temperature: 0.2,
+        max_tokens: 95,
+        temperature: 0.3,
       };
 
       const res = await fetch(url, {

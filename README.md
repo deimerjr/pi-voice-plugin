@@ -10,6 +10,11 @@ Plugin / Extensión modular para **Pi CLI** que sintetiza en voz las respuestas 
   - Un botón widget interactivo colocado al pie del editor `[ 🎙️ Voice: ON/OFF (voz) • Clic: Menú ⚙️ ]` que podés clickear directamente con el ratón.
   - Interfaz visual por overlays con navegación por mouse y teclado (flechas, Enter, Escape).
   - Atajo rápido global `ctrl+alt+v` o comando `/voice menu` / `/voice`.
+- **Modo Cuadrilla ("Jefe") e Interacción Dinámica de Equipo**:
+  - Los subagentes se coordinan en vivo, se dirigen a vos como **"Jefe"** y se pasan la posta entre ellos con roles definidos:
+    - **Dora (Exploradora / Scout)**: *"Jefe, me pongo a explorar el terreno..."* y al terminar: *"Alex, te dejo la cancha lista."*
+    - **Alex (Programador / Worker)**: *"Recibido Dora, tomo la posta. Jefe, arranco con la implementación..."* y al terminar: *"Santa, pasale la lupa y fijate si no rompí nada."*
+    - **Santa (Auditor / Reviewer)**: *"A ver qué hiciste, Alex... Jefe, voy a auditar con lupa..."* y al terminar: *"Gentleman, todo verificado y aprobado para el Jefe."*
 - **Voces Diferenciadas por Subagente / Rol (Español Nativo)**:
   - Cada agente del harness tiene su propio timbre de voz asignado en español:
     - **Orquestador (`el Gentleman`)**: `dora_heart` (cálida y equilibrada).
@@ -69,6 +74,7 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 | :--- | :--- |
 | `/voice` / `/voice menu` | Abre el menú visual interactivo con soporte de mouse |
 | `/voice record` / `/voice dictar` | Inicia o finaliza la grabación de voz para dictar prompts (`Alt + R`) |
+| `/voice crew [on\|off]` | Alterna el modo interactivo de cuadrilla ("Jefe") |
 | `/voice agents [on\|off]` | Alterna las voces diferenciadas y avisos para subagentes |
 | `/voice tldr` / `/voice resumen` | Alterna el modo de resumen ejecutivo breve (TL;DR) |
 | `/voice on` | Activa la lectura automática tras cada respuesta |

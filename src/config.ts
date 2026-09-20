@@ -59,6 +59,7 @@ export interface VoiceShortcutsConfig {
 
 export interface SubagentVoicesConfig {
   enabled: boolean;
+  crewMode: boolean;
   announceStart: boolean;
   announceEnd: boolean;
   orchestrator: string;
@@ -140,6 +141,7 @@ export const DEFAULT_CONFIG: VoicePluginConfig = {
   },
   subagents: {
     enabled: true,
+    crewMode: true,
     announceStart: true,
     announceEnd: true,
     orchestrator: "dora_heart",
