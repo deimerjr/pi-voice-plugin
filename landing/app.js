@@ -1,14 +1,16 @@
 /**
  * PI VOICE PLUGIN — BRUTALIST LANDING INTERACTION (app.js)
- * Manejo de eventos, sintetizador Web Audio API, Web Speech API y simulador TUI.
+ * Reproducción de audios reales generados con Kokoro TTS local,
+ * Web Audio API para efectos, Web Speech API fallback y simulador TUI.
  */
 
-// Datos de la Cuadrilla para el Soundboard
+// Datos de la Cuadrilla para el Soundboard con audios reales
 const CUADRILLA_DATA = {
   gentleman: {
     name: "El Gentleman",
     role: "Orquestador",
     voiceName: "dora_heart",
+    audioFile: "audio/gentleman.wav",
     text: "Entendido, Jefe. Pongo a la cuadrilla en marcha. Dora, relevá el terreno. Alex y Santa, atentos.",
     pitch: 0.95,
     rate: 1.05,
@@ -18,7 +20,8 @@ const CUADRILLA_DATA = {
     name: "Dora",
     role: "Exploradora",
     voiceName: "ef_dora",
-    text: "A la orden, Gentleman. Jefe, me pongo a explorar el terreno... Alex, te dejo la cancha lista.",
+    audioFile: "audio/dora.wav",
+    text: "A la orden, Gentleman. Jefe, me pongo a explorar el terreno. Alex, te dejo la cancha lista.",
     pitch: 1.25,
     rate: 1.15,
     synthTone: 520,
@@ -27,7 +30,8 @@ const CUADRILLA_DATA = {
     name: "Alex",
     role: "Programador",
     voiceName: "em_alex",
-    text: "Recibido Dora, tomo la posta. Jefe, arranco con la implementación... Santa, pasale la lupa y fijate si no rompí nada.",
+    audioFile: "audio/alex.wav",
+    text: "Recibido Dora, tomo la posta. Jefe, arranco con la implementación. Santa, pasale la lupa y fijate si no rompí nada.",
     pitch: 1.05,
     rate: 1.1,
     synthTone: 440,
@@ -36,6 +40,7 @@ const CUADRILLA_DATA = {
     name: "Santa",
     role: "Auditor",
     voiceName: "em_santa",
+    audioFile: "audio/santa.wav",
     text: "A ver qué hiciste, Alex... Jefe, voy a auditar con lupa. Todo verificado y aprobado para el Jefe.",
     pitch: 0.75,
     rate: 0.95,
@@ -43,7 +48,7 @@ const CUADRILLA_DATA = {
   },
 };
 
-// Web Audio Context Helper
+// Web Audio Context Helper para efectos
 let audioCtx = null;
 function getAudioContext() {
   if (!audioCtx) {
@@ -82,15 +87,29 @@ function playRetroTone(freq = 440, duration = 0.15, type = "square") {
   }
 }
 
-// Sintetizador oral con Web Speech API
-let activeUtterance = null;
+// Control de reproducción de audio
+let currentAudioPlayer = null;
 let activeAgentKey = null;
 
 function stopCurrentSpeech() {
-  if (window.speechSynthesis) {
-    window.speechSynthesis.cancel();
+  if (currentAudioPlayer) {
+    try {
+      currentAudioPlayer.pause();
+      currentAudioPlayer.currentTime = 0;
+    } catch {
+      // Ignorar
+    }
+    currentAudioPlayer = null;
   }
-  activeUtterance = null;
+
+  if (window.speechSynthesis) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch {
+      // Ignorar
+    }
+  }
+
   if (activeAgentKey) {
     const prevCard = document.querySelector(`.agent-card[data-agent="${activeAgentKey}"]`);
     if (prevCard) {
@@ -102,37 +121,21 @@ function stopCurrentSpeech() {
   }
 }
 
-function speakAgent(agentKey, onEndCallback) {
-  const data = CUADRILLA_DATA[agentKey];
-  if (!data) return;
-
-  stopCurrentSpeech();
-  activeAgentKey = agentKey;
-
-  const card = document.querySelector(`.agent-card[data-agent="${agentKey}"]`);
-  if (card) {
-    card.classList.add("card-playing");
-    const btn = card.querySelector(".btn-voice-play");
-    if (btn) btn.textContent = "⏹ DETENER";
-  }
-
-  // Tono de apertura de canal
-  playRetroTone(data.synthTone, 0.12, "sawtooth");
-
+// Fallback por Web Speech API si el archivo de audio falla
+function fallbackSpeechSynthesis(data, card, agentKey, onEndCallback) {
   if ("speechSynthesis" in window) {
     const utterance = new SpeechSynthesisUtterance(data.text);
     utterance.lang = "es-ES";
     utterance.pitch = data.pitch;
     utterance.rate = data.rate;
 
-    // Intentar buscar voces en español disponibles
     const voices = window.speechSynthesis.getVoices();
     const esVoice = voices.find((v) => v.lang.startsWith("es") || v.lang.startsWith("spa"));
     if (esVoice) {
       utterance.voice = esVoice;
     }
 
-    utterance.onend = () => {
+    const finish = () => {
       if (card) {
         card.classList.remove("card-playing");
         const btn = card.querySelector(".btn-voice-play");
@@ -144,22 +147,11 @@ function speakAgent(agentKey, onEndCallback) {
       }
     };
 
-    utterance.onerror = () => {
-      if (card) {
-        card.classList.remove("card-playing");
-        const btn = card.querySelector(".btn-voice-play");
-        if (btn) btn.textContent = `▶ ESCUCHAR A ${agentKey.toUpperCase()}`;
-      }
-      activeAgentKey = null;
-      if (typeof onEndCallback === "function") {
-        onEndCallback();
-      }
-    };
-
-    activeUtterance = utterance;
+    utterance.onend = finish;
+    utterance.onerror = finish;
     window.speechSynthesis.speak(utterance);
   } else {
-    // Si no soporta speechSynthesis, simular locución con beeps rítmicos
+    // Beeps simulados si no hay sintetizador
     let step = 0;
     const interval = setInterval(() => {
       playRetroTone(data.synthTone + (step % 2 === 0 ? 40 : -40), 0.1, "sine");
@@ -178,6 +170,55 @@ function speakAgent(agentKey, onEndCallback) {
       }
     }, 180);
   }
+}
+
+// Reproduce la voz original de un agente usando el audio generado por Kokoro
+function speakAgent(agentKey, onEndCallback) {
+  const data = CUADRILLA_DATA[agentKey];
+  if (!data) return;
+
+  stopCurrentSpeech();
+  activeAgentKey = agentKey;
+
+  const card = document.querySelector(`.agent-card[data-agent="${agentKey}"]`);
+  if (card) {
+    card.classList.add("card-playing");
+    const btn = card.querySelector(".btn-voice-play");
+    if (btn) btn.textContent = "⏹ DETENER";
+  }
+
+  // Reproducir el archivo de audio real
+  if (data.audioFile) {
+    const audio = new Audio(data.audioFile);
+    currentAudioPlayer = audio;
+
+    const cleanup = () => {
+      if (card) {
+        card.classList.remove("card-playing");
+        const btn = card.querySelector(".btn-voice-play");
+        if (btn) btn.textContent = `▶ ESCUCHAR A ${agentKey.toUpperCase()}`;
+      }
+      activeAgentKey = null;
+      currentAudioPlayer = null;
+      if (typeof onEndCallback === "function") {
+        onEndCallback();
+      }
+    };
+
+    audio.onended = cleanup;
+    audio.onerror = (e) => {
+      console.warn(`[Pi Voice] Error cargando audio original ${data.audioFile}, activando fallback:`, e);
+      fallbackSpeechSynthesis(data, card, agentKey, onEndCallback);
+    };
+
+    audio.play().catch((err) => {
+      console.warn(`[Pi Voice] Error reproduciendo audio ${data.audioFile}:`, err);
+      fallbackSpeechSynthesis(data, card, agentKey, onEndCallback);
+    });
+    return;
+  }
+
+  fallbackSpeechSynthesis(data, card, agentKey, onEndCallback);
 }
 
 // Reproducción en cadena de la Cuadrilla completa
@@ -221,13 +262,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 2. Botón Test Audio Engine en Monitor Hero
+  // 2. Botón Test Audio Engine en Monitor Hero con audio original
   const btnTestSound = document.getElementById("btn-trigger-test-sound");
   if (btnTestSound) {
     btnTestSound.addEventListener("click", () => {
-      playRetroTone(440, 0.1, "square");
-      setTimeout(() => playRetroTone(660, 0.1, "square"), 100);
-      setTimeout(() => playRetroTone(880, 0.18, "square"), 200);
+      stopCurrentSpeech();
+      const testAudio = new Audio("audio/test-engine.wav");
+      currentAudioPlayer = testAudio;
+      btnTestSound.textContent = "🔊 REPRODUCIENDO...";
+
+      const resetBtn = () => {
+        btnTestSound.textContent = "▶ TEST AUDIO ENGINE";
+        currentAudioPlayer = null;
+      };
+
+      testAudio.onended = resetBtn;
+      testAudio.onerror = () => {
+        resetBtn();
+        playRetroTone(440, 0.1, "square");
+        setTimeout(() => playRetroTone(660, 0.1, "square"), 100);
+        setTimeout(() => playRetroTone(880, 0.18, "square"), 200);
+      };
+
+      testAudio.play().catch(() => {
+        resetBtn();
+      });
     });
   }
 
