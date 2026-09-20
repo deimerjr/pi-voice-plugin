@@ -98,6 +98,19 @@ body {
   height: 72px;
 }
 
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-theme {
+  background: var(--c-purple);
+  color: var(--c-white);
+  font-size: 12px;
+  padding: 8px 14px;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -953,3 +966,90 @@ kbd {
     flex-direction: column;
   }
 }
+
+/* ==========================================================================
+   DARK MATRIX MODE STYLES
+   ========================================================================== */
+
+body.dark-mode {
+  --bg-canvas: #0a0a0c;
+  --c-black: #000000;
+  --c-white: #141419;
+  color: #00ff66;
+  background-image: radial-gradient(#00ff66 1px, transparent 0);
+}
+
+body.dark-mode .navbar-wrapper {
+  background: #0f0f14;
+  border-bottom-color: #00ff66;
+}
+
+body.dark-mode .nav-links a {
+  color: #e0e0e0;
+}
+
+body.dark-mode .nav-links a:hover {
+  background: #00ff66;
+  color: #000000;
+}
+
+body.dark-mode .brand-title {
+  color: #ffffff;
+}
+
+body.dark-mode .hero-lead {
+  color: #d0d0d0;
+}
+
+body.dark-mode .btn {
+  background: #181820;
+  color: #ffffff;
+  border-color: #00ff66;
+  box-shadow: 5px 5px 0px #00ff66;
+}
+
+body.dark-mode .btn:hover {
+  background: #00ff66;
+  color: #000000;
+  box-shadow: 7px 7px 0px #00ff66;
+}
+
+body.dark-mode .agent-card,
+body.dark-mode .feature-card,
+body.dark-mode .table-card,
+body.dark-mode .install-box,
+body.dark-mode .install-banner,
+body.dark-mode .ascii-diagram-card,
+body.dark-mode .simulator-wrapper,
+body.dark-mode .hero-card {
+  background: #121218;
+  color: #e5e5e5;
+  border-color: #00ff66;
+  box-shadow: 5px 5px 0px #00ff66;
+}
+
+body.dark-mode .agent-quote {
+  background: #1b1b22;
+  color: #a0ffa0;
+  border-left-color: #00ff66;
+}
+
+body.dark-mode .agent-voice-tag {
+  color: #88ff88;
+}
+
+body.dark-mode .install-option-card {
+  background: #181822;
+  border-color: #00ff66;
+}
+
+body.dark-mode .brutalist-table th {
+  background: #00ff66;
+  color: #000000;
+}
+
+body.dark-mode .brutalist-table td {
+  border-bottom-color: #224422;
+  color: #e0e0e0;
+}
+

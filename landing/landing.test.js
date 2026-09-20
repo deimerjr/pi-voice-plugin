@@ -68,6 +68,10 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
       assert.match(html, /id="sim-btn-volume"/);
       assert.match(html, /id="sim-btn-record"/);
     });
+
+    it("contains the dark matrix theme toggle button", () => {
+      assert.match(html, /id="btn-theme-toggle"/);
+    });
   });
 
   describe("Neo-Brutalist CSS Design Tokens (styles.css)", () => {
@@ -94,6 +98,11 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
     it("includes responsive media queries for tablet and mobile devices", () => {
       assert.match(css, /@media\s*\(\s*max-width:\s*900px\s*\)/i);
       assert.match(css, /@media\s*\(\s*max-width:\s*600px\s*\)/i);
+    });
+
+    it("defines dark matrix theme styles", () => {
+      assert.match(css, /body\.dark-mode/);
+      assert.match(css, /--bg-canvas:\s*#0a0a0c/i);
     });
   });
 
@@ -122,6 +131,12 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
       assert.match(js, /speechSynthesis/);
       assert.match(js, /SpeechSynthesisUtterance/);
       assert.match(js, /playCuadrillaChain/);
+    });
+
+    it("handles theme toggle logic and persistence", () => {
+      assert.match(js, /btn-theme-toggle/);
+      assert.match(js, /dark-mode/);
+      assert.match(js, /pi_voice_theme/);
     });
   });
 });

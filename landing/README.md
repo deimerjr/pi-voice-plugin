@@ -34,16 +34,19 @@ firefox landing/index.html
 xdg-open landing/index.html
 ```
 
-### Opción 2: Servir con un servidor local ligero
-Con Python (incluido por defecto en Ubuntu):
+### Opción 2: Servir con un servidor local ligero (Acceso desde Windows / LAN)
+Con Python (escuchando en toda la red local):
 ```bash
-python3 -m http.server 3000 --directory landing
+python3 -m http.server 3000 --bind 0.0.0.0 --directory landing
 ```
 O con `npx serve`:
 ```bash
-npx serve landing
+npx serve landing -l 3000
 ```
-Luego abrí `http://localhost:3000` en tu navegador.
+
+#### 🌐 Acceso desde Windows u otro equipo en la red local:
+Abrí tu navegador en Windows (Chrome, Edge, Firefox) e ingresá a:
+👉 **`http://192.168.18.29:3000`**
 
 ---
 

@@ -331,4 +331,29 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 2400);
     });
   }
+
+  // 6. Botón Dark Matrix Mode Toggle con persistencia
+  const btnThemeToggle = document.getElementById("btn-theme-toggle");
+  if (btnThemeToggle) {
+    try {
+      const savedTheme = localStorage.getItem("pi_voice_theme");
+      if (savedTheme === "dark") {
+        document.body.classList.add("dark-mode");
+        btnThemeToggle.textContent = "☀️ LIGHT MODE";
+      }
+    } catch {
+      // Ignorar restricciones en entornos aislados
+    }
+
+    btnThemeToggle.addEventListener("click", () => {
+      const isDark = document.body.classList.toggle("dark-mode");
+      try {
+        localStorage.setItem("pi_voice_theme", isDark ? "dark" : "light");
+      } catch {
+        // Ignorar
+      }
+      btnThemeToggle.textContent = isDark ? "☀️ LIGHT MODE" : "🌙 DARK MATRIX";
+      playRetroTone(isDark ? 800 : 400, 0.1, "square");
+    });
+  }
 });
