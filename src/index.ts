@@ -135,6 +135,7 @@ export function resolveSubagentVoice(
     crewMode: true,
     announceStart: true,
     announceEnd: true,
+    announceOrchestratorPhases: true,
     orchestrator: "dora_heart",
     scout: "ef_dora",
     worker: "em_alex",
@@ -152,6 +153,22 @@ export function resolveSubagentVoice(
   }
 
   return { role: "Agente", name: "Alex", voice: sub.worker || "em_alex" };
+}
+
+export function cleanPhaseTitle(rawText?: string): string {
+  if (!rawText) return "";
+  let clean = rawText.trim();
+  // Strip "Task 1:", "Task 1 -", "#1", "[x]", "[ ]", etc.
+  clean = clean.replace(/^(?:Task\s*\d+\s*[:\-–—]\s*|#\d+\s*[:\-–—]?\s*)/i, "");
+  // Strip markdown formatting
+  clean = clean.replace(/[`*_~[\]]/g, "");
+  // Translate common English technical phrases to Spanish
+  clean = TldrSummarizer.quickTranslateCommonEnglish(clean);
+  // Cap at 100 chars
+  if (clean.length > 100) {
+    clean = clean.slice(0, 97) + "...";
+  }
+  return clean.trim();
 }
 
 function extractTextFromResult(result: any): string {
@@ -511,8 +528,17 @@ export default function (pi: ExtensionAPI) {
   >();
   let lastFinishedRole: string | null = null;
 
+  // Track known tasks and orchestrator phases when executing directly without subagents
+  const knownTodoTasks = new Map<
+    number,
+    { title: string; status: string; note?: string }
+  >();
+  let lastAnnouncedTodoPhase: string | null = null;
+
   pi.on("tool_execution_start", async (event: any, ctx: ExtensionContext) => {
     if (!config.subagents?.enabled) return;
+
+    // 1. Subagent tool execution start
     if (
       event.toolName === "subagent_run" ||
       event.toolName === "Agent" ||
@@ -565,11 +591,125 @@ export default function (pi: ExtensionAPI) {
 
         speakText(msg, ctx, voice).catch(() => {});
       }
+      return;
+    }
+
+    // 2. Orchestrator Direct Phases (Todo tool transitions)
+    if (
+      event.toolName === "todo" &&
+      config.subagents?.announceOrchestratorPhases !== false
+    ) {
+      const args = event.args || {};
+      const action = String(args.action || "");
+      const orchVoice =
+        config.subagents?.orchestrator || config.kokoro?.voice || "dora_heart";
+
+      if (action === "write" && Array.isArray(args.tasks)) {
+        knownTodoTasks.clear();
+        args.tasks.forEach((t: any, idx: number) => {
+          const id = typeof t.id === "number" ? t.id : idx + 1;
+          knownTodoTasks.set(id, {
+            title: t.title || `Fase ${id}`,
+            status: t.status || "pending",
+            note: t.note,
+          });
+        });
+
+        if (args.tasks.length > 0) {
+          const count = args.tasks.length;
+          const msg = config.subagents?.crewMode
+            ? `Jefe, planifiqué el trabajo en ${count} ${count === 1 ? "fase" : "fases"}. Pongo manos a la obra.`
+            : `Trabajo planificado en ${count} ${count === 1 ? "fase" : "fases"}.`;
+          speakText(msg, ctx, orchVoice).catch(() => {});
+        }
+      } else if (action === "update" && typeof args.id === "number") {
+        const existing = knownTodoTasks.get(args.id);
+        const title = args.title || existing?.title || args.note || `Fase ${args.id}`;
+        const newStatus = args.status || existing?.status;
+        const note = args.note || existing?.note;
+
+        knownTodoTasks.set(args.id, {
+          title,
+          status: newStatus,
+          note,
+        });
+
+        const cleanTitle = cleanPhaseTitle(args.note || title);
+
+        if (newStatus === "in_progress") {
+          const phraseKey = `start:${args.id}:${cleanTitle}`;
+          if (lastAnnouncedTodoPhase !== phraseKey) {
+            lastAnnouncedTodoPhase = phraseKey;
+            const msg = config.subagents?.crewMode
+              ? `Jefe, arranco la fase: ${cleanTitle}.`
+              : `Iniciando fase: ${cleanTitle}.`;
+            speakText(msg, ctx, orchVoice).catch(() => {});
+          }
+        } else if (newStatus === "done") {
+          const phraseKey = `done:${args.id}:${cleanTitle}`;
+          if (lastAnnouncedTodoPhase !== phraseKey) {
+            lastAnnouncedTodoPhase = phraseKey;
+            const msg = config.subagents?.crewMode
+              ? `Jefe, quedó lista la fase: ${cleanTitle}.`
+              : `Fase completada: ${cleanTitle}.`;
+            speakText(msg, ctx, orchVoice).catch(() => {});
+          }
+        }
+      } else if (action === "add" && args.title) {
+        const cleanTitle = cleanPhaseTitle(args.title);
+        if (args.status === "in_progress") {
+          const msg = config.subagents?.crewMode
+            ? `Jefe, arranco la fase: ${cleanTitle}.`
+            : `Iniciando fase: ${cleanTitle}.`;
+          speakText(msg, ctx, orchVoice).catch(() => {});
+        }
+      }
+      return;
+    }
+
+    // 3. Orchestrator Direct Verification announcements (Test runs)
+    if (
+      event.toolName === "bash" &&
+      config.subagents?.announceOrchestratorPhases !== false
+    ) {
+      const cmd = String(event.args?.command || "").trim();
+      const isTestCmd = /\b(npm\s+test|node\s+--test|pytest|cargo\s+test|go\s+test)\b/i.test(cmd);
+      if (isTestCmd) {
+        const orchVoice =
+          config.subagents?.orchestrator || config.kokoro?.voice || "dora_heart";
+        const msg = config.subagents?.crewMode
+          ? "Jefe, voy a correr las pruebas de verificación."
+          : "Ejecutando pruebas de verificación.";
+        speakText(msg, ctx, orchVoice).catch(() => {});
+      }
     }
   });
 
   pi.on("tool_execution_end", async (event: any, ctx: ExtensionContext) => {
     if (!config.subagents?.enabled) return;
+
+    // Direct Verification conclusion
+    if (
+      event.toolName === "bash" &&
+      config.subagents?.announceOrchestratorPhases !== false
+    ) {
+      const cmd = String(event.args?.command || "").trim();
+      const isTestCmd = /\b(npm\s+test|node\s+--test|pytest|cargo\s+test|go\s+test)\b/i.test(cmd);
+      if (isTestCmd) {
+        const orchVoice =
+          config.subagents?.orchestrator || config.kokoro?.voice || "dora_heart";
+        const msg = event.isError
+          ? config.subagents?.crewMode
+            ? "Jefe, atención: las pruebas fallaron."
+            : "Las pruebas fallaron."
+          : config.subagents?.crewMode
+            ? "Jefe, pruebas verificadas y pasadas con éxito."
+            : "Pruebas pasadas exitosamente.";
+        speakText(msg, ctx, orchVoice).catch(() => {});
+        return;
+      }
+    }
+
     const tracked = activeSubagents.get(event.toolCallId);
     if (!tracked) return;
     activeSubagents.delete(event.toolCallId);
@@ -764,6 +904,22 @@ export default function (pi: ExtensionAPI) {
             next
               ? "🔊 Voces diferenciadas para subagentes ACTIVADAS"
               : "🔇 Voces diferenciadas para subagentes DESACTIVADAS",
+            "info"
+          );
+          break;
+        }
+
+        case "phases":
+        case "fases": {
+          const current = config.subagents?.announceOrchestratorPhases ?? true;
+          const next =
+            val.toLowerCase() === "on" ? true : val.toLowerCase() === "off" ? false : !current;
+          config = configManager.updateNested("subagents", { announceOrchestratorPhases: next });
+          updateUiState(ctx);
+          ctx.ui.notify(
+            next
+              ? "🔊 Locución de fases del orquestador ACTIVADA"
+              : "🔇 Locución de fases del orquestador DESACTIVADA",
             "info"
           );
           break;
@@ -1054,6 +1210,7 @@ export default function (pi: ExtensionAPI) {
             "  /voice                 - Abre el menú visual interactivo con mouse",
             "  /voice menu            - Abre el menú visual interactivo con mouse",
             "  /voice agents [on|off] - Alterna las voces diferenciadas para subagentes",
+            "  /voice phases [on|off] - Alterna la locución de fases del orquestador",
             "  /voice crew [on|off]   - Alterna el modo conversacional de cuadrilla ('Jefe')",
             "  /voice record          - Inicia o detiene el dictado de prompts por voz (Alt+R)",
             "  /voice tldr            - Alterna el modo de resumen breve ejecutivo (TL;DR)",
