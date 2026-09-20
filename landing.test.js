@@ -139,4 +139,44 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
       assert.match(js, /pi_voice_theme/);
     });
   });
+
+  describe("Neural Audio Assets (landing/audio/)", () => {
+    const audioDir = path.join(__dirname, "audio");
+    const requiredAudios = [
+      "gentleman.wav",
+      "dora.wav",
+      "alex.wav",
+      "santa.wav",
+      "test-engine.wav",
+    ];
+
+    it("verifies all 5 authentic Kokoro audio files exist", () => {
+      for (const file of requiredAudios) {
+        const filePath = path.join(audioDir, file);
+        assert.ok(fs.existsSync(filePath), `${file} must exist in landing/audio/`);
+      }
+    });
+
+    it("ensures each audio file is valid RIFF/WAVE PCM audio format", () => {
+      for (const file of requiredAudios) {
+        const filePath = path.join(audioDir, file);
+        const stats = fs.statSync(filePath);
+        assert.ok(stats.size > 10000, `${file} must be at least 10KB`);
+
+        const buffer = fs.readFileSync(filePath);
+        const header = buffer.subarray(0, 12).toString("binary");
+        assert.ok(header.startsWith("RIFF"), `${file} must start with RIFF header`);
+        assert.ok(header.includes("WAVE"), `${file} must contain WAVE format identifier`);
+      }
+    });
+
+    it("ensures landing/app.js references authentic audio files", () => {
+      const js = fs.readFileSync(jsPath, "utf-8");
+      assert.match(js, /audio\/gentleman\.wav/);
+      assert.match(js, /audio\/dora\.wav/);
+      assert.match(js, /audio\/alex\.wav/);
+      assert.match(js, /audio\/santa\.wav/);
+      assert.match(js, /audio\/test-engine\.wav/);
+    });
+  });
 });
