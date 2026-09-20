@@ -415,10 +415,11 @@ export default function (pi: ExtensionAPI) {
 
     try {
       // Pipeline: start synthesizing chunk 0
-      let nextPromise = provider.synthesize(chunks[0], signal);
+      let nextPromise: Promise<any> | null = provider.synthesize(chunks[0], signal);
+      nextPromise.catch(() => {});
 
       for (let i = 0; i < chunks.length; i++) {
-        if (signal.aborted) break;
+        if (signal.aborted || !nextPromise) break;
 
         isSynthesizing = true;
         updateUiState(ctx);
@@ -426,12 +427,23 @@ export default function (pi: ExtensionAPI) {
           ctx.ui.setStatus("pi-voice", "🔊 Sintetizando...");
         }
 
-        const currentResult = await nextPromise;
+        let currentResult;
+        try {
+          currentResult = await nextPromise;
+        } catch (err: any) {
+          if (signal.aborted || err.name === "AbortError") {
+            break;
+          }
+          throw err;
+        }
         isSynthesizing = false;
 
         // Immediately start synthesizing chunk i + 1 while chunk i plays!
         if (i + 1 < chunks.length && !signal.aborted) {
           nextPromise = provider.synthesize(chunks[i + 1], signal);
+          nextPromise.catch(() => {});
+        } else {
+          nextPromise = null;
         }
 
         if (signal.aborted) break;
@@ -449,12 +461,14 @@ export default function (pi: ExtensionAPI) {
         await player.play(currentResult.audioBuffer, currentResult.format);
       }
     } catch (err: any) {
-      if (!signal.aborted && ctx?.ui) {
+      if (!signal.aborted && err.name !== "AbortError" && ctx?.ui) {
         ctx.ui.notify(`[Voice] Error de reproducción: ${err.message}`, "error");
       }
     } finally {
-      isSynthesizing = false;
-      updateUiState(ctx);
+      if (!signal.aborted) {
+        isSynthesizing = false;
+        updateUiState(ctx);
+      }
     }
   };
 

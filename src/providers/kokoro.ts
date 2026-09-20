@@ -33,6 +33,11 @@ export class KokoroProvider implements TTSProvider {
         signal,
       });
     } catch (err: any) {
+      if (signal?.aborted || err.name === "AbortError") {
+        const abortErr = new Error("Operación de síntesis cancelada");
+        abortErr.name = "AbortError";
+        throw abortErr;
+      }
       throw new Error(
         `No se pudo conectar con el servidor Kokoro TTS local en ${normalizedBaseUrl}. ¿Está corriendo? Ejecutá 'kokoro-tts start' en tu terminal.`
       );
