@@ -84,7 +84,7 @@ describe("Voice Extension Entrypoint", () => {
     }
   });
 
-  it("VoiceControlBarComponent renders buttons and routes clicks properly", () => {
+  it("VoiceControlBarComponent renders buttons and routes clicks properly", async () => {
     const mockTheme: any = {
       fg: (_col: string, text: string) => text,
       bg: (_col: string, text: string) => text,
@@ -131,6 +131,7 @@ describe("Voice Extension Entrypoint", () => {
       alt: false,
       ctrl: false,
     });
+    await new Promise((r) => setTimeout(r, 10));
     assert.equal(stopped, true);
 
     // Click on dictate button area (x = 20)
@@ -147,6 +148,7 @@ describe("Voice Extension Entrypoint", () => {
       alt: false,
       ctrl: false,
     });
+    await new Promise((r) => setTimeout(r, 10));
     assert.equal(recorded, true);
 
     // Click on volume button area (x = 35)
@@ -163,6 +165,7 @@ describe("Voice Extension Entrypoint", () => {
       alt: false,
       ctrl: false,
     });
+    await new Promise((r) => setTimeout(r, 10));
     assert.equal(volumeClicked, true);
   });
 });

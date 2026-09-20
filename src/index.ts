@@ -48,35 +48,39 @@ export class VoiceControlBarComponent implements Component {
   }
 
   render(_width: number): string[] {
-    const playing = this.isPlaying();
-    const recording = this.isRecording();
-    const vol = this.getVolume();
-    const pct = Math.round(vol * 100);
+    try {
+      const playing = this.isPlaying();
+      const recording = this.isRecording();
+      const vol = this.getVolume();
+      const pct = Math.round(vol * 100);
 
-    const speakerIcon = pct === 0 ? "🔇" : pct < 40 ? "🔈" : pct < 75 ? "🔉" : "🔊";
+      const speakerIcon = pct === 0 ? "🔇" : pct < 40 ? "🔈" : pct < 75 ? "🔉" : "🔊";
 
-    // 1. Stop button
-    const stopRaw = playing ? " [ ⏹️ Detener ] " : " [ ⏹️ Parar ] ";
-    const stopFormatted = playing
-      ? this.theme.fg("error", this.theme.bold(stopRaw))
-      : this.theme.fg("dim", stopRaw);
-    this.stopWidth = visibleWidth(stopRaw);
+      // 1. Stop button
+      const stopRaw = playing ? " [ ⏹️ Detener ] " : " [ ⏹️ Parar ] ";
+      const stopFormatted = playing
+        ? this.theme.fg("error", this.theme.bold(stopRaw))
+        : this.theme.fg("dim", stopRaw);
+      this.stopWidth = visibleWidth(stopRaw);
 
-    // 2. Dictate / Record button
-    const recRaw = recording ? " [ 🔴 Grabando... ] " : " [ 🎙️ Dictar ] ";
-    const recFormatted = recording
-      ? this.theme.bg("error", this.theme.fg("text", this.theme.bold(recRaw)))
-      : this.theme.fg("accent", recRaw);
-    this.recStart = this.stopWidth + 1;
-    this.recWidth = visibleWidth(recRaw);
+      // 2. Dictate / Record button
+      const recRaw = recording ? " [ 🔴 Grabando... ] " : " [ 🎙️ Dictar ] ";
+      const recFormatted = recording
+        ? this.theme.fg("error", this.theme.bold(recRaw))
+        : this.theme.fg("accent", recRaw);
+      this.recStart = this.stopWidth + 1;
+      this.recWidth = visibleWidth(recRaw);
 
-    // 3. Speaker / Volume button
-    const volRaw = ` [ ${speakerIcon} ${pct}% ] `;
-    const volFormatted = this.theme.fg(playing ? "accent" : "muted", volRaw);
-    this.volStart = this.recStart + this.recWidth + 1;
-    this.volWidth = visibleWidth(volRaw);
+      // 3. Speaker / Volume button
+      const volRaw = ` [ ${speakerIcon} ${pct}% ] `;
+      const volFormatted = this.theme.fg(playing ? "accent" : "muted", volRaw);
+      this.volStart = this.recStart + this.recWidth + 1;
+      this.volWidth = visibleWidth(volRaw);
 
-    return [`${stopFormatted} ${recFormatted} ${volFormatted}`];
+      return [`${stopFormatted} ${recFormatted} ${volFormatted}`];
+    } catch {
+      return [" [ ⏹️ Parar ]  [ 🎙️ Dictar ]  [ 🔊 ] "];
+    }
   }
 
   handleMouse(event: TuiMouseEvent): TuiMouseEventResult | undefined {
@@ -95,15 +99,15 @@ export class VoiceControlBarComponent implements Component {
 
     if (event.type === "click") {
       if (isOverStop) {
-        this.onStop();
+        setTimeout(() => this.onStop(), 0);
         return { handled: true };
       }
       if (isOverRec) {
-        this.onRecordClick();
+        setTimeout(() => this.onRecordClick(), 0);
         return { handled: true };
       }
       if (isOverVol) {
-        this.onVolumeClick();
+        setTimeout(() => this.onVolumeClick(), 0);
         return { handled: true };
       }
     }
@@ -282,6 +286,7 @@ export default function (pi: ExtensionAPI) {
           },
           onConfigChanged: (newConfig) => {
             config = newConfig;
+            registerAllShortcuts(ctx);
             updateUiState(ctx);
           },
         });
@@ -395,6 +400,7 @@ export default function (pi: ExtensionAPI) {
     config = configManager.load();
     player.setCustomCommand(config.playerCommand);
     player.setVolume(config.volume ?? 1.0);
+    registerAllShortcuts(ctx);
     updateUiState(ctx);
   });
 
@@ -427,60 +433,82 @@ export default function (pi: ExtensionAPI) {
     }
   });
 
-  // Register shortcuts for quick keyboard control in any mode
-  if (typeof (pi as any).registerShortcut === "function") {
-    (pi as any).registerShortcut("alt+v", {
-      description: "Abrir menú interactivo de Pi Voice",
-      handler: async (ctx: ExtensionContext) => {
-        await openVoiceMenu(ctx);
-      },
-    });
+  // Register shortcuts dynamically based on configuration
+  const registerAllShortcuts = (ctx?: ExtensionContext) => {
+    if (typeof (pi as any).registerShortcut !== "function") return;
 
-    (pi as any).registerShortcut("alt+s", {
-      description: "Detener reproducción de voz inmediatamente",
-      handler: async (ctx: ExtensionContext) => {
-        stopPlayback(ctx);
-        if (ctx.ui) {
-          ctx.ui.notify("⏹️ Audio detenido", "info");
-        }
-      },
-    });
+    const sc = config.shortcuts || {
+      menu: "alt+v",
+      stop: "alt+s",
+      record: "alt+r",
+      volumeUp: "alt+up",
+      volumeDown: "alt+down",
+    };
 
-    (pi as any).registerShortcut("alt+r", {
-      description: "Alternar grabación de voz para dictado de prompts",
-      handler: async (ctx: ExtensionContext) => {
-        await toggleRecording(ctx);
-      },
-    });
+    if (sc.menu) {
+      (pi as any).registerShortcut(sc.menu, {
+        description: "Abrir menú interactivo de Pi Voice",
+        handler: async (c: ExtensionContext) => {
+          await openVoiceMenu(c);
+        },
+      });
+    }
 
-    (pi as any).registerShortcut("alt+up", {
-      description: "Subir volumen de voz (+10%)",
-      handler: async (ctx: ExtensionContext) => {
-        const current = config.volume ?? 1.0;
-        const next = Math.min(1.5, Math.round((current + 0.1) * 10) / 10);
-        config = configManager.save({ volume: next });
-        player.setVolume(next);
-        if (ctx.ui) {
-          ctx.ui.notify(`🔊 Volumen: ${Math.round(next * 100)}%`, "info");
-        }
-        updateUiState(ctx);
-      },
-    });
+    if (sc.stop) {
+      (pi as any).registerShortcut(sc.stop, {
+        description: "Detener reproducción de voz inmediatamente",
+        handler: async (c: ExtensionContext) => {
+          stopPlayback(c);
+          if (c.ui) {
+            c.ui.notify("⏹️ Audio detenido", "info");
+          }
+        },
+      });
+    }
 
-    (pi as any).registerShortcut("alt+down", {
-      description: "Bajar volumen de voz (-10%)",
-      handler: async (ctx: ExtensionContext) => {
-        const current = config.volume ?? 1.0;
-        const next = Math.max(0.0, Math.round((current - 0.1) * 10) / 10);
-        config = configManager.save({ volume: next });
-        player.setVolume(next);
-        if (ctx.ui) {
-          ctx.ui.notify(`🔉 Volumen: ${Math.round(next * 100)}%`, "info");
-        }
-        updateUiState(ctx);
-      },
-    });
-  }
+    if (sc.record) {
+      (pi as any).registerShortcut(sc.record, {
+        description: "Alternar grabación de voz para dictado de prompts",
+        handler: async (c: ExtensionContext) => {
+          await toggleRecording(c);
+        },
+      });
+    }
+
+    if (sc.volumeUp) {
+      (pi as any).registerShortcut(sc.volumeUp, {
+        description: "Subir volumen de voz (+10%)",
+        handler: async (c: ExtensionContext) => {
+          const current = config.volume ?? 1.0;
+          const next = Math.min(1.5, Math.round((current + 0.1) * 10) / 10);
+          config = configManager.save({ volume: next });
+          player.setVolume(next);
+          if (c.ui) {
+            c.ui.notify(`🔊 Volumen: ${Math.round(next * 100)}%`, "info");
+          }
+          updateUiState(c);
+        },
+      });
+    }
+
+    if (sc.volumeDown) {
+      (pi as any).registerShortcut(sc.volumeDown, {
+        description: "Bajar volumen de voz (-10%)",
+        handler: async (c: ExtensionContext) => {
+          const current = config.volume ?? 1.0;
+          const next = Math.max(0.0, Math.round((current - 0.1) * 10) / 10);
+          config = configManager.save({ volume: next });
+          player.setVolume(next);
+          if (c.ui) {
+            c.ui.notify(`🔉 Volumen: ${Math.round(next * 100)}%`, "info");
+          }
+          updateUiState(c);
+        },
+      });
+    }
+  };
+
+  registerAllShortcuts();
 
   // Register command /voice
   pi.registerCommand("voice", {
@@ -621,6 +649,61 @@ export default function (pi: ExtensionAPI) {
             ctx.ui.notify(
               "Uso de /voice custom: url <url> | method <POST|GET> | format <wav|mp3> | activate",
               "info"
+            );
+          }
+          break;
+        }
+
+        case "shortcuts":
+        case "shortcut":
+        case "keybinding": {
+          const sc = config.shortcuts || {
+            menu: "alt+v",
+            stop: "alt+s",
+            record: "alt+r",
+            volumeUp: "alt+up",
+            volumeDown: "alt+down",
+          };
+          const subParts = val.trim().split(/\s+/);
+          const targetAction = subParts[0]?.toLowerCase();
+          const targetKey = subParts[1]?.toLowerCase();
+
+          if (!targetAction) {
+            const list = [
+              "Atajos de teclado configurados:",
+              `  menu:       ${sc.menu}`,
+              `  stop:       ${sc.stop}`,
+              `  record:     ${sc.record}`,
+              `  volumeUp:   ${sc.volumeUp}`,
+              `  volumeDown: ${sc.volumeDown}`,
+              "",
+              "Para cambiar uno: /voice shortcut <accion> <tecla> (ej: /voice shortcut record f8)",
+            ].join("\n");
+            if (ctx.ui.editor) {
+              await ctx.ui.editor("Atajos de Voz", list);
+            } else {
+              ctx.ui.notify(list, "info");
+            }
+            return;
+          }
+
+          if (
+            ["menu", "stop", "record", "volumeup", "volumedown"].includes(targetAction) &&
+            targetKey
+          ) {
+            const normalizedAction =
+              targetAction === "volumeup"
+                ? "volumeUp"
+                : targetAction === "volumedown"
+                ? "volumeDown"
+                : targetAction;
+            config = configManager.updateNested("shortcuts", { [normalizedAction]: targetKey });
+            registerAllShortcuts(ctx);
+            ctx.ui.notify(`Atajo para ${normalizedAction} actualizado a: ${targetKey}`, "info");
+          } else {
+            ctx.ui.notify(
+              "Uso: /voice shortcut <menu|stop|record|volumeUp|volumeDown> <tecla>",
+              "warning"
             );
           }
           break;

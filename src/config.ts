@@ -49,6 +49,14 @@ export interface STTConfig {
   language?: string;
 }
 
+export interface VoiceShortcutsConfig {
+  menu: string;
+  stop: string;
+  record: string;
+  volumeUp: string;
+  volumeDown: string;
+}
+
 export interface VoicePluginConfig {
   enabled: boolean;
   autoRead: boolean;
@@ -63,6 +71,7 @@ export interface VoicePluginConfig {
   kokoro: KokoroProviderConfig;
   custom: CustomProviderConfig;
   stt: STTConfig;
+  shortcuts: VoiceShortcutsConfig;
 }
 
 export const DEFAULT_CONFIG: VoicePluginConfig = {
@@ -108,6 +117,13 @@ export const DEFAULT_CONFIG: VoicePluginConfig = {
     baseUrl: "https://api.openai.com/v1",
     model: "whisper-1",
     language: "es",
+  },
+  shortcuts: {
+    menu: "alt+v",
+    stop: "alt+s",
+    record: "alt+r",
+    volumeUp: "alt+up",
+    volumeDown: "alt+down",
   },
 };
 
@@ -200,7 +216,7 @@ export class ConfigManager {
     return this.currentConfig;
   }
 
-  public updateNested<K extends "openai" | "elevenlabs" | "kokoro" | "custom" | "stt">(
+  public updateNested<K extends "openai" | "elevenlabs" | "kokoro" | "custom" | "stt" | "shortcuts">(
     section: K,
     updates: Partial<VoicePluginConfig[K]>
   ): VoicePluginConfig {
@@ -238,6 +254,10 @@ export class ConfigManager {
       stt: {
         ...base.stt,
         ...(incoming.stt || {}),
+      },
+      shortcuts: {
+        ...base.shortcuts,
+        ...(incoming.shortcuts || {}),
       },
     };
   }

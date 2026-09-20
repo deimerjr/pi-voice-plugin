@@ -18,6 +18,7 @@ import {
   type VoicePluginConfig,
   type SpeechProviderType,
   type CodeFilterMode,
+  type VoiceShortcutsConfig,
 } from "./config.ts";
 import { AudioPlayer } from "./player.ts";
 import { createTTSProvider } from "./providers/factory.ts";
@@ -29,7 +30,8 @@ export type MenuScreen =
   | "custom_api"
   | "speed"
   | "filter"
-  | "volume";
+  | "volume"
+  | "shortcuts";
 
 export interface VoiceMenuOptions {
   configManager: ConfigManager;
@@ -150,6 +152,7 @@ export class VoiceMenuComponent extends Container {
     else if (this.currentScreen === "speed") titleText = "⚡ Velocidad de Locución";
     else if (this.currentScreen === "filter") titleText = "🧹 Filtro de Código y Markdown";
     else if (this.currentScreen === "volume") titleText = "🔊 Control de Volumen";
+    else if (this.currentScreen === "shortcuts") titleText = "⌨️ Configurar Atajos y Comandos";
 
     this.addChild(
       new Text(this.theme.fg("accent", this.theme.bold(` ${titleText} `)), 0, 0)
@@ -247,6 +250,11 @@ export class VoiceMenuComponent extends Container {
             value: "goto_volume",
             label: `🔊 Control de Volumen (${Math.round((config.volume ?? 1.0) * 100)}%)...`,
             description: "Ajustar volumen del audio (0% a 150%)",
+          },
+          {
+            value: "goto_shortcuts",
+            label: "⌨️ Configurar Atajos de Teclado y Teclas...",
+            description: "Personalizar las teclas para dictar, parar, volumen y menú",
           },
           {
             value: "goto_speed",
@@ -514,6 +522,54 @@ export class VoiceMenuComponent extends Container {
         return items;
       }
 
+      case "shortcuts": {
+        const sc = config.shortcuts || {
+          menu: "alt+v",
+          stop: "alt+s",
+          record: "alt+r",
+          volumeUp: "alt+up",
+          volumeDown: "alt+down",
+        };
+
+        return [
+          {
+            value: "change_sc:record",
+            label: `🎙️ Dictado de voz: [ ${sc.record} ]`,
+            description: "Clic para cambiar la tecla de inicio/parada de dictado",
+          },
+          {
+            value: "change_sc:stop",
+            label: `⏹️ Detener audio: [ ${sc.stop} ]`,
+            description: "Clic para cambiar la tecla de parada inmediata de audio",
+          },
+          {
+            value: "change_sc:menu",
+            label: `⚙️ Abrir Menú: [ ${sc.menu} ]`,
+            description: "Clic para cambiar la tecla de acceso rápido al menú",
+          },
+          {
+            value: "change_sc:volumeUp",
+            label: `🔊 Subir volumen: [ ${sc.volumeUp} ]`,
+            description: "Clic para cambiar la tecla para subir volumen (+10%)",
+          },
+          {
+            value: "change_sc:volumeDown",
+            label: `🔉 Bajar volumen: [ ${sc.volumeDown} ]`,
+            description: "Clic para cambiar la tecla para bajar volumen (-10%)",
+          },
+          {
+            value: "reset_shortcuts",
+            label: "🔄 Restaurar atajos por defecto (Alt+R, Alt+S, etc.)",
+            description: "Reestablece las combinaciones recomendadas",
+          },
+          {
+            value: "back",
+            label: "⬅️ Volver al menú principal",
+            description: "Regresar a las opciones principales",
+          },
+        ];
+      }
+
       case "filter": {
         const modes: { mode: CodeFilterMode; title: string; desc: string }[] = [
           {
@@ -585,6 +641,14 @@ export class VoiceMenuComponent extends Container {
     if (value === "goto_custom_api") {
       this.statusNotice = undefined;
       this.currentScreen = "custom_api";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "goto_shortcuts") {
+      this.statusNotice = undefined;
+      this.currentScreen = "shortcuts";
       this.renderScreen();
       this.tui.requestRender();
       return;
@@ -858,6 +922,44 @@ export class VoiceMenuComponent extends Container {
           this.ctx.ui.notify(`Volumen configurado al ${parsed}%`, "info");
         }
       }
+      return;
+    }
+
+    if (value.startsWith("change_sc:")) {
+      const actionKey = value.slice(10) as keyof VoiceShortcutsConfig;
+      if (this.ctx.ui.input) {
+        this.onClose();
+        const currentKey = this.configManager.getConfig().shortcuts?.[actionKey] || "";
+        const newKey = await this.ctx.ui.input(
+          `Ingresá nuevo atajo para ${actionKey} (ej: alt+r, ctrl+r, f8):`,
+          currentKey
+        );
+        if (newKey && newKey.trim()) {
+          const cleanKey = newKey.trim().toLowerCase();
+          const updated = this.configManager.updateNested("shortcuts", {
+            [actionKey]: cleanKey,
+          });
+          this.onConfigChanged(updated);
+          this.ctx.ui.notify(`Atajo para ${actionKey} cambiado a: ${cleanKey}`, "info");
+        }
+      }
+      return;
+    }
+
+    if (value === "reset_shortcuts") {
+      const updated = this.configManager.save({
+        shortcuts: {
+          menu: "alt+v",
+          stop: "alt+s",
+          record: "alt+r",
+          volumeUp: "alt+up",
+          volumeDown: "alt+down",
+        },
+      });
+      this.onConfigChanged(updated);
+      this.statusNotice = "✓ Atajos restaurados a los valores por defecto";
+      this.renderScreen();
+      this.tui.requestRender();
       return;
     }
 
