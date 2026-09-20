@@ -299,6 +299,11 @@ export class VoiceMenuComponent extends Container {
           });
 
           items.push({
+            value: "kokoro_custom_voice",
+            label: "✨ Crear voz personalizada o mezclar (Blend)...",
+            description: "Ingresá un nombre guardado o fórmula (ej: ef_dora:0.6,af_heart:0.4)",
+          });
+          items.push({
             value: "back",
             label: "⬅️ Volver al menú principal",
             description: "Regresar a las opciones principales",
@@ -588,6 +593,25 @@ export class VoiceMenuComponent extends Container {
 
       // Play audio sample in background
       this.playVoiceSample(voiceName, config.provider);
+      return;
+    }
+
+    if (value === "kokoro_custom_voice") {
+      if (this.ctx.ui.input) {
+        this.onClose();
+        const inputVoice = await this.ctx.ui.input(
+          "Voz Kokoro o fórmula blend (ej: dora_heart o ef_dora:0.7,af_bella:0.3):",
+          this.configManager.getConfig().kokoro.voice
+        );
+        if (inputVoice && inputVoice.trim()) {
+          const updated = this.configManager.updateNested("kokoro", {
+            voice: inputVoice.trim(),
+          });
+          this.onConfigChanged(updated);
+          this.ctx.ui.notify(`Voz Kokoro configurada: ${inputVoice.trim()}`, "info");
+          this.playVoiceSample(inputVoice.trim(), "kokoro");
+        }
+      }
       return;
     }
 
