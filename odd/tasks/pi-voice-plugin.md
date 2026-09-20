@@ -16,3 +16,4 @@ Plugin/Extensión para Pi CLI que sintetiza en voz las respuestas del asistente 
 - [x] Task 10: Implement one-click Stop button and Speaker volume control in Pi Voice Plugin [commit: f42b8ce]
 - [x] Task 11: Implement Speech-to-Text (STT) voice input with native recorder, Whisper transcription, and Alt+R shortcut [commit: 20f7148]
 - [x] Task 12: Fix Theme.bg crash on record button press and add customizable voice shortcuts in visual menu and CLI [commit: e55b3ea]
+- [x] Task 13: Redesign menu UI (pure black background, monochrome icons, single unified API hub, wider dialog, and Whisper silence/hallucination filter) [commit: b6636df]
