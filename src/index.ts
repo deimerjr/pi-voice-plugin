@@ -66,10 +66,10 @@ export class VoiceControlBarComponent implements Component {
     if (event.button !== "left") return undefined;
 
     const clickX = event.x;
-    const isOverStop = clickX >= 0 && clickX < this.stopWidth;
-    const volStart = this.stopWidth + this.gapWidth;
-    const volEnd = volStart + this.volWidth;
-    const isOverVol = clickX >= volStart && clickX <= volEnd;
+    const isOverStop = clickX >= 0 && clickX <= this.stopWidth;
+    const volStart = this.stopWidth;
+    const volEnd = volStart + this.gapWidth + this.volWidth + 4;
+    const isOverVol = clickX > volStart && clickX <= volEnd;
 
     if (!isOverStop && !isOverVol) return undefined;
 
@@ -295,12 +295,52 @@ export default function (pi: ExtensionAPI) {
     }
   });
 
-  // Register shortcut to open voice menu directly (if supported by host)
+  // Register shortcuts for quick keyboard control in any mode
   if (typeof (pi as any).registerShortcut === "function") {
     (pi as any).registerShortcut("ctrl+alt+v", {
       description: "Abrir menú interactivo de Pi Voice",
       handler: async (ctx: ExtensionContext) => {
         await openVoiceMenu(ctx);
+      },
+    });
+
+    (pi as any).registerShortcut("ctrl+alt+s", {
+      description: "Detener reproducción de voz inmediatamente",
+      handler: async (ctx: ExtensionContext) => {
+        player.stop();
+        isSynthesizing = false;
+        if (ctx.ui) {
+          ctx.ui.notify("⏹️ Audio detenido", "info");
+        }
+        updateUiState(ctx);
+      },
+    });
+
+    (pi as any).registerShortcut("ctrl+alt+up", {
+      description: "Subir volumen de voz (+10%)",
+      handler: async (ctx: ExtensionContext) => {
+        const current = config.volume ?? 1.0;
+        const next = Math.min(1.5, Math.round((current + 0.1) * 10) / 10);
+        config = configManager.save({ volume: next });
+        player.setVolume(next);
+        if (ctx.ui) {
+          ctx.ui.notify(`🔊 Volumen: ${Math.round(next * 100)}%`, "info");
+        }
+        updateUiState(ctx);
+      },
+    });
+
+    (pi as any).registerShortcut("ctrl+alt+down", {
+      description: "Bajar volumen de voz (-10%)",
+      handler: async (ctx: ExtensionContext) => {
+        const current = config.volume ?? 1.0;
+        const next = Math.max(0.0, Math.round((current - 0.1) * 10) / 10);
+        config = configManager.save({ volume: next });
+        player.setVolume(next);
+        if (ctx.ui) {
+          ctx.ui.notify(`🔉 Volumen: ${Math.round(next * 100)}%`, "info");
+        }
+        updateUiState(ctx);
       },
     });
   }
