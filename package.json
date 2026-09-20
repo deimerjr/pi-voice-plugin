@@ -15,7 +15,8 @@
   "scripts": {
     "test": "node --experimental-strip-types --test 'src/**/*.test.ts'",
     "serve:landing": "python3 -m http.server 3000 --bind 0.0.0.0 --directory landing",
-    "tunnel": "cloudflared tunnel --url http://127.0.0.1:3000"
+    "tunnel": "cloudflared tunnel --url http://127.0.0.1:3000",
+    "deploy:surge": "npx surge landing gentle-pi-voice.surge.sh"
   },
   "files": [
     "src",
