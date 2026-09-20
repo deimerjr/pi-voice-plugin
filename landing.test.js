@@ -199,27 +199,10 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
     });
   });
 
-  describe("Terminal Theater Engine (theater.html & theater.js)", () => {
-    const theaterHtmlPath = path.join(__dirname, "theater.html");
-    const theaterJsPath = path.join(__dirname, "theater.js");
-
-    it("ensures theater.html and theater.js exist", () => {
-      assert.ok(fs.existsSync(theaterHtmlPath), "theater.html must exist");
-      assert.ok(fs.existsSync(theaterJsPath), "theater.js must exist");
-    });
-
-    it("ensures theater.html incorporates Gentleman-Sexy-Djr theme variables", () => {
-      const html = fs.readFileSync(theaterHtmlPath, "utf-8");
-      assert.match(html, /--bg:\s*#070508/i);
-      assert.match(html, /--border:\s*#723C54/i);
-      assert.match(html, /--active-pink:\s*#FF4F9A/i);
-      assert.match(html, /--champagne:\s*#F0D28A/i);
-      assert.match(html, /--violet:\s*#CEAAFF/i);
-      assert.match(html, /--diff-added:\s*#7CEAA4/i);
-    });
-
-    it("ensures theater.html has speaker HUD, wave canvas, and all 4 agent scenes", () => {
-      const html = fs.readFileSync(theaterHtmlPath, "utf-8");
+  describe("Integrated Terminal Theater Engine (index.html & app.js)", () => {
+    it("ensures index.html contains the full integrated Gentleman-Sexy-Djr terminal theater", () => {
+      const html = fs.readFileSync(htmlPath, "utf-8");
+      assert.match(html, /class="theater-terminal-wrapper"/);
       assert.match(html, /id="speaker-hud"/);
       assert.match(html, /id="wave-canvas"/);
       assert.match(html, /id="scene-gentleman"/);
@@ -227,17 +210,28 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
       assert.match(html, /id="scene-alex"/);
       assert.match(html, /id="scene-santa"/);
       assert.match(html, /id="btn-play-theater"/);
+      assert.match(html, /id="btn-restart-theater"/);
       assert.match(html, /id="btn-record-video"/);
+      assert.match(html, /Gentleman-Sexy-Djr/);
     });
 
-    it("ensures theater.js configures SCENES_DATA, audio analyser and MediaRecorder", () => {
-      const js = fs.readFileSync(theaterJsPath, "utf-8");
-      assert.match(js, /SCENES_DATA\s*=\s*\[/);
-      assert.match(js, /audio\/gentleman\.wav/);
-      assert.match(js, /audio\/dora\.wav/);
-      assert.match(js, /audio\/alex\.wav/);
-      assert.match(js, /audio\/santa\.wav/);
-      assert.match(js, /createAnalyser/);
+    it("ensures styles.css defines Gentleman-Sexy-Djr terminal styling", () => {
+      const css = fs.readFileSync(cssPath, "utf-8");
+      assert.match(css, /\.theater-terminal-wrapper/);
+      assert.match(css, /#070508/);
+      assert.match(css, /#723C54/);
+      assert.match(css, /#FF4F9A/);
+      assert.match(css, /#F0D28A/);
+      assert.match(css, /#wave-canvas/);
+    });
+
+    it("ensures app.js contains unified animation sequencer, analyser and video recorder", () => {
+      const js = fs.readFileSync(jsPath, "utf-8");
+      assert.match(js, /CUADRILLA_DATA\s*=\s*\{/);
+      assert.match(js, /SCENES_ORDER/);
+      assert.match(js, /drawWaveform/);
+      assert.match(js, /startFullTheater/);
+      assert.match(js, /setupVideoRecorder/);
       assert.match(js, /MediaRecorder/);
       assert.match(js, /video\/webm/);
     });
