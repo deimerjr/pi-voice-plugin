@@ -52,6 +52,53 @@ describe("VoiceMenuComponent", () => {
     // Test Escape key closes menu from main screen
     menu.handleInput("escape");
     assert.equal(closed, true);
+
+    // Test Kitty protocol Escape sequence closes menu
+    let closedKitty = false;
+    const menu2 = new VoiceMenuComponent({
+      configManager,
+      player,
+      theme: mockTheme,
+      tui: mockTui,
+      ctx: mockCtx,
+      onClose: () => {
+        closedKitty = true;
+      },
+      onConfigChanged: () => {},
+    });
+    menu2.handleInput("\x1b[27;1;27~");
+    assert.equal(closedKitty, true);
+  });
+
+  it("Escape in submenu navigates back to main menu then closes", () => {
+    let closed = false;
+    const menu = new VoiceMenuComponent({
+      configManager,
+      player,
+      theme: mockTheme,
+      tui: mockTui,
+      ctx: mockCtx,
+      initialScreen: "main",
+      onClose: () => {
+        closed = true;
+      },
+      onConfigChanged: () => {},
+    });
+
+    // Simulate selecting 'goto_voices' to go into voices submenu
+    (menu as any).handleItemSelection("goto_voices");
+    const submenuLines = menu.render(80);
+    assert.ok(submenuLines.some((l) => l.includes("Voces y Muestras")));
+
+    // First Escape should return to main menu, NOT close
+    menu.handleInput("\x1b");
+    assert.equal(closed, false);
+    const mainLines = menu.render(80);
+    assert.ok(mainLines.some((l) => l.includes("Menú de Voz")));
+
+    // Second Escape should close the menu
+    menu.handleInput("\x1b");
+    assert.equal(closed, true);
   });
 
   it("handles mouse event dispatch without errors", () => {

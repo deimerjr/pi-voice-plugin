@@ -3,6 +3,8 @@ import {
   Text,
   SelectList,
   Spacer,
+  matchesKey,
+  Key,
   type SelectItem,
   type SelectListTheme,
   type Theme,
@@ -62,6 +64,7 @@ export class VoiceMenuComponent extends Container {
   private onClose: () => void;
   private onConfigChanged: (newConfig: VoicePluginConfig) => void;
 
+  private initialScreen: MenuScreen = "main";
   private currentScreen: MenuScreen = "main";
   private activeSelectList: SelectList | null = null;
   private statusNotice?: string;
@@ -77,21 +80,22 @@ export class VoiceMenuComponent extends Container {
     this.lastAssistantText = options.lastAssistantText;
     this.onClose = options.onClose;
     this.onConfigChanged = options.onConfigChanged;
-    this.currentScreen = options.initialScreen || "main";
+    this.initialScreen = options.initialScreen || "main";
+    this.currentScreen = this.initialScreen;
 
     this.renderScreen();
   }
 
   public handleInput(keyData: string): void {
-    if (keyData === "\x1b" || keyData === "escape") {
-      if (this.currentScreen !== "main") {
-        this.statusNotice = undefined;
-        this.currentScreen = "main";
-        this.renderScreen();
-        this.tui.requestRender();
-        return;
-      }
-      this.onClose();
+    if (
+      matchesKey(keyData, "escape") ||
+      matchesKey(keyData, Key.escape) ||
+      matchesKey(keyData, "ctrl+c") ||
+      keyData === "\x1b" ||
+      keyData === "escape" ||
+      keyData === "esc"
+    ) {
+      this.goBackOrClose();
       return;
     }
 
@@ -99,6 +103,17 @@ export class VoiceMenuComponent extends Container {
       this.activeSelectList.handleInput(keyData);
       this.tui.requestRender();
     }
+  }
+
+  private goBackOrClose(): void {
+    if (this.currentScreen !== "main" && this.initialScreen !== this.currentScreen) {
+      this.statusNotice = undefined;
+      this.currentScreen = "main";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+    this.onClose();
   }
 
   public override handleMouse(event: TuiMouseEvent): TuiMouseEventResult | undefined {
@@ -164,6 +179,9 @@ export class VoiceMenuComponent extends Container {
     const list = new SelectList(items, maxVisible, selectTheme);
     list.onSelect = (selectedItem: SelectItem) => {
       this.handleItemSelection(selectedItem.value);
+    };
+    list.onCancel = () => {
+      this.goBackOrClose();
     };
 
     this.activeSelectList = list;
@@ -529,10 +547,7 @@ export class VoiceMenuComponent extends Container {
     }
 
     if (value === "back") {
-      this.statusNotice = undefined;
-      this.currentScreen = "main";
-      this.renderScreen();
-      this.tui.requestRender();
+      this.goBackOrClose();
       return;
     }
 
