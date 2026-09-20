@@ -17,6 +17,12 @@ dist/
 *.tmp.wav
 *.tmp.mp3
 
+# Zip bundles
+*.zip
+
+# Netlify local state
+.netlify/
+
 # Playground tests
 playground/
 
