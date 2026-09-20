@@ -22,6 +22,13 @@ Plugin / Extensión modular para **Pi CLI** que sintetiza en voz las respuestas 
     - **Programador (`gentle-ai-worker` / Worker)**: `em_alex` (masculina técnica y directa).
     - **Auditor (`gentle-ai-verify` / Reviewer)**: `em_santa` (grave, pausada y autoritaria).
   - Anuncia oralmente cuándo inicia cada subagente y sintetiza un resumen ejecutivo TL;DR de lo logrado al finalizar su tarea.
+- **Locución de Fases del Orquestador (Transmisión en Vivo)**:
+  - Cuando el orquestador trabaja de forma directa (sin delegar subagentes o en desarrollo ODD), transmite oralmente cada fase en tiempo real:
+    - Anuncia la planificación inicial de fases (herramienta `todo`).
+    - Anuncia el inicio de cada fase (*"Jefe, arranco la fase: [nombre]..."*).
+    - Anuncia el cierre de cada fase (*"Jefe, quedó lista la fase: [nombre]..."*).
+    - Anuncia la ejecución y el resultado de las suites de prueba (*"Jefe, voy a correr las pruebas..."* y confirmación de resultado).
+  - Se controla con `/voice phases [on|off]` o desde el menú visual interactivo.
 - **Modo Audio TL;DR (Resumen Ejecutivo Breve)**:
   - En lugar de escuchar toda una respuesta larga de 4 párrafos, el modo TL;DR (`/voice tldr`) sintetiza en 1 o 2 oraciones clave lo que se hizo antes de hablar.
 - **Entrada Directa de Voz (Dictado de Prompts / STT)**:
@@ -76,6 +83,7 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 | `/voice record` / `/voice dictar` | Inicia o finaliza la grabación de voz para dictar prompts (`Alt + R`) |
 | `/voice crew [on\|off]` | Alterna el modo interactivo de cuadrilla ("Jefe") |
 | `/voice agents [on\|off]` | Alterna las voces diferenciadas y avisos para subagentes |
+| `/voice phases [on\|off]` | Alterna la locución de fases del orquestador en ejecuciones directas |
 | `/voice tldr` / `/voice resumen` | Alterna el modo de resumen ejecutivo breve (TL;DR) |
 | `/voice on` | Activa la lectura automática tras cada respuesta |
 | `/voice off` | Desactiva la lectura automática (modo silencioso) |

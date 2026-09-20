@@ -98,6 +98,11 @@ export class TldrSummarizer {
       [/\bno blockers\b/gi, "sin bloqueos"],
       [/\bnone\b/gi, "ninguno"],
       [/\bfound (\d+) files\b/gi, "se encontraron $1 archivos"],
+      [/\bcreate unit tests\b/gi, "crear pruebas unitarias"],
+      [/\bunit tests\b/gi, "pruebas unitarias"],
+      [/\bverification\b/gi, "verificación"],
+      [/\bdocumentation\b/gi, "documentación"],
+      [/\band\b/gi, "y"],
       [/\bcoverage\b/gi, "cobertura"],
     ];
     for (const [pattern, repl] of replacements) {

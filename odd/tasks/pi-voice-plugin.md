@@ -21,3 +21,5 @@ Plugin/Extensión para Pi CLI que sintetiza en voz las respuestas del asistente 
 - [x] Task 15: Implement Multi-Agent Spanish Voice Personas with start/end task announcements and synthesis (`dora_heart`, `ef_dora`, `em_alex`, `em_santa`) [commit: 2b9fdd4]
 - [x] Task 16: Ensure 100% Spanish translation for subagent start announcements and end summaries (`TldrSummarizer.quickTranslateCommonEnglish` and LLM translation) [commit: 7612b23]
 - [x] Task 17: Implement conversational "Modo Cuadrilla" addressing user as Jefe with inter-agent baton passing and live dialogue [commit: 21bb92b]
+- [x] Task 18: Implement live Orchestrator Phase Voice Announcer for direct task transitions and test executions (`/voice phases`, `cleanPhaseTitle`, `knownTodoTasks`)
+

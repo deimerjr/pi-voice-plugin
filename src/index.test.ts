@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import voiceExtension, { VoiceControlBarComponent, resolveSubagentVoice } from "./index.ts";
+import voiceExtension, { VoiceControlBarComponent, resolveSubagentVoice, cleanPhaseTitle } from "./index.ts";
 import { DEFAULT_CONFIG } from "./config.ts";
 
 describe("Voice Extension Entrypoint", () => {
@@ -73,6 +73,13 @@ describe("Voice Extension Entrypoint", () => {
 
       // Run /voice tldr
       await registeredCommandOpts.handler("tldr", mockCtx);
+
+      // Run /voice phases
+      await registeredCommandOpts.handler("phases off", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("fases del orquestador DESACTIVADA")));
+
+      await registeredCommandOpts.handler("phases on", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("fases del orquestador ACTIVADA")));
       assert.ok(notifications.some((n) => n.msg.includes("TL;DR ACTIVADO")));
 
       // Test input cancels speech
@@ -189,5 +196,24 @@ describe("Voice Extension Entrypoint", () => {
     assert.equal(reviewer.role, "Auditor");
     assert.equal(reviewer.name, "Santa");
     assert.equal(reviewer.voice, "em_santa");
+  });
+
+  it("cleans and translates orchestrator phase titles correctly", () => {
+    assert.equal(
+      cleanPhaseTitle("Task 1: HTML Architecture & Semantic Structure"),
+      "HTML Architecture & Semantic Structure"
+    );
+    assert.equal(
+      cleanPhaseTitle("#2 - `src/index.ts` setup"),
+      "src/index.ts setup"
+    );
+    assert.equal(
+      cleanPhaseTitle("Task 3: create unit tests and verification"),
+      "crear pruebas unitarias y verificación"
+    );
+    assert.equal(
+      cleanPhaseTitle(""),
+      ""
+    );
   });
 });
