@@ -418,6 +418,8 @@ export class VoiceMenuComponent extends Container {
             { id: "ef_dora", name: "Dora (Español)", desc: "Femenina, natural y fluida" },
             { id: "em_alex", name: "Alex (Español)", desc: "Masculina, clara y cercana" },
             { id: "em_santa", name: "Santa (Español)", desc: "Masculina, tono narrador" },
+            { id: "mateo", name: "Mateo (Español)", desc: "Masculina fresca, clara y natural (Híbrida Michael)" },
+            { id: "adrian", name: "Adrián (Español)", desc: "Masculina cálida, profunda y segura (Híbrida Adam)" },
             { id: "fenrir_es", name: "Fenrir (Español)", desc: "Masculina profunda, autoritaria y cinematográfica (Híbrida)" },
             { id: "juan_carlos", name: "Juan Carlos (Clonada)", desc: "Masculina expresiva, enérgica y amistosa (Locutor)" },
             { id: "valeria", name: "Valeria (Clonada)", desc: "Femenina ejecutiva, dicción nítida y tono elegante (Clon ElevenLabs)" },
