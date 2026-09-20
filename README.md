@@ -10,6 +10,13 @@ Plugin / Extensión modular para **Pi CLI** que sintetiza en voz las respuestas 
   - Un botón widget interactivo colocado al pie del editor `[ 🎙️ Voice: ON/OFF (voz) • Clic: Menú ⚙️ ]` que podés clickear directamente con el ratón.
   - Interfaz visual por overlays con navegación por mouse y teclado (flechas, Enter, Escape).
   - Atajo rápido global `ctrl+alt+v` o comando `/voice menu` / `/voice`.
+- **Voces Diferenciadas por Subagente / Rol (Español Nativo)**:
+  - Cada agente del harness tiene su propio timbre de voz asignado en español:
+    - **Orquestador (`el Gentleman`)**: `dora_heart` (cálida y equilibrada).
+    - **Explorador (`gentle-ai-explore` / Scout)**: `ef_dora` (femenina ágil y descriptiva).
+    - **Programador (`gentle-ai-worker` / Worker)**: `em_alex` (masculina técnica y directa).
+    - **Auditor (`gentle-ai-verify` / Reviewer)**: `em_santa` (grave, pausada y autoritaria).
+  - Anuncia oralmente cuándo inicia cada subagente y sintetiza un resumen ejecutivo TL;DR de lo logrado al finalizar su tarea.
 - **Modo Audio TL;DR (Resumen Ejecutivo Breve)**:
   - En lugar de escuchar toda una respuesta larga de 4 párrafos, el modo TL;DR (`/voice tldr`) sintetiza en 1 o 2 oraciones clave lo que se hizo antes de hablar.
 - **Entrada Directa de Voz (Dictado de Prompts / STT)**:
@@ -62,6 +69,7 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 | :--- | :--- |
 | `/voice` / `/voice menu` | Abre el menú visual interactivo con soporte de mouse |
 | `/voice record` / `/voice dictar` | Inicia o finaliza la grabación de voz para dictar prompts (`Alt + R`) |
+| `/voice agents [on\|off]` | Alterna las voces diferenciadas y avisos para subagentes |
 | `/voice tldr` / `/voice resumen` | Alterna el modo de resumen ejecutivo breve (TL;DR) |
 | `/voice on` | Activa la lectura automática tras cada respuesta |
 | `/voice off` | Desactiva la lectura automática (modo silencioso) |

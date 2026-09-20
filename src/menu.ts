@@ -20,6 +20,7 @@ import {
   type SpeechProviderType,
   type CodeFilterMode,
   type VoiceShortcutsConfig,
+  type SubagentVoicesConfig,
 } from "./config.ts";
 import { AudioPlayer } from "./player.ts";
 import { createTTSProvider } from "./providers/factory.ts";
@@ -30,6 +31,7 @@ export type MenuScreen =
   | "api_hub"
   | "volume"
   | "shortcuts"
+  | "subagents"
   | "speed"
   | "filter";
 
@@ -161,6 +163,7 @@ export class VoiceMenuComponent extends Container {
     else if (this.currentScreen === "api_hub") titleText = "Configuración de APIs y Proveedores";
     else if (this.currentScreen === "volume") titleText = "Control de Volumen";
     else if (this.currentScreen === "shortcuts") titleText = "Atajos de Teclado y Teclas";
+    else if (this.currentScreen === "subagents") titleText = "Voces de Agentes y Roles";
     else if (this.currentScreen === "speed") titleText = "Velocidad de Locución";
     else if (this.currentScreen === "filter") titleText = "Filtro de Código y Formato";
 
@@ -273,6 +276,11 @@ export class VoiceMenuComponent extends Container {
             value: "goto_shortcuts",
             label: "◆ Atajos de Teclado...",
             description: "Personalizar teclas para dictar, parar, volumen y menú",
+          },
+          {
+            value: "goto_subagents",
+            label: "◆ Voces de Agentes y Roles...",
+            description: "Personalizar voz y avisos para Scout, Worker y Reviewer",
           },
           {
             value: "goto_speed",
@@ -558,6 +566,66 @@ export class VoiceMenuComponent extends Container {
         ];
       }
 
+      case "subagents": {
+        const sub = config.subagents || {
+          enabled: true,
+          announceStart: true,
+          announceEnd: true,
+          orchestrator: "dora_heart",
+          scout: "ef_dora",
+          worker: "em_alex",
+          reviewer: "em_santa",
+        };
+
+        return [
+          {
+            value: "sub_toggle_enabled",
+            label: `${sub.enabled ? "●" : "○"} Voces de Agentes: ${sub.enabled ? "ACTIVADO" : "DESACTIVADO"}`,
+            description: "Activa voces diferenciadas para cada subagente",
+          },
+          {
+            value: "sub_toggle_start",
+            label: `${sub.announceStart ? "●" : "○"} Anunciar inicio de tarea: ${sub.announceStart ? "SÍ" : "NO"}`,
+            description: "Locución oral cuando un subagente empieza a trabajar",
+          },
+          {
+            value: "sub_toggle_end",
+            label: `${sub.announceEnd ? "●" : "○"} Anunciar fin y resumen: ${sub.announceEnd ? "SÍ" : "NO"}`,
+            description: "Síntesis oral de lo logrado al terminar cada tarea",
+          },
+          {
+            value: "sub_voice:scout",
+            label: `▸ Explorador / Scout: [ ${sub.scout} ]`,
+            description: "Voz en español para exploración y mapeo",
+          },
+          {
+            value: "sub_voice:worker",
+            label: `▸ Programador / Worker: [ ${sub.worker} ]`,
+            description: "Voz en español para implementación y código",
+          },
+          {
+            value: "sub_voice:reviewer",
+            label: `▸ Auditor / Reviewer: [ ${sub.reviewer} ]`,
+            description: "Voz en español para verificación y tests",
+          },
+          {
+            value: "sub_voice:orchestrator",
+            label: `▸ Orquestador / Principal: [ ${sub.orchestrator} ]`,
+            description: "Voz principal para el Gentleman",
+          },
+          {
+            value: "sub_reset",
+            label: "🔄 Restaurar voces en español por defecto",
+            description: "Dora Heart, Dora, Alex y Santa",
+          },
+          {
+            value: "back",
+            label: "⬅ Volver al menú principal",
+            description: "Regresar a las opciones principales",
+          },
+        ];
+      }
+
       case "speed": {
         const speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
         const items: SelectItem[] = speeds.map((s) => ({
@@ -644,6 +712,14 @@ export class VoiceMenuComponent extends Container {
     if (value === "goto_shortcuts") {
       this.statusNotice = undefined;
       this.currentScreen = "shortcuts";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "goto_subagents") {
+      this.statusNotice = undefined;
+      this.currentScreen = "subagents";
       this.renderScreen();
       this.tui.requestRender();
       return;
@@ -1030,6 +1106,81 @@ export class VoiceMenuComponent extends Container {
       });
       this.onConfigChanged(updated);
       this.statusNotice = "Atajos restaurados a los valores por defecto";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    // Subagent voices actions
+    if (value === "sub_toggle_enabled") {
+      const config = this.configManager.getConfig();
+      const current = config.subagents?.enabled ?? true;
+      const updated = this.configManager.updateNested("subagents", { enabled: !current });
+      this.statusNotice = !current
+        ? "Voces de Subagentes ACTIVADAS"
+        : "Voces de Subagentes DESACTIVADAS";
+      this.onConfigChanged(updated);
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "sub_toggle_start") {
+      const config = this.configManager.getConfig();
+      const current = config.subagents?.announceStart ?? true;
+      const updated = this.configManager.updateNested("subagents", { announceStart: !current });
+      this.statusNotice = !current ? "Avisos de inicio ACTIVADOS" : "Avisos de inicio DESACTIVADOS";
+      this.onConfigChanged(updated);
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "sub_toggle_end") {
+      const config = this.configManager.getConfig();
+      const current = config.subagents?.announceEnd ?? true;
+      const updated = this.configManager.updateNested("subagents", { announceEnd: !current });
+      this.statusNotice = !current ? "Avisos de fin ACTIVADOS" : "Avisos de fin DESACTIVADOS";
+      this.onConfigChanged(updated);
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value.startsWith("sub_voice:")) {
+      const role = value.slice(10) as keyof SubagentVoicesConfig;
+      if (this.ctx.ui.input) {
+        this.onClose();
+        const currentVoice = (this.configManager.getConfig().subagents as any)?.[role] || "";
+        const newVoice = await this.ctx.ui.input(
+          `Voz en español para ${role} (ej: dora_heart, ef_dora, em_alex, em_santa):`,
+          currentVoice
+        );
+        if (newVoice && newVoice.trim()) {
+          const cleanVoice = newVoice.trim();
+          const updated = this.configManager.updateNested("subagents", {
+            [role]: cleanVoice,
+          });
+          this.onConfigChanged(updated);
+          this.ctx.ui.notify(`Voz para ${role} configurada: ${cleanVoice}`, "info");
+          this.playVoiceSample(cleanVoice, this.configManager.getConfig().provider);
+        }
+      }
+      return;
+    }
+
+    if (value === "sub_reset") {
+      const updated = this.configManager.updateNested("subagents", {
+        enabled: true,
+        announceStart: true,
+        announceEnd: true,
+        orchestrator: "dora_heart",
+        scout: "ef_dora",
+        worker: "em_alex",
+        reviewer: "em_santa",
+      });
+      this.onConfigChanged(updated);
+      this.statusNotice = "Voces en español restauradas por defecto";
       this.renderScreen();
       this.tui.requestRender();
       return;

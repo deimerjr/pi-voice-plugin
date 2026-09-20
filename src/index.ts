@@ -119,6 +119,48 @@ export class VoiceControlBarComponent implements Component {
   invalidate(): void {}
 }
 
+export function resolveSubagentVoice(
+  agentName: string,
+  config: VoicePluginConfig
+): { role: string; voice: string } {
+  const lower = (agentName || "").toLowerCase();
+  const sub = config.subagents || {
+    enabled: true,
+    announceStart: true,
+    announceEnd: true,
+    orchestrator: "dora_heart",
+    scout: "ef_dora",
+    worker: "em_alex",
+    reviewer: "em_santa",
+  };
+
+  if (/scout|explore|plan|investig/i.test(lower)) {
+    return { role: "Explorador", voice: sub.scout || "ef_dora" };
+  }
+  if (/verify|reviewer|judge|audit|review/i.test(lower)) {
+    return { role: "Auditor", voice: sub.reviewer || "em_santa" };
+  }
+  if (/worker|implement|apply|code|dev/i.test(lower)) {
+    return { role: "Programador", voice: sub.worker || "em_alex" };
+  }
+
+  return { role: "Agente", voice: sub.worker || "em_alex" };
+}
+
+function extractTextFromResult(result: any): string {
+  if (!result) return "";
+  if (typeof result === "string") return result;
+  if (result.content && Array.isArray(result.content)) {
+    return result.content
+      .filter((c: any) => c.type === "text" && typeof c.text === "string")
+      .map((c: any) => c.text)
+      .join("\n");
+  }
+  if (result.answer && typeof result.answer === "string") return result.answer;
+  if (result.output && typeof result.output === "string") return result.output;
+  return "";
+}
+
 export default function (pi: ExtensionAPI) {
   const configManager = new ConfigManager();
   let config: VoicePluginConfig = configManager.getConfig();
@@ -304,7 +346,11 @@ export default function (pi: ExtensionAPI) {
     );
   };
 
-  const speakText = async (rawText: string, ctx?: ExtensionContext): Promise<void> => {
+  const speakText = async (
+    rawText: string,
+    ctx?: ExtensionContext,
+    overrideVoice?: string
+  ): Promise<void> => {
     if (!rawText || !rawText.trim()) {
       return;
     }
@@ -319,9 +365,18 @@ export default function (pi: ExtensionAPI) {
     }
 
     const apiKey = configManager.getActiveApiKey();
+    const effectiveConfig = overrideVoice
+      ? {
+          ...config,
+          openai: { ...config.openai, voice: overrideVoice },
+          kokoro: { ...config.kokoro, voice: overrideVoice },
+          elevenlabs: { ...config.elevenlabs, voiceId: overrideVoice },
+        }
+      : config;
+
     let provider;
     try {
-      provider = createTTSProvider(config, apiKey);
+      provider = createTTSProvider(effectiveConfig, apiKey);
     } catch (err: any) {
       if (ctx?.ui) {
         ctx.ui.notify(`[Voice] Error de configuración: ${err.message}`, "error");
@@ -428,6 +483,55 @@ export default function (pi: ExtensionAPI) {
     stopPlayback();
   });
 
+  // Track active subagents for audio notifications
+  const activeSubagents = new Map<string, { role: string; voice: string; label?: string }>();
+
+  pi.on("tool_execution_start", async (event: any, ctx: ExtensionContext) => {
+    if (!config.subagents?.enabled) return;
+    if (
+      event.toolName === "subagent_run" ||
+      event.toolName === "Agent" ||
+      event.toolName === "subagent_continue"
+    ) {
+      const agentName = String(event.args?.agent || event.args?.name || "");
+      const { role, voice } = resolveSubagentVoice(agentName, config);
+      const label =
+        event.args?.label ||
+        (event.args?.task ? String(event.args.task).slice(0, 80) : undefined);
+
+      activeSubagents.set(event.toolCallId, { role, voice, label });
+
+      if (config.subagents.announceStart) {
+        const msg = label ? `${role} iniciado: ${label}.` : `${role} iniciado.`;
+        speakText(msg, ctx, voice).catch(() => {});
+      }
+    }
+  });
+
+  pi.on("tool_execution_end", async (event: any, ctx: ExtensionContext) => {
+    if (!config.subagents?.enabled) return;
+    const tracked = activeSubagents.get(event.toolCallId);
+    if (!tracked) return;
+    activeSubagents.delete(event.toolCallId);
+
+    if (config.subagents.announceEnd) {
+      if (event.isError) {
+        speakText(`${tracked.role} finalizó con error.`, ctx, tracked.voice).catch(() => {});
+      } else {
+        const rawResult = extractTextFromResult(event.result);
+        if (rawResult && rawResult.trim()) {
+          try {
+            const summary = await TldrSummarizer.summarize(rawResult);
+            speakText(`${tracked.role} completado: ${summary}`, ctx, tracked.voice).catch(() => {});
+          } catch {
+            speakText(`${tracked.role} completó su tarea.`, ctx, tracked.voice).catch(() => {});
+          }
+        } else {
+          speakText(`${tracked.role} completó su tarea.`, ctx, tracked.voice).catch(() => {});
+        }
+      }
+    }
+  });
   // Agent finishes response
   pi.on("agent_end", async (event, ctx) => {
     const assistantMessages = (event.messages || []).filter(
@@ -537,6 +641,25 @@ export default function (pi: ExtensionAPI) {
         case "menu":
         case "gui": {
           await openVoiceMenu(ctx);
+          break;
+        }
+
+        case "agents":
+        case "subagents": {
+          const next =
+            val.toLowerCase() === "on"
+              ? true
+              : val.toLowerCase() === "off"
+              ? false
+              : !config.subagents.enabled;
+          config = configManager.updateNested("subagents", { enabled: next });
+          updateUiState(ctx);
+          ctx.ui.notify(
+            next
+              ? "🔊 Voces diferenciadas para subagentes ACTIVADAS"
+              : "🔇 Voces diferenciadas para subagentes DESACTIVADAS",
+            "info"
+          );
           break;
         }
 
@@ -824,6 +947,7 @@ export default function (pi: ExtensionAPI) {
             "Comandos de Pi Voice:",
             "  /voice                 - Abre el menú visual interactivo con mouse",
             "  /voice menu            - Abre el menú visual interactivo con mouse",
+            "  /voice agents [on|off] - Alterna las voces diferenciadas para subagentes",
             "  /voice record          - Inicia o detiene el dictado de prompts por voz (Alt+R)",
             "  /voice tldr            - Alterna el modo de resumen breve ejecutivo (TL;DR)",
             "  /voice on              - Activa la lectura automática tras cada respuesta",

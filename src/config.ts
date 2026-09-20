@@ -57,6 +57,16 @@ export interface VoiceShortcutsConfig {
   volumeDown: string;
 }
 
+export interface SubagentVoicesConfig {
+  enabled: boolean;
+  announceStart: boolean;
+  announceEnd: boolean;
+  orchestrator: string;
+  scout: string;
+  worker: string;
+  reviewer: string;
+}
+
 export interface VoicePluginConfig {
   enabled: boolean;
   autoRead: boolean;
@@ -73,6 +83,7 @@ export interface VoicePluginConfig {
   custom: CustomProviderConfig;
   stt: STTConfig;
   shortcuts: VoiceShortcutsConfig;
+  subagents: SubagentVoicesConfig;
 }
 
 export const DEFAULT_CONFIG: VoicePluginConfig = {
@@ -126,6 +137,15 @@ export const DEFAULT_CONFIG: VoicePluginConfig = {
     record: "alt+r",
     volumeUp: "alt+up",
     volumeDown: "alt+down",
+  },
+  subagents: {
+    enabled: true,
+    announceStart: true,
+    announceEnd: true,
+    orchestrator: "dora_heart",
+    scout: "ef_dora",
+    worker: "em_alex",
+    reviewer: "em_santa",
   },
 };
 
@@ -218,7 +238,7 @@ export class ConfigManager {
     return this.currentConfig;
   }
 
-  public updateNested<K extends "openai" | "elevenlabs" | "kokoro" | "custom" | "stt" | "shortcuts">(
+  public updateNested<K extends "openai" | "elevenlabs" | "kokoro" | "custom" | "stt" | "shortcuts" | "subagents">(
     section: K,
     updates: Partial<VoicePluginConfig[K]>
   ): VoicePluginConfig {
@@ -261,6 +281,10 @@ export class ConfigManager {
       shortcuts: {
         ...base.shortcuts,
         ...(incoming.shortcuts || {}),
+      },
+      subagents: {
+        ...base.subagents,
+        ...(incoming.subagents || {}),
       },
     };
   }

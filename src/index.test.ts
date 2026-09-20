@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import voiceExtension, { VoiceControlBarComponent } from "./index.ts";
+import voiceExtension, { VoiceControlBarComponent, resolveSubagentVoice } from "./index.ts";
+import { DEFAULT_CONFIG } from "./config.ts";
 
 describe("Voice Extension Entrypoint", () => {
   it("registers event listeners and /voice command", async () => {
@@ -171,5 +172,19 @@ describe("Voice Extension Entrypoint", () => {
     });
     await new Promise((r) => setTimeout(r, 10));
     assert.equal(volumeClicked, true);
+  });
+
+  it("resolves subagent roles and distinct Spanish voices correctly", () => {
+    const scout = resolveSubagentVoice("gentle-ai-explore", DEFAULT_CONFIG);
+    assert.equal(scout.role, "Explorador");
+    assert.equal(scout.voice, "ef_dora");
+
+    const worker = resolveSubagentVoice("gentle-ai-worker", DEFAULT_CONFIG);
+    assert.equal(worker.role, "Programador");
+    assert.equal(worker.voice, "em_alex");
+
+    const reviewer = resolveSubagentVoice("gentle-ai-verify", DEFAULT_CONFIG);
+    assert.equal(reviewer.role, "Auditor");
+    assert.equal(reviewer.voice, "em_santa");
   });
 });
