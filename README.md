@@ -15,7 +15,8 @@ Plugin / Extensión modular para **Pi CLI** que sintetiza en voz las respuestas 
 - **Integración de API Custom**:
   - Conexión con cualquier endpoint HTTP REST propio o servidor local (Kokoro, XTTS, vLLM, Piper), con configuración interactiva de URL, método (POST/GET), headers de autorización y formato (WAV/MP3).
 - **Soporte Universal de Proveedores**:
-  - **OpenAI / Compatible** (`/v1/audio/speech`): Compatible de forma nativa con OpenAI (`tts-1`, `tts-1-hd`), Groq, Deepgram, servidores locales Kokoro TTS, LocalAI, vLLM y FastWhisper.
+  - **Kokoro TTS Local (100% Offline y Gratis)**: Servidor local ONNX corriendo en tu propio Ubuntu (`http://127.0.0.1:8880`), sin límites, sin costo de API y con voces en español natural (`ef_dora`, `em_alex`, `em_santa`).
+  - **OpenAI / Compatible** (`/v1/audio/speech`): Compatible de forma nativa con OpenAI (`tts-1`, `tts-1-hd`), Groq, Deepgram, LocalAI, vLLM y FastWhisper.
   - **ElevenLabs** (`/v1/text-to-speech`): Voces ultrarrealistas y clonadas con modelos multilingües.
   - **Custom HTTP**: Adaptador genérico para conectar cualquier backend REST propio o local.
 - **Sanitización Inteligente de Texto**:
@@ -60,13 +61,28 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 | `/voice stop` | Detiene inmediatamente la reproducción en curso |
 | `/voice test [frase]` | Prueba el sintetizador y el reproductor de audio |
 | `/voice status` | Muestra proveedor, voz, velocidad, reproductor y estado actual |
-| `/voice provider <tipo>` | Cambia de proveedor (`openai`, `elevenlabs`, `custom`) |
+| `/voice provider <tipo>` | Cambia de proveedor (`kokoro`, `openai`, `elevenlabs`, `custom`) |
 | `/voice voice <nombre>` | Cambia la voz (ej: `nova`, `alloy`, `echo`, `onyx`, o ID de ElevenLabs) |
 | `/voice custom <accion>` | Configura API custom (`url`, `method`, `format`, `activate`) |
 | `/voice speed <numero>` | Ajusta la velocidad de habla (ej: `1.0`, `1.25`) |
 | `/voice filter <modo>` | Tratamiento de código: `omit` (ignorar), `mention` (avisar), `raw` (leer todo) |
 | `/voice key <api-key>` | Guarda la clave de API para el proveedor activo en `voice.json` |
 | `/voice help` | Muestra la ayuda rápida en pantalla |
+
+---
+
+## 🖥️ Servidor Kokoro TTS Local en Ubuntu
+
+El servidor local de Kokoro TTS corre de forma continua en tu sistema administrado por `systemd`:
+- **Endpoint OpenAI compatible:** `http://127.0.0.1:8880/v1/audio/speech`
+- **Comando de administración:**
+  ```bash
+  kokoro-tts status   # Ver estado y prueba de conectividad
+  kokoro-tts restart  # Reiniciar el servidor
+  kokoro-tts stop     # Detener el servidor
+  kokoro-tts start    # Iniciar el servidor
+  kokoro-tts test     # Sintetizar y reproducir un audio de prueba
+  ```
 
 ---
 

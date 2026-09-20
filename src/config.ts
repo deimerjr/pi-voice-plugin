@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-export type SpeechProviderType = "openai" | "elevenlabs" | "custom";
+export type SpeechProviderType = "openai" | "elevenlabs" | "kokoro" | "custom";
 export type CodeFilterMode = "omit" | "mention" | "raw";
 export type SpeechMode = "final" | "all";
 
@@ -24,6 +24,14 @@ export interface ElevenLabsProviderConfig {
   similarityBoost: number;
 }
 
+export interface KokoroProviderConfig {
+  baseUrl: string;
+  model: string;
+  voice: string;
+  speed: number;
+  format: "wav" | "mp3";
+}
+
 export interface CustomProviderConfig {
   url: string;
   method: "POST" | "GET";
@@ -42,6 +50,7 @@ export interface VoicePluginConfig {
   playerCommand?: string;
   openai: OpenAIProviderConfig;
   elevenlabs: ElevenLabsProviderConfig;
+  kokoro: KokoroProviderConfig;
   custom: CustomProviderConfig;
 }
 
@@ -65,6 +74,13 @@ export const DEFAULT_CONFIG: VoicePluginConfig = {
     modelId: "eleven_multilingual_v2",
     stability: 0.5,
     similarityBoost: 0.75,
+  },
+  kokoro: {
+    baseUrl: "http://127.0.0.1:8880/v1",
+    model: "tts-1",
+    voice: "ef_dora",
+    speed: 1.0,
+    format: "wav",
   },
   custom: {
     url: "http://localhost:8000/v1/audio/speech",
@@ -156,7 +172,7 @@ export class ConfigManager {
     return this.currentConfig;
   }
 
-  public updateNested<K extends "openai" | "elevenlabs" | "custom">(
+  public updateNested<K extends "openai" | "elevenlabs" | "kokoro" | "custom">(
     section: K,
     updates: Partial<VoicePluginConfig[K]>
   ): VoicePluginConfig {
@@ -178,6 +194,10 @@ export class ConfigManager {
       elevenlabs: {
         ...base.elevenlabs,
         ...(incoming.elevenlabs || {}),
+      },
+      kokoro: {
+        ...base.kokoro,
+        ...(incoming.kokoro || {}),
       },
       custom: {
         ...base.custom,

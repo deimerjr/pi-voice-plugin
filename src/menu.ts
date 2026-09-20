@@ -140,6 +140,8 @@ export class VoiceMenuComponent extends Container {
       const activeVoice =
         config.provider === "openai"
           ? config.openai.voice
+          : config.provider === "kokoro"
+          ? config.kokoro.voice
           : config.provider === "elevenlabs"
           ? config.elevenlabs.voiceId
           : "custom";
@@ -184,6 +186,8 @@ export class VoiceMenuComponent extends Container {
         const activeVoice =
           config.provider === "openai"
             ? config.openai.voice
+            : config.provider === "kokoro"
+            ? config.kokoro.voice
             : config.provider === "elevenlabs"
             ? config.elevenlabs.voiceId
             : "custom";
@@ -271,6 +275,35 @@ export class VoiceMenuComponent extends Container {
             description: "Regresar a las opciones principales",
           });
           return items;
+        } else if (config.provider === "kokoro") {
+          const kokoroVoices = [
+            { id: "ef_dora", name: "Dora (Español)", desc: "Femenina, natural y fluida" },
+            { id: "em_alex", name: "Alex (Español)", desc: "Masculina, clara y cercana" },
+            { id: "em_santa", name: "Santa (Español)", desc: "Masculina, tono narrador" },
+            { id: "af_heart", name: "Heart (Inglés)", desc: "Femenina, máxima calidad y realismo" },
+            { id: "af_nova", name: "Nova (Inglés)", desc: "Femenina, expresiva y enérgica" },
+            { id: "af_alloy", name: "Alloy (Inglés)", desc: "Neutra, balanceada" },
+            { id: "am_echo", name: "Echo (Inglés)", desc: "Masculina, cálida y conversacional" },
+            { id: "am_fenrir", name: "Fenrir (Inglés)", desc: "Masculina, profunda y seria" },
+            { id: "bf_emma", name: "Emma (Británico)", desc: "Femenina británica elegante" },
+            { id: "bm_george", name: "George (Británico)", desc: "Masculina británica culta" },
+          ];
+
+          const items: SelectItem[] = kokoroVoices.map((v) => {
+            const isCurrent = config.kokoro.voice === v.id;
+            return {
+              value: `voice:${v.id}`,
+              label: `${isCurrent ? "✓ " : "  "}${v.name}`,
+              description: `${v.desc} • [Clic: escuchar y activar]`,
+            };
+          });
+
+          items.push({
+            value: "back",
+            label: "⬅️ Volver al menú principal",
+            description: "Regresar a las opciones principales",
+          });
+          return items;
         } else if (config.provider === "elevenlabs") {
           const elevenVoices = [
             { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel", desc: "Calma y natural" },
@@ -320,6 +353,11 @@ export class VoiceMenuComponent extends Container {
 
       case "providers": {
         return [
+          {
+            value: "set_prov:kokoro",
+            label: `${config.provider === "kokoro" ? "✓ " : "  "}Kokoro TTS Local (100% Offline, Gratis)`,
+            description: "Servidor local ONNX en http://127.0.0.1:8880 (sin límites ni costo)",
+          },
           {
             value: "set_prov:openai",
             label: `${config.provider === "openai" ? "✓ " : "  "}OpenAI / Compatible`,
@@ -537,6 +575,8 @@ export class VoiceMenuComponent extends Container {
       let updated: VoicePluginConfig;
       if (config.provider === "openai") {
         updated = this.configManager.updateNested("openai", { voice: voiceName });
+      } else if (config.provider === "kokoro") {
+        updated = this.configManager.updateNested("kokoro", { voice: voiceName });
       } else {
         updated = this.configManager.updateNested("elevenlabs", { voiceId: voiceName });
       }

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { OpenAIProvider } from "./openai.ts";
 import { ElevenLabsProvider } from "./elevenlabs.ts";
 import { CustomHttpProvider } from "./custom.ts";
+import { KokoroProvider } from "./kokoro.ts";
 import { createTTSProvider } from "./factory.ts";
 import { DEFAULT_CONFIG } from "../config.ts";
 
@@ -112,8 +113,36 @@ describe("TTS Providers", () => {
     assert.equal(result.format, "wav");
   });
 
+  it("KokoroProvider formats request correctly without API key", async () => {
+    globalThis.fetch = async (url: any, options: any) => {
+      interceptedUrl = String(url);
+      interceptedOptions = options;
+      return new Response(new Uint8Array([10, 11]), { status: 200 });
+    };
+
+    const provider = new KokoroProvider({
+      baseUrl: "http://127.0.0.1:8880/v1",
+      model: "tts-1",
+      voice: "ef_dora",
+      speed: 1.0,
+      format: "wav",
+    });
+
+    const result = await provider.synthesize("Hola Kokoro");
+
+    assert.equal(interceptedUrl, "http://127.0.0.1:8880/v1/audio/speech");
+    assert.equal(interceptedOptions.method, "POST");
+    const body = JSON.parse(interceptedOptions.body);
+    assert.equal(body.input, "Hola Kokoro");
+    assert.equal(body.voice, "ef_dora");
+    assert.equal(result.format, "wav");
+  });
+
   it("createTTSProvider creates matching instance", () => {
     const provider = createTTSProvider(DEFAULT_CONFIG, "sk-key");
     assert.equal(provider.id, "openai");
+
+    const kokoroProv = createTTSProvider({ ...DEFAULT_CONFIG, provider: "kokoro" });
+    assert.equal(kokoroProv.id, "kokoro");
   });
 });

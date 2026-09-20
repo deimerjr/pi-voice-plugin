@@ -2,6 +2,7 @@ import type { VoicePluginConfig } from "../config.ts";
 import type { TTSProvider } from "./base.ts";
 import { OpenAIProvider } from "./openai.ts";
 import { ElevenLabsProvider } from "./elevenlabs.ts";
+import { KokoroProvider } from "./kokoro.ts";
 import { CustomHttpProvider } from "./custom.ts";
 
 export function createTTSProvider(
@@ -13,6 +14,8 @@ export function createTTSProvider(
       return new OpenAIProvider(config.openai, resolvedApiKey);
     case "elevenlabs":
       return new ElevenLabsProvider(config.elevenlabs, resolvedApiKey);
+    case "kokoro":
+      return new KokoroProvider(config.kokoro);
     case "custom":
       return new CustomHttpProvider(config.custom);
     default:

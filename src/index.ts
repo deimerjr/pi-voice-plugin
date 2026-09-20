@@ -27,6 +27,8 @@ export default function (pi: ExtensionAPI) {
     const providerLabel =
       config.provider === "openai"
         ? config.openai.voice
+        : config.provider === "kokoro"
+        ? config.kokoro.voice
         : config.provider === "elevenlabs"
         ? config.elevenlabs.voiceId
         : "custom";
@@ -259,9 +261,9 @@ export default function (pi: ExtensionAPI) {
         }
 
         case "provider": {
-          if (!val || !["openai", "elevenlabs", "custom"].includes(val.toLowerCase())) {
+          if (!val || !["openai", "elevenlabs", "kokoro", "custom"].includes(val.toLowerCase())) {
             ctx.ui.notify(
-              `Proveedor actual: ${config.provider}. Opciones válidas: openai, elevenlabs, custom`,
+              `Proveedor actual: ${config.provider}. Opciones válidas: kokoro, openai, elevenlabs, custom`,
               "warning"
             );
             return;
@@ -275,13 +277,20 @@ export default function (pi: ExtensionAPI) {
         case "voice": {
           if (!val) {
             const currentVoice =
-              config.provider === "openai" ? config.openai.voice : config.elevenlabs.voiceId;
+              config.provider === "openai"
+                ? config.openai.voice
+                : config.provider === "kokoro"
+                ? config.kokoro.voice
+                : config.elevenlabs.voiceId;
             ctx.ui.notify(`Voz actual: ${currentVoice}`, "info");
             return;
           }
           if (config.provider === "openai") {
             config = configManager.updateNested("openai", { voice: val });
             ctx.ui.notify(`Voz OpenAI cambiada a: ${val}`, "info");
+          } else if (config.provider === "kokoro") {
+            config = configManager.updateNested("kokoro", { voice: val });
+            ctx.ui.notify(`Voz Kokoro cambiada a: ${val}`, "info");
           } else if (config.provider === "elevenlabs") {
             config = configManager.updateNested("elevenlabs", { voiceId: val });
             ctx.ui.notify(`Voice ID ElevenLabs cambiado a: ${val}`, "info");
