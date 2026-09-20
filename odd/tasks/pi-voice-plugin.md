@@ -20,3 +20,4 @@ Plugin/Extensión para Pi CLI que sintetiza en voz las respuestas del asistente 
 - [x] Task 14: Implement Audio TL;DR executive summary mode and expand menu width to eliminate overlapping text [commit: 2289602]
 - [x] Task 15: Implement Multi-Agent Spanish Voice Personas with start/end task announcements and synthesis (`dora_heart`, `ef_dora`, `em_alex`, `em_santa`) [commit: 2b9fdd4]
 - [x] Task 16: Ensure 100% Spanish translation for subagent start announcements and end summaries (`TldrSummarizer.quickTranslateCommonEnglish` and LLM translation) [commit: 7612b23]
+- [x] Task 17: Implement conversational "Modo Cuadrilla" addressing user as Jefe with inter-agent baton passing and live dialogue [commit: 21bb92b]
