@@ -513,9 +513,55 @@ body {
   border: var(--border-thin);
 }
 
-.agent-avatar {
-  font-size: 40px;
-  margin-bottom: 8px;
+.b-icon-inline {
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.b-avatar-box {
+  width: 64px;
+  height: 64px;
+  background: var(--c-black);
+  color: var(--c-white);
+  border: var(--border-thick);
+  box-shadow: var(--shadow-hard-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.card-yellow .b-avatar-box {
+  background: var(--c-yellow);
+  color: var(--c-black);
+}
+
+.card-cyan .b-avatar-box {
+  background: var(--c-cyan);
+  color: var(--c-black);
+}
+
+.card-green .b-avatar-box {
+  background: var(--c-green);
+  color: var(--c-black);
+}
+
+.card-pink .b-avatar-box {
+  background: var(--c-pink);
+  color: var(--c-white);
+}
+
+.b-avatar-svg {
+  width: 44px;
+  height: 44px;
+  display: block;
+}
+
+.agent-card:hover .b-avatar-box {
+  transform: scale(1.05) rotate(-2deg);
 }
 
 .agent-name {
@@ -1052,4 +1098,19 @@ body.dark-mode .brutalist-table td {
   border-bottom-color: #224422;
   color: #e0e0e0;
 }
+
+body.dark-mode .b-avatar-box {
+  background: #181822;
+  border-color: #00ff66;
+  box-shadow: 3px 3px 0px #00ff66;
+}
+
+body.dark-mode .card-yellow .b-avatar-box,
+body.dark-mode .card-cyan .b-avatar-box,
+body.dark-mode .card-green .b-avatar-box,
+body.dark-mode .card-pink .b-avatar-box {
+  background: #181822;
+  color: #00ff66;
+}
+
 

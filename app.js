@@ -2,6 +2,7 @@
  * PI VOICE PLUGIN — BRUTALIST LANDING INTERACTION (app.js)
  * Reproducción de audios reales generados con Kokoro TTS local,
  * Web Audio API para efectos, Web Speech API fallback y simulador TUI.
+ * Estilo visual brutalista con iconos vectoriales de un solo tono sin emojis.
  */
 
 // Datos de la Cuadrilla para el Soundboard con audios reales
@@ -46,6 +47,15 @@ const CUADRILLA_DATA = {
     rate: 0.95,
     synthTone: 220,
   },
+};
+
+// Generador de iconos SVG brutalistas
+const ICONS = {
+  play: `<svg class="b-icon-inline" viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><polygon points="3,2 14,8 3,14"/></svg>`,
+  stop: `<svg class="b-icon-inline" viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><rect x="2" y="2" width="12" height="12"/></svg>`,
+  audio: `<svg class="b-icon-inline" viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><polygon points="2,5 6,5 11,1 11,15 6,11 2,11"/><rect x="13" y="4" width="2" height="8"/></svg>`,
+  mic: `<svg class="b-icon-inline" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="1" width="6" height="8" fill="currentColor"/><path d="M3 6v2a5 5 0 0 0 10 0V6"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="5" y1="15" x2="11" y2="15"/></svg>`,
+  theme: `<svg class="b-icon-inline" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>`,
 };
 
 // Web Audio Context Helper para efectos
@@ -115,7 +125,7 @@ function stopCurrentSpeech() {
     if (prevCard) {
       prevCard.classList.remove("card-playing");
       const btn = prevCard.querySelector(".btn-voice-play");
-      if (btn) btn.textContent = `▶ ESCUCHAR A ${activeAgentKey.toUpperCase()}`;
+      if (btn) btn.innerHTML = `${ICONS.play} ESCUCHAR A ${activeAgentKey.toUpperCase()}`;
     }
     activeAgentKey = null;
   }
@@ -139,7 +149,7 @@ function fallbackSpeechSynthesis(data, card, agentKey, onEndCallback) {
       if (card) {
         card.classList.remove("card-playing");
         const btn = card.querySelector(".btn-voice-play");
-        if (btn) btn.textContent = `▶ ESCUCHAR A ${agentKey.toUpperCase()}`;
+        if (btn) btn.innerHTML = `${ICONS.play} ESCUCHAR A ${agentKey.toUpperCase()}`;
       }
       activeAgentKey = null;
       if (typeof onEndCallback === "function") {
@@ -161,7 +171,7 @@ function fallbackSpeechSynthesis(data, card, agentKey, onEndCallback) {
         if (card) {
           card.classList.remove("card-playing");
           const btn = card.querySelector(".btn-voice-play");
-          if (btn) btn.textContent = `▶ ESCUCHAR A ${agentKey.toUpperCase()}`;
+          if (btn) btn.innerHTML = `${ICONS.play} ESCUCHAR A ${agentKey.toUpperCase()}`;
         }
         activeAgentKey = null;
         if (typeof onEndCallback === "function") {
@@ -184,7 +194,7 @@ function speakAgent(agentKey, onEndCallback) {
   if (card) {
     card.classList.add("card-playing");
     const btn = card.querySelector(".btn-voice-play");
-    if (btn) btn.textContent = "⏹ DETENER";
+    if (btn) btn.innerHTML = `${ICONS.stop} DETENER`;
   }
 
   // Reproducir el archivo de audio real
@@ -196,7 +206,7 @@ function speakAgent(agentKey, onEndCallback) {
       if (card) {
         card.classList.remove("card-playing");
         const btn = card.querySelector(".btn-voice-play");
-        if (btn) btn.textContent = `▶ ESCUCHAR A ${agentKey.toUpperCase()}`;
+        if (btn) btn.innerHTML = `${ICONS.play} ESCUCHAR A ${agentKey.toUpperCase()}`;
       }
       activeAgentKey = null;
       currentAudioPlayer = null;
@@ -250,7 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
       navigator.clipboard.writeText(textToCopy).then(() => {
         const copyText = btnCopy.querySelector(".copy-text");
         if (copyText) {
-          copyText.textContent = "✓ COPIADO!";
+          copyText.textContent = "[OK] COPIADO";
           btnCopy.style.background = "var(--c-green)";
           setTimeout(() => {
             copyText.textContent = "COPIAR";
@@ -269,10 +279,10 @@ document.addEventListener("DOMContentLoaded", () => {
       stopCurrentSpeech();
       const testAudio = new Audio("audio/test-engine.wav");
       currentAudioPlayer = testAudio;
-      btnTestSound.textContent = "🔊 REPRODUCIENDO...";
+      btnTestSound.innerHTML = `${ICONS.audio} REPRODUCIENDO...`;
 
       const resetBtn = () => {
-        btnTestSound.textContent = "▶ TEST AUDIO ENGINE";
+        btnTestSound.innerHTML = `${ICONS.play} TEST AUDIO ENGINE`;
         currentAudioPlayer = null;
       };
 
@@ -318,7 +328,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const simStopBtn = document.getElementById("sim-btn-stop");
   const simVolBtn = document.getElementById("sim-btn-volume");
   const simVolVal = document.getElementById("sim-vol-val");
-  const simVolIcon = document.getElementById("sim-vol-icon");
   const simRecordBtn = document.getElementById("sim-btn-record");
   const termLog = document.querySelector(".term-log");
 
@@ -337,28 +346,22 @@ document.addEventListener("DOMContentLoaded", () => {
   if (simStopBtn) {
     simStopBtn.addEventListener("click", () => {
       stopCurrentSpeech();
-      simStopBtn.textContent = "⏹️ ¡Detenido!";
+      const stopText = document.getElementById("sim-stop-text");
+      if (stopText) stopText.textContent = "¡Detenido!";
       playRetroTone(200, 0.15, "sawtooth");
       setTimeout(() => {
-        simStopBtn.textContent = "⏹️ Parar";
+        if (stopText) stopText.textContent = "Parar";
       }, 1200);
     });
   }
 
   // Botón Volumen cíclico
-  const volumes = [
-    { val: "100%", icon: "🔊" },
-    { val: "120%", icon: "🔊" },
-    { val: "150%", icon: "🔊" },
-    { val: "50%", icon: "🔉" },
-    { val: "0% (MUTE)", icon: "🔇" },
-  ];
+  const volumes = ["100%", "120%", "150%", "50%", "0% [MUTE]"];
   let volIndex = 0;
-  if (simVolBtn && simVolVal && simVolIcon) {
+  if (simVolBtn && simVolVal) {
     simVolBtn.addEventListener("click", () => {
       volIndex = (volIndex + 1) % volumes.length;
-      simVolVal.textContent = volumes[volIndex].val;
-      simVolIcon.textContent = volumes[volIndex].icon;
+      simVolVal.textContent = volumes[volIndex];
       playRetroTone(350 + volIndex * 60, 0.08, "triangle");
     });
   }
@@ -369,13 +372,14 @@ document.addEventListener("DOMContentLoaded", () => {
     simRecordBtn.addEventListener("click", () => {
       if (isRecording) return;
       isRecording = true;
-      simRecordBtn.textContent = "🔴 Grabando... (hablá)";
+      const recordText = document.getElementById("sim-record-text");
+      if (recordText) recordText.textContent = "Grabando...";
       simRecordBtn.style.color = "var(--c-pink)";
       playRetroTone(700, 0.12, "sine");
 
       setTimeout(() => {
         isRecording = false;
-        simRecordBtn.textContent = "🎙️ Dictar";
+        if (recordText) recordText.textContent = "Dictar";
         simRecordBtn.style.color = "";
         playRetroTone(900, 0.15, "sine");
 
@@ -398,7 +402,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const savedTheme = localStorage.getItem("pi_voice_theme");
       if (savedTheme === "dark") {
         document.body.classList.add("dark-mode");
-        btnThemeToggle.textContent = "☀️ LIGHT MODE";
+        btnThemeToggle.innerHTML = `${ICONS.theme} LIGHT MODE`;
       }
     } catch {
       // Ignorar restricciones en entornos aislados
@@ -411,7 +415,9 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch {
         // Ignorar
       }
-      btnThemeToggle.textContent = isDark ? "☀️ LIGHT MODE" : "🌙 DARK MATRIX";
+      btnThemeToggle.innerHTML = isDark
+        ? `${ICONS.theme} LIGHT MODE`
+        : `${ICONS.theme} DARK MATRIX`;
       playRetroTone(isDark ? 800 : 400, 0.1, "square");
     });
   }

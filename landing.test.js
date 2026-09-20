@@ -72,6 +72,13 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
     it("contains the dark matrix theme toggle button", () => {
       assert.match(html, /id="btn-theme-toggle"/);
     });
+
+    it("uses custom single-tone brutalist vector icons and avatars without generic emojis", () => {
+      assert.match(html, /class="b-avatar-box"/);
+      assert.match(html, /class="b-avatar-svg"/);
+      assert.match(html, /class="b-icon-inline"/);
+      assert.doesNotMatch(html, /[🎙️🎩🧭⚡🛡️⚙️⏹️🔊🔉🔇💡⌨️]/, "No generic emojis allowed");
+    });
   });
 
   describe("Neo-Brutalist CSS Design Tokens (styles.css)", () => {
@@ -103,6 +110,12 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
     it("defines dark matrix theme styles", () => {
       assert.match(css, /body\.dark-mode/);
       assert.match(css, /--bg-canvas:\s*#0a0a0c/i);
+    });
+
+    it("defines styling for single-tone brutalist icons and avatars", () => {
+      assert.match(css, /\.b-avatar-box/);
+      assert.match(css, /\.b-avatar-svg/);
+      assert.match(css, /\.b-icon-inline/);
     });
   });
 
@@ -137,6 +150,12 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
       assert.match(js, /btn-theme-toggle/);
       assert.match(js, /dark-mode/);
       assert.match(js, /pi_voice_theme/);
+    });
+
+    it("defines ICONS dictionary and avoids generic emojis in UI updates", () => {
+      assert.match(js, /ICONS\s*=\s*\{/);
+      assert.match(js, /b-icon-inline/);
+      assert.doesNotMatch(js, /[🎙️🎩🧭⚡🛡️⚙️⏹️🔊🔉🔇💡⌨️]/, "No generic emojis allowed in app.js");
     });
   });
 
