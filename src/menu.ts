@@ -594,6 +594,11 @@ export class VoiceMenuComponent extends Container {
             description: "Síntesis oral de lo logrado al terminar cada tarea",
           },
           {
+            value: "sub_toggle_orchestrator_phases",
+            label: `${sub.announceOrchestratorPhases ?? true ? "●" : "○"} Fases del Orquestador: ${sub.announceOrchestratorPhases ?? true ? "SÍ" : "NO"}`,
+            description: "Locución de cada fase de trabajo cuando el orquestador trabaja directo",
+          },
+          {
             value: "sub_voice:scout",
             label: `▸ Explorador / Scout: [ ${sub.scout} ]`,
             description: "Voz en español para exploración y mapeo",
@@ -1141,6 +1146,17 @@ export class VoiceMenuComponent extends Container {
       const current = config.subagents?.announceEnd ?? true;
       const updated = this.configManager.updateNested("subagents", { announceEnd: !current });
       this.statusNotice = !current ? "Avisos de fin ACTIVADOS" : "Avisos de fin DESACTIVADOS";
+      this.onConfigChanged(updated);
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "sub_toggle_orchestrator_phases") {
+      const config = this.configManager.getConfig();
+      const current = config.subagents?.announceOrchestratorPhases ?? true;
+      const updated = this.configManager.updateNested("subagents", { announceOrchestratorPhases: !current });
+      this.statusNotice = !current ? "Fases del orquestador ACTIVADAS" : "Fases del orquestador DESACTIVADAS";
       this.onConfigChanged(updated);
       this.renderScreen();
       this.tui.requestRender();

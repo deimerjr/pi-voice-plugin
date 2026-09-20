@@ -62,6 +62,7 @@ export interface SubagentVoicesConfig {
   crewMode: boolean;
   announceStart: boolean;
   announceEnd: boolean;
+  announceOrchestratorPhases: boolean;
   orchestrator: string;
   scout: string;
   worker: string;
@@ -144,6 +145,7 @@ export const DEFAULT_CONFIG: VoicePluginConfig = {
     crewMode: true,
     announceStart: true,
     announceEnd: true,
+    announceOrchestratorPhases: true,
     orchestrator: "dora_heart",
     scout: "ef_dora",
     worker: "em_alex",
