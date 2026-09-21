@@ -20,6 +20,10 @@ dist/
 # Zip bundles
 *.zip
 
+# User media samples
+*.mp4
+API Elevenlabs.txt
+
 # Netlify local state
 .netlify/
 

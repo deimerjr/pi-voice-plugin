@@ -32,9 +32,68 @@ export type MenuScreen =
   | "volume"
   | "shortcuts"
   | "subagents"
+  | "subagent_voice"
   | "speed"
   | "filter"
   | "user_title";
+
+export type SubagentRoleKey = "scout" | "worker" | "reviewer" | "orchestrator";
+
+export interface VoiceOption {
+  id: string;
+  name: string;
+  desc: string;
+}
+
+export const ROLE_LABELS: Record<SubagentRoleKey, string> = {
+  scout: "Explorador / Scout",
+  worker: "Programador / Worker",
+  reviewer: "Auditor / Reviewer",
+  orchestrator: "Orquestador / Principal",
+};
+
+export const OPENAI_VOICES: VoiceOption[] = [
+  { id: "nova", name: "nova", desc: "Femenina, enérgica y natural" },
+  { id: "alloy", name: "alloy", desc: "Neutra, clara y balanceada" },
+  { id: "echo", name: "echo", desc: "Masculina, cálida y cercana" },
+  { id: "fable", name: "fable", desc: "Expresiva, acento británico" },
+  { id: "onyx", name: "onyx", desc: "Masculina, profunda y autoritaria" },
+  { id: "shimmer", name: "shimmer", desc: "Femenina, brillante y nítida" },
+  { id: "ash", name: "ash", desc: "Masculina suave y cotidiana" },
+  { id: "sage", name: "sage", desc: "Neutra, serena y reposada" },
+  { id: "coral", name: "coral", desc: "Femenina, cálida y amigable" },
+];
+
+export const KOKORO_VOICES: VoiceOption[] = [
+  { id: "ef_dora", name: "Dora (Español)", desc: "Femenina, natural y fluida" },
+  { id: "ximena", name: "Ximena (Español México)", desc: "Femenina cálida, melódica y suave con acento mexicano/latino" },
+  { id: "em_alex", name: "Alex (Español)", desc: "Masculina, clara y cercana" },
+  { id: "em_santa", name: "Santa (Español)", desc: "Masculina, tono narrador" },
+  { id: "mateo", name: "Mateo (Español)", desc: "Masculina fresca, clara y natural (Híbrida Michael)" },
+  { id: "adrian", name: "Adrián (Español)", desc: "Masculina cálida, profunda y segura (Híbrida Adam)" },
+  { id: "fenrir_es", name: "Fenrir (Español)", desc: "Masculina profunda, autoritaria y cinematográfica (Híbrida)" },
+  { id: "juan_carlos", name: "Juan Carlos (Clonada)", desc: "Masculina expresiva, enérgica y amistosa (Locutor)" },
+  { id: "valeria", name: "Valeria (Clonada)", desc: "Femenina ejecutiva, dicción nítida y tono elegante (Clon ElevenLabs)" },
+  { id: "lucia", name: "Lucía (Clonada)", desc: "Femenina ágil, articulación brillante y ritmo conversacional" },
+  { id: "dora_heart", name: "Dora Heart (Híbrida)", desc: "Femenina cálida, prosodia fluida y presencia envolvente" },
+  { id: "af_heart", name: "Heart (Inglés)", desc: "Femenina, máxima calidad y realismo" },
+  { id: "af_nova", name: "Nova (Inglés)", desc: "Femenina, expresiva y enérgica" },
+  { id: "af_alloy", name: "Alloy (Inglés)", desc: "Neutra, balanceada" },
+  { id: "am_echo", name: "Echo (Inglés)", desc: "Masculina, cálida y conversacional" },
+  { id: "am_fenrir", name: "Fenrir (Inglés)", desc: "Masculina, profunda y seria" },
+  { id: "bf_emma", name: "Emma (Británico)", desc: "Femenina británica elegante" },
+  { id: "bm_george", name: "George (Británico)", desc: "Masculina británica culta" },
+];
+
+export const ELEVENLABS_VOICES: VoiceOption[] = [
+  { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel", desc: "Calma y natural" },
+  { id: "AZnzlk1XvdvUeBnXmlld", name: "Domi", desc: "Enérgica y segura" },
+  { id: "EXAVITQu4vr4xnSDxMaL", name: "Bella", desc: "Suave y expresiva" },
+  { id: "ErXwobaYiN019PkySvjV", name: "Antoni", desc: "Masculina modulada" },
+  { id: "TxGEqnHWrfWFTfGW9XjX", name: "Josh", desc: "Masculina joven" },
+  { id: "VR6AewLTigWG4xSOukaG", name: "Arnold", desc: "Masculina profunda" },
+  { id: "pNInz6obpgDQGcFmaJgB", name: "Adam", desc: "Narrador profesional" },
+];
 
 export interface VoiceMenuOptions {
   configManager: ConfigManager;
@@ -73,6 +132,7 @@ export class VoiceMenuComponent extends Container {
 
   private initialScreen: MenuScreen = "main";
   private currentScreen: MenuScreen = "main";
+  private selectedSubagentRole?: SubagentRoleKey;
   private activeSelectList: SelectList | null = null;
   private statusNotice?: string;
   private isPreviewing: boolean = false;
@@ -133,6 +193,13 @@ export class VoiceMenuComponent extends Container {
   }
 
   private goBackOrClose(): void {
+    if (this.currentScreen === "subagent_voice") {
+      this.statusNotice = undefined;
+      this.currentScreen = "subagents";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
     if (this.currentScreen === "user_title") {
       this.statusNotice = undefined;
       this.currentScreen = "subagents";
@@ -172,6 +239,11 @@ export class VoiceMenuComponent extends Container {
     else if (this.currentScreen === "volume") titleText = "Control de Volumen";
     else if (this.currentScreen === "shortcuts") titleText = "Atajos de Teclado y Teclas";
     else if (this.currentScreen === "subagents") titleText = "Voces de Agentes y Roles";
+    else if (this.currentScreen === "subagent_voice") {
+      const role = this.selectedSubagentRole || "scout";
+      const roleLabel = ROLE_LABELS[role] || role;
+      titleText = `Seleccionar Voz: ${roleLabel}`;
+    }
     else if (this.currentScreen === "user_title") titleText = "Apelativo de Usuario (Modo Cuadrilla)";
     else if (this.currentScreen === "speed") titleText = "Velocidad de Locución";
     else if (this.currentScreen === "filter") titleText = "Filtro de Código y Formato";
@@ -386,22 +458,10 @@ export class VoiceMenuComponent extends Container {
 
       case "voices": {
         if (config.provider === "openai") {
-          const openaiVoices = [
-            { name: "nova", desc: "Femenina, enérgica y natural" },
-            { name: "alloy", desc: "Neutra, clara y balanceada" },
-            { name: "echo", desc: "Masculina, cálida y cercana" },
-            { name: "fable", desc: "Expresiva, acento británico" },
-            { name: "onyx", desc: "Masculina, profunda y autoritaria" },
-            { name: "shimmer", desc: "Femenina, brillante y nítida" },
-            { name: "ash", desc: "Masculina suave y cotidiana" },
-            { name: "sage", desc: "Neutra, serena y reposada" },
-            { name: "coral", desc: "Femenina, cálida y amigable" },
-          ];
-
-          const items: SelectItem[] = openaiVoices.map((v) => {
-            const isCurrent = config.openai.voice === v.name;
+          const items: SelectItem[] = OPENAI_VOICES.map((v) => {
+            const isCurrent = config.openai.voice === v.id;
             return {
-              value: `voice:${v.name}`,
+              value: `voice:${v.id}`,
               label: `${isCurrent ? "● " : "○ "}${v.name}`,
               description: `${v.desc} • [Clic: escuchar y activar]`,
             };
@@ -414,28 +474,7 @@ export class VoiceMenuComponent extends Container {
           });
           return items;
         } else if (config.provider === "kokoro") {
-          const kokoroVoices = [
-            { id: "ef_dora", name: "Dora (Español)", desc: "Femenina, natural y fluida" },
-            { id: "ximena", name: "Ximena (Español México)", desc: "Femenina cálida, melódica y suave con acento mexicano/latino" },
-            { id: "em_alex", name: "Alex (Español)", desc: "Masculina, clara y cercana" },
-            { id: "em_santa", name: "Santa (Español)", desc: "Masculina, tono narrador" },
-            { id: "mateo", name: "Mateo (Español)", desc: "Masculina fresca, clara y natural (Híbrida Michael)" },
-            { id: "adrian", name: "Adrián (Español)", desc: "Masculina cálida, profunda y segura (Híbrida Adam)" },
-            { id: "fenrir_es", name: "Fenrir (Español)", desc: "Masculina profunda, autoritaria y cinematográfica (Híbrida)" },
-            { id: "juan_carlos", name: "Juan Carlos (Clonada)", desc: "Masculina expresiva, enérgica y amistosa (Locutor)" },
-            { id: "valeria", name: "Valeria (Clonada)", desc: "Femenina ejecutiva, dicción nítida y tono elegante (Clon ElevenLabs)" },
-            { id: "lucia", name: "Lucía (Clonada)", desc: "Femenina ágil, articulación brillante y ritmo conversacional" },
-            { id: "dora_heart", name: "Dora Heart (Híbrida)", desc: "Femenina cálida, prosodia fluida y presencia envolvente" },
-            { id: "af_heart", name: "Heart (Inglés)", desc: "Femenina, máxima calidad y realismo" },
-            { id: "af_nova", name: "Nova (Inglés)", desc: "Femenina, expresiva y enérgica" },
-            { id: "af_alloy", name: "Alloy (Inglés)", desc: "Neutra, balanceada" },
-            { id: "am_echo", name: "Echo (Inglés)", desc: "Masculina, cálida y conversacional" },
-            { id: "am_fenrir", name: "Fenrir (Inglés)", desc: "Masculina, profunda y seria" },
-            { id: "bf_emma", name: "Emma (Británico)", desc: "Femenina británica elegante" },
-            { id: "bm_george", name: "George (Británico)", desc: "Masculina británica culta" },
-          ];
-
-          const items: SelectItem[] = kokoroVoices.map((v) => {
+          const items: SelectItem[] = KOKORO_VOICES.map((v) => {
             const isCurrent = config.kokoro.voice === v.id;
             return {
               value: `voice:${v.id}`,
@@ -456,17 +495,7 @@ export class VoiceMenuComponent extends Container {
           });
           return items;
         } else if (config.provider === "elevenlabs") {
-          const elevenVoices = [
-            { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel", desc: "Calma y natural" },
-            { id: "AZnzlk1XvdvUeBnXmlld", name: "Domi", desc: "Enérgica y segura" },
-            { id: "EXAVITQu4vr4xnSDxMaL", name: "Bella", desc: "Suave y expresiva" },
-            { id: "ErXwobaYiN019PkySvjV", name: "Antoni", desc: "Masculina modulada" },
-            { id: "TxGEqnHWrfWFTfGW9XjX", name: "Josh", desc: "Masculina joven" },
-            { id: "VR6AewLTigWG4xSOukaG", name: "Arnold", desc: "Masculina profunda" },
-            { id: "pNInz6obpgDQGcFmaJgB", name: "Adam", desc: "Narrador profesional" },
-          ];
-
-          const items: SelectItem[] = elevenVoices.map((v) => {
+          const items: SelectItem[] = ELEVENLABS_VOICES.map((v) => {
             const isCurrent = config.elevenlabs.voiceId === v.id;
             return {
               value: `voice:${v.id}`,
@@ -651,6 +680,43 @@ export class VoiceMenuComponent extends Container {
             description: "Regresar a las opciones principales",
           },
         ];
+      }
+
+      case "subagent_voice": {
+        const role = this.selectedSubagentRole || "scout";
+        const currentVoice = config.subagents?.[role] || "";
+
+        let voiceList: VoiceOption[] = [];
+        if (config.provider === "kokoro") {
+          voiceList = KOKORO_VOICES;
+        } else if (config.provider === "openai") {
+          voiceList = OPENAI_VOICES;
+        } else if (config.provider === "elevenlabs") {
+          voiceList = ELEVENLABS_VOICES;
+        }
+
+        const items: SelectItem[] = voiceList.map((v) => {
+          const isAssigned = currentVoice === v.id;
+          return {
+            value: `set_sub_voice:${role}:${v.id}`,
+            label: `${isAssigned ? "● " : "○ "}${v.name}`,
+            description: `${v.desc} • [Clic: activar y escuchar]`,
+          };
+        });
+
+        items.push({
+          value: `custom_sub_voice:${role}`,
+          label: "✏️ Voz personalizada o fórmula manual...",
+          description: `Ingresar nombre o mezcla Kokoro (actual: ${currentVoice})`,
+        });
+
+        items.push({
+          value: "back_to_subagents",
+          label: "⬅ Volver a Voces de Agentes",
+          description: "Regresar a la configuración de subagentes",
+        });
+
+        return items;
       }
 
       case "user_title": {
@@ -1223,12 +1289,45 @@ export class VoiceMenuComponent extends Container {
     }
 
     if (value.startsWith("sub_voice:")) {
-      const role = value.slice(10) as keyof SubagentVoicesConfig;
+      const role = value.slice(10) as SubagentRoleKey;
+      this.selectedSubagentRole = role;
+      this.statusNotice = undefined;
+      this.currentScreen = "subagent_voice";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value.startsWith("set_sub_voice:")) {
+      const rest = value.slice("set_sub_voice:".length);
+      const colonIndex = rest.indexOf(":");
+      const role = rest.slice(0, colonIndex) as SubagentRoleKey;
+      const voiceId = rest.slice(colonIndex + 1);
+
+      const updated = this.configManager.updateNested("subagents", {
+        [role]: voiceId,
+      });
+      this.onConfigChanged(updated);
+
+      const roleName = ROLE_LABELS[role] || role;
+      this.statusNotice = `Voz de ${roleName} asignada a '${voiceId}'. Reproduciendo muestra...`;
+      this.currentScreen = "subagents";
+      this.renderScreen();
+      this.tui.requestRender();
+
+      const config = this.configManager.getConfig();
+      this.playVoiceSample(voiceId, config.provider, role);
+      return;
+    }
+
+    if (value.startsWith("custom_sub_voice:")) {
+      const role = value.slice("custom_sub_voice:".length) as SubagentRoleKey;
       if (this.ctx.ui.input) {
         this.onClose();
         const currentVoice = (this.configManager.getConfig().subagents as any)?.[role] || "";
+        const roleName = ROLE_LABELS[role] || role;
         const newVoice = await this.ctx.ui.input(
-          `Voz en español para ${role} (ej: dora_heart, ef_dora, em_alex, em_santa):`,
+          `Voz personalizada para ${roleName} (ej: dora_heart o ef_dora:0.7,af_bella:0.3):`,
           currentVoice
         );
         if (newVoice && newVoice.trim()) {
@@ -1237,8 +1336,8 @@ export class VoiceMenuComponent extends Container {
             [role]: cleanVoice,
           });
           this.onConfigChanged(updated);
-          this.ctx.ui.notify(`Voz para ${role} configurada: ${cleanVoice}`, "info");
-          this.playVoiceSample(cleanVoice, this.configManager.getConfig().provider);
+          this.ctx.ui.notify(`Voz para ${roleName} configurada: ${cleanVoice}`, "info");
+          this.playVoiceSample(cleanVoice, this.configManager.getConfig().provider, role);
         }
       }
       return;
@@ -1316,16 +1415,36 @@ export class VoiceMenuComponent extends Container {
     }
   }
 
-  private async playVoiceSample(voiceName: string, providerType: string): Promise<void> {
+  private async playVoiceSample(
+    voiceName: string,
+    providerType: string,
+    role?: SubagentRoleKey
+  ): Promise<void> {
     if (this.isPreviewing) {
       this.player.stop();
     }
     this.isPreviewing = true;
     try {
-      const sampleText = `Hola, soy la voz ${voiceName} en Pi CLI.`;
+      let sampleText = `Hola, soy la voz ${voiceName} en Pi CLI.`;
+      if (role === "scout") {
+        sampleText = `Hola, soy la voz del explorador Scout. Relevando el terreno en Pi CLI.`;
+      } else if (role === "worker") {
+        sampleText = `Hola, soy la voz del programador Worker. Listo para implementar código en Pi CLI.`;
+      } else if (role === "reviewer") {
+        sampleText = `Hola, soy la voz del auditor Reviewer. Verificando y testeando en Pi CLI.`;
+      } else if (role === "orchestrator") {
+        sampleText = `Hola, soy la voz del orquestador principal. Coordinando a la cuadrilla en Pi CLI.`;
+      }
+
       const config = this.configManager.getConfig();
+      const effectiveConfig: VoicePluginConfig = {
+        ...config,
+        openai: { ...config.openai, voice: voiceName },
+        kokoro: { ...config.kokoro, voice: voiceName },
+        elevenlabs: { ...config.elevenlabs, voiceId: voiceName },
+      };
       const apiKey = this.configManager.getActiveApiKey();
-      const provider = createTTSProvider(config, apiKey);
+      const provider = createTTSProvider(effectiveConfig, apiKey);
       const res = await provider.synthesize(sampleText);
       await this.player.play(res.audioBuffer, res.format);
     } catch (err: any) {

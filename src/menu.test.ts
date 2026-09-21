@@ -128,4 +128,91 @@ describe("VoiceMenuComponent", () => {
       menu.handleMouse(mouseEvent);
     });
   });
+
+  it("navigates to subagent_voice submenu, updates voice, and navigates back with Escape", async () => {
+    let closed = false;
+    let latestConfig: any = null;
+    const menu = new VoiceMenuComponent({
+      configManager,
+      player,
+      theme: mockTheme,
+      tui: mockTui,
+      ctx: mockCtx,
+      initialScreen: "main",
+      onClose: () => {
+        closed = true;
+      },
+      onConfigChanged: (cfg) => {
+        latestConfig = cfg;
+      },
+    });
+
+    // 1. Navigate to subagents menu
+    await (menu as any).handleItemSelection("goto_subagents");
+    assert.equal((menu as any).currentScreen, "subagents");
+
+    // 2. Selecting 'sub_voice:scout' switches screen to 'subagent_voice'
+    await (menu as any).handleItemSelection("sub_voice:scout");
+    assert.equal((menu as any).currentScreen, "subagent_voice");
+    assert.equal((menu as any).selectedSubagentRole, "scout");
+
+    const lines = menu.render(80);
+    assert.ok(lines.some((l: string) => l.includes("Seleccionar Voz: Explorador / Scout")));
+    assert.ok(lines.some((l: string) => l.includes("Volver a Voces de Agentes")));
+
+    // 3. Selecting a voice in 'subagent_voice' updates config.subagents.scout and returns to 'subagents'
+    await (menu as any).handleItemSelection("set_sub_voice:scout:mateo");
+    assert.equal((menu as any).currentScreen, "subagents");
+    assert.equal(configManager.getConfig().subagents.scout, "mateo");
+    assert.equal(latestConfig?.subagents?.scout, "mateo");
+
+    const subagentsLines = menu.render(80);
+    assert.ok(subagentsLines.some((l: string) => l.includes("Explorador / Scout: [ mateo ]")));
+
+    // 4. Hitting Escape in 'subagent_voice' returns to 'subagents' without closing the menu
+    await (menu as any).handleItemSelection("sub_voice:worker");
+    assert.equal((menu as any).currentScreen, "subagent_voice");
+    assert.equal((menu as any).selectedSubagentRole, "worker");
+
+    menu.handleInput("\x1b");
+    assert.equal(closed, false);
+    assert.equal((menu as any).currentScreen, "subagents");
+
+    // Subsequent Escape returns to main
+    menu.handleInput("\x1b");
+    assert.equal(closed, false);
+    assert.equal((menu as any).currentScreen, "main");
+
+    // Next Escape closes menu
+    menu.handleInput("\x1b");
+    assert.equal(closed, true);
+  });
+
+  it("provides complete voice lists and renders radio selection correctly in subagent_voice", async () => {
+    configManager.save({ provider: "kokoro" });
+    const menu = new VoiceMenuComponent({
+      configManager,
+      player,
+      theme: mockTheme,
+      tui: mockTui,
+      ctx: mockCtx,
+      initialScreen: "subagents",
+      onClose: () => {},
+      onConfigChanged: () => {},
+    });
+
+    await (menu as any).handleItemSelection("sub_voice:worker");
+    assert.equal((menu as any).currentScreen, "subagent_voice");
+
+    const items = (menu as any).getItemsForScreen(configManager.getConfig());
+    assert.ok(items.some((it: any) => it.value === "set_sub_voice:worker:em_alex"));
+    assert.ok(items.some((it: any) => it.value === "set_sub_voice:worker:ef_dora"));
+    assert.ok(items.some((it: any) => it.value === "set_sub_voice:worker:dora_heart"));
+    assert.ok(items.some((it: any) => it.value === "custom_sub_voice:worker"));
+    assert.ok(items.some((it: any) => it.value === "back_to_subagents"));
+
+    // Verify navigating back via back_to_subagents
+    await (menu as any).handleItemSelection("back_to_subagents");
+    assert.equal((menu as any).currentScreen, "subagents");
+  });
 });
