@@ -48,6 +48,13 @@ describe("VoiceMenuComponent", () => {
     assert.ok(lines.length > 5);
     assert.ok(lines.some((l) => l.includes("Menú de Voz")));
     assert.ok(lines.some((l) => l.includes("Auto-lectura")));
+    assert.ok(lines.some((l) => l.includes("Modo Resumen (TL;DR)")));
+
+    const items = (menu as any).getItemsForScreen(configManager.getConfig());
+    const tldrItem = items.find((i: any) => i.value === "toggle_tldr");
+    assert.ok(tldrItem);
+    assert.ok(tldrItem.label.includes("Lectura completa"));
+    assert.equal(tldrItem.description, "Lee las respuestas completas palabra por palabra sin resumir");
 
     // Test Escape key closes menu from main screen
     menu.handleInput("escape");
@@ -244,9 +251,11 @@ describe("VoiceMenuComponent", () => {
 
     const concurrencyLines = menu.render(80);
     assert.ok(concurrencyLines.some((l: string) => l.includes("Concurrencia de Audio entre Sesiones")));
-    assert.ok(concurrencyLines.some((l: string) => l.includes("Cola FIFO")));
-    assert.ok(concurrencyLines.some((l: string) => l.includes("Interrupción inmediata")));
-    assert.ok(concurrencyLines.some((l: string) => l.includes("Desactivada")));
+    assert.ok(concurrencyLines.some((l: string) => l.includes("Opción 1: Cola ordenada FIFO")));
+    assert.ok(concurrencyLines.some((l: string) => l.includes("Opción 2: Interrumpir sesión previa")));
+    assert.ok(concurrencyLines.some((l: string) => l.includes("Opción 3: Modo Foco")));
+    assert.ok(concurrencyLines.some((l: string) => l.includes("Desactivado (Sin bloqueo)")));
+    assert.ok(concurrencyLines.some((l: string) => l.includes("Anunciar nombre de proyecto/sesión")));
 
     // 2. Select interrupt mode
     await (menu as any).handleItemSelection("set_concurrency:interrupt");
@@ -254,12 +263,30 @@ describe("VoiceMenuComponent", () => {
     assert.equal(player.getConcurrency(), "interrupt");
     assert.equal(latestConfig?.concurrency, "interrupt");
 
-    // 3. Escape on concurrency screen returns to main menu
+    // 3. Select focus mode
+    await (menu as any).handleItemSelection("set_concurrency:focus");
+    assert.equal(configManager.getConfig().concurrency, "focus");
+    assert.equal(player.getConcurrency(), "focus");
+    assert.equal(latestConfig?.concurrency, "focus");
+
+    // 4. Toggle announce project
+    assert.equal(configManager.getConfig().announceProject, false);
+    await (menu as any).handleItemSelection("toggle_announce_project");
+    assert.equal(configManager.getConfig().announceProject, true);
+    assert.equal(latestConfig?.announceProject, true);
+    assert.ok((menu as any).statusNotice.includes("ACTIVADO"));
+
+    // Toggle back to false
+    await (menu as any).handleItemSelection("toggle_announce_project");
+    assert.equal(configManager.getConfig().announceProject, false);
+    assert.equal(latestConfig?.announceProject, false);
+
+    // 5. Escape on concurrency screen returns to main menu
     menu.handleInput("\x1b");
     assert.equal(closed, false);
     assert.equal((menu as any).currentScreen, "main");
 
-    // 4. Second Escape closes menu
+    // 6. Second Escape closes menu
     menu.handleInput("\x1b");
     assert.equal(closed, true);
   });

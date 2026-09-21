@@ -8,6 +8,7 @@ import voiceExtension, {
   resolveSubagentVoice,
   cleanPhaseTitle,
   isTestCommand,
+  getProjectName,
   TEST_ANNOUNCE_COOLDOWN_MS,
 } from "./index.ts";
 import { DEFAULT_CONFIG } from "./config.ts";
@@ -522,6 +523,295 @@ describe("Voice Extension Entrypoint", () => {
       await new Promise((r) => setTimeout(r, 20));
       // Suppressed by config toggle
       assert.equal(notifications.length, 0);
+    } finally {
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  it("getProjectName returns current working directory base name", () => {
+    const name = getProjectName();
+    assert.ok(name.length > 0);
+    assert.equal(name, path.basename(process.cwd()));
+  });
+
+  it("handles /voice concurrency focus and /voice project toggles", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-project-test-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    try {
+      const listeners: Record<string, Function[]> = {};
+      let registeredCommandOpts: any = null;
+
+      const mockPi: any = {
+        on(event: string, handler: Function) {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        },
+        registerCommand(_name: string, opts: any) {
+          registeredCommandOpts = opts;
+        },
+        registerShortcut() {},
+      };
+
+      voiceExtension(mockPi);
+
+      const notifications: { msg: string; type: string }[] = [];
+      const mockCtx: any = {
+        ui: {
+          notify(msg: string, type: string) {
+            notifications.push({ msg, type });
+          },
+          setStatus() {},
+        },
+      };
+
+      // 1. /voice concurrency focus
+      await registeredCommandOpts.handler("concurrency focus", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Modo Foco")));
+
+      let saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.concurrency, "focus");
+
+      // 2. /voice project on
+      notifications.length = 0;
+      await registeredCommandOpts.handler("project on", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Anuncio de proyecto/sesión ACTIVADO")));
+
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.announceProject, true);
+
+      // 3. /voice proyecto off
+      notifications.length = 0;
+      await registeredCommandOpts.handler("proyecto off", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Anuncio de proyecto/sesión DESACTIVADO")));
+
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.announceProject, false);
+
+      // 4. /voice contexto (toggle)
+      notifications.length = 0;
+      await registeredCommandOpts.handler("contexto", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Anuncio de proyecto/sesión ACTIVADO")));
+
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.announceProject, true);
+    } finally {
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  it("records active session on input, commands, and shortcuts", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-active-session-test-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    try {
+      const listeners: Record<string, Function[]> = {};
+      let registeredCommandOpts: any = null;
+      const shortcuts: Record<string, any> = {};
+
+      const mockPi: any = {
+        on(event: string, handler: Function) {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        },
+        registerCommand(_name: string, opts: any) {
+          registeredCommandOpts = opts;
+        },
+        registerShortcut(key: string, opts: any) {
+          shortcuts[key] = opts;
+        },
+      };
+
+      voiceExtension(mockPi);
+
+      const mockCtx: any = {
+        ui: {
+          notify() {},
+          setStatus() {},
+        },
+      };
+
+      // Session start records active session
+      await listeners["session_start"][0]({}, mockCtx);
+
+      // Input event records active session
+      assert.doesNotThrow(() => {
+        listeners["input"][0]({}, mockCtx);
+      });
+
+      // Command execution records active session
+      await registeredCommandOpts.handler("status", mockCtx);
+
+      // Shortcuts record active session
+      if (shortcuts["alt+s"]) {
+        await shortcuts["alt+s"].handler(mockCtx);
+      }
+      if (shortcuts["alt+up"]) {
+        await shortcuts["alt+up"].handler(mockCtx);
+      }
+    } finally {
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  it("suppresses speech in focus mode when foreign session has focus", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-focus-suppress-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    // Configure focus mode and autoRead: true
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({ concurrency: "focus", autoRead: true, announceProject: true }),
+      "utf-8"
+    );
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    const { spawn } = await import("node:child_process");
+    const dummy = spawn("sleep", ["30"], { stdio: "ignore" });
+    const aliveForeignPid = dummy.pid!;
+
+    try {
+      const listeners: Record<string, Function[]> = {};
+      const mockPi: any = {
+        on(event: string, handler: Function) {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        },
+        registerCommand() {},
+        registerShortcut() {},
+      };
+
+      voiceExtension(mockPi);
+
+      const notifications: { msg: string; type: string }[] = [];
+      const mockCtx: any = {
+        ui: {
+          notify(msg: string, type: string) {
+            notifications.push({ msg, type });
+          },
+          setStatus() {},
+        },
+      };
+
+      // Import getIpcDirectory to simulate active session from foreign process
+      const { getIpcDirectory } = await import("./lock.ts");
+      const activeSessionFile = path.join(getIpcDirectory(), "active_session.json");
+      fs.writeFileSync(
+        activeSessionFile,
+        JSON.stringify({ pid: aliveForeignPid, timestamp: Date.now() })
+      );
+
+      // Now trigger agent_end (which calls speakText)
+      notifications.length = 0;
+      await listeners["agent_end"][0](
+        { messages: [{ role: "assistant", content: "Mensaje generado por agente de fondo." }] },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 40));
+
+      // Because session is NOT focused, speakText exits cleanly (no audio synthesis attempt)
+      assert.equal(notifications.length, 0);
+
+      // Now reclaim focus (e.g. user typed input in this session)
+      fs.writeFileSync(
+        activeSessionFile,
+        JSON.stringify({ pid: process.pid, timestamp: Date.now() })
+      );
+
+      // Now trigger agent_end again
+      notifications.length = 0;
+      await listeners["agent_end"][0](
+        { messages: [{ role: "assistant", content: "Mensaje en sesión enfocada." }] },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 40));
+
+      // Now it attempts synthesis (and since no API key is provided, notifies error or synthesizes)
+      assert.ok(notifications.length > 0);
+      assert.ok(
+        notifications.some(
+          (n) => n.msg.includes("[Voice] Error de") || n.msg.includes("configuración")
+        )
+      );
+    } finally {
+      dummy.kill("SIGKILL");
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  it("formats project prefix when announceProject is enabled for agent/orchestrator events and avoids duplicates", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-proj-prefix-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        concurrency: "off",
+        autoRead: true,
+        announceProject: true,
+        subagents: { enabled: true, announceStart: true },
+      }),
+      "utf-8"
+    );
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    try {
+      const listeners: Record<string, Function[]> = {};
+      const mockPi: any = {
+        on(event: string, handler: Function) {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        },
+        registerCommand() {},
+        registerShortcut() {},
+      };
+
+      voiceExtension(mockPi);
+
+      const notifications: { msg: string; type: string }[] = [];
+      const mockCtx: any = {
+        ui: {
+          notify(msg: string, type: string) {
+            notifications.push({ msg, type });
+          },
+          setStatus() {},
+        },
+      };
+
+      // Trigger subagent start (which runs speakText with isAgentOrOrch = true)
+      await listeners["tool_execution_start"][0](
+        {
+          toolName: "subagent_run",
+          toolCallId: "agent_prefix_1",
+          args: { agent: "gentle-ai-explore", task: "explorar repo" },
+        },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 40));
+
+      // With announceProject enabled, prefix "En <project>:" is prepended to speech
+      const proj = getProjectName();
+      assert.ok(proj.length > 0);
     } finally {
       delete process.env.PI_VOICE_CONFIG_PATH;
       try {

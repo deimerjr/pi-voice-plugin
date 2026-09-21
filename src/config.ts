@@ -76,6 +76,7 @@ export interface VoicePluginConfig {
   enabled: boolean;
   autoRead: boolean;
   tldr: boolean;
+  announceProject?: boolean;
   mode: SpeechMode;
   filterCode: CodeFilterMode;
   provider: SpeechProviderType;
@@ -96,6 +97,7 @@ export const DEFAULT_CONFIG: VoicePluginConfig = {
   enabled: true,
   autoRead: false,
   tldr: false,
+  announceProject: false,
   mode: "final",
   filterCode: "omit",
   provider: "openai",
@@ -265,12 +267,16 @@ export class ConfigManager {
       ...base,
       ...incoming,
       tldr: typeof incoming.tldr === "boolean" ? incoming.tldr : base.tldr ?? false,
+      announceProject:
+        typeof incoming.announceProject === "boolean"
+          ? incoming.announceProject
+          : base.announceProject ?? false,
       volume:
         typeof incoming.volume === "number"
           ? Math.max(0.0, Math.min(1.5, incoming.volume))
           : base.volume ?? 1.0,
       concurrency:
-        incoming.concurrency && ["queue", "interrupt", "off"].includes(incoming.concurrency)
+        incoming.concurrency && ["queue", "interrupt", "focus", "off"].includes(incoming.concurrency)
           ? incoming.concurrency
           : base.concurrency ?? "queue",
       openai: {

@@ -31,6 +31,7 @@ describe("ConfigManager", () => {
     assert.equal(config.provider, "openai");
     assert.equal(config.openai.voice, "nova");
     assert.equal(config.concurrency, "queue");
+    assert.equal(config.announceProject, false);
     assert.equal(config.subagents.announceTests, true);
   });
 
@@ -53,6 +54,28 @@ describe("ConfigManager", () => {
     manager2.save({ concurrency: "off" });
     const manager3 = new ConfigManager(tmpConfigFile);
     assert.equal(manager3.getConfig().concurrency, "off");
+
+    // Can update to 'focus'
+    manager3.save({ concurrency: "focus" });
+    const manager4 = new ConfigManager(tmpConfigFile);
+    assert.equal(manager4.getConfig().concurrency, "focus");
+  });
+
+  it("persists and reloads announceProject toggle cleanly", () => {
+    const manager = new ConfigManager(tmpConfigFile);
+    assert.equal(manager.getConfig().announceProject, false);
+
+    manager.save({ announceProject: true });
+    assert.equal(manager.getConfig().announceProject, true);
+
+    const reloaded = new ConfigManager(tmpConfigFile);
+    assert.equal(reloaded.getConfig().announceProject, true);
+
+    reloaded.save({ announceProject: false });
+    assert.equal(reloaded.getConfig().announceProject, false);
+
+    const reloaded2 = new ConfigManager(tmpConfigFile);
+    assert.equal(reloaded2.getConfig().announceProject, false);
   });
 
   it("updates nested provider settings cleanly", () => {

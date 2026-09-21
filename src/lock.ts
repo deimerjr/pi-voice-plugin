@@ -3,7 +3,14 @@ import path from "node:path";
 import os from "node:os";
 import crypto from "node:crypto";
 
-export type ConcurrencyMode = "queue" | "interrupt" | "off";
+export type ConcurrencyMode = "queue" | "interrupt" | "focus" | "off";
+
+export class FocusSuppressionError extends Error {
+  constructor(message: string = "Audio playback suppressed: session is not in focus") {
+    super(message);
+    this.name = "FocusSuppressionError";
+  }
+}
 
 export interface LockMetadata {
   sessionPid: number;
@@ -81,6 +88,8 @@ export class PlaybackLockManager {
   private ipcDir: string;
   private lockFile: string;
   private queueDir: string;
+  private activeSessionFile: string;
+  private lastInteractionTimestamp: number;
   private mode: ConcurrencyMode;
   private maxDurationMs: number;
   private pollIntervalMs: number;
@@ -97,6 +106,8 @@ export class PlaybackLockManager {
     this.ipcDir = options.ipcDir ?? getIpcDirectory();
     this.lockFile = path.join(this.ipcDir, "playback.lock");
     this.queueDir = path.join(this.ipcDir, "queue");
+    this.activeSessionFile = path.join(this.ipcDir, "active_session.json");
+    this.lastInteractionTimestamp = Date.now();
     this.mode = options.mode ?? "queue";
     this.maxDurationMs = options.maxDurationMs ?? 60_000;
     this.pollIntervalMs = options.pollIntervalMs ?? 50;
@@ -117,6 +128,65 @@ export class PlaybackLockManager {
 
   public getQueueDirPath(): string {
     return this.queueDir;
+  }
+
+  public getActiveSessionFilePath(): string {
+    return this.activeSessionFile;
+  }
+
+  public getLastInteractionTimestamp(): number {
+    return this.lastInteractionTimestamp;
+  }
+
+  /**
+   * Atomically records the current process as the actively focused Pi session.
+   */
+  public recordActiveSession(): void {
+    const now = Date.now();
+    this.lastInteractionTimestamp = now;
+    this.ensureDirectoriesSync();
+    const tmp = path.join(
+      this.ipcDir,
+      `active_session.${process.pid}.${now}.${Math.random().toString(36).slice(2)}.tmp`
+    );
+    try {
+      fs.writeFileSync(tmp, JSON.stringify({ pid: process.pid, timestamp: now }), "utf-8");
+      fs.renameSync(tmp, this.activeSessionFile);
+    } catch {
+      try {
+        if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  /**
+   * Reads and parses the active session record if present and valid.
+   */
+  public getActiveSession(): { pid: number; timestamp: number } | null {
+    try {
+      if (!fs.existsSync(this.activeSessionFile)) return null;
+      const raw = fs.readFileSync(this.activeSessionFile, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.pid === "number" && typeof parsed.timestamp === "number") {
+        return { pid: parsed.pid, timestamp: parsed.timestamp };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Checks whether this session is currently focused (owns the active record or dead PID / same PID).
+   */
+  public isFocusedSession(): boolean {
+    const active = this.getActiveSession();
+    if (!active) return true;
+    if (active.pid === process.pid) return true;
+    if (!isPidAlive(active.pid)) return true;
+    return false;
   }
 
   public getMode(): ConcurrencyMode {
@@ -300,6 +370,13 @@ export class PlaybackLockManager {
     this.waitCancelled = false;
 
     if (effectiveMode === "interrupt") {
+      return this.acquireInterrupt();
+    }
+
+    if (effectiveMode === "focus") {
+      if (!this.isFocusedSession()) {
+        throw new FocusSuppressionError();
+      }
       return this.acquireInterrupt();
     }
 

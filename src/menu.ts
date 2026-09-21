@@ -340,8 +340,10 @@ export class VoiceMenuComponent extends Container {
           },
           {
             value: "toggle_tldr",
-            label: `${config.tldr ? "●" : "○"} Modo Resumen (TL;DR): ${config.tldr ? "ACTIVADO" : "DESACTIVADO"}`,
-            description: "Sintetiza respuestas largas en 1-2 frases antes de hablar",
+            label: `${config.tldr ? "●" : "○"} Modo Resumen (TL;DR): ${config.tldr ? "ACTIVADO (Resumen breve)" : "DESACTIVADO (Lectura completa)"}`,
+            description: config.tldr
+              ? "Sintetiza respuestas extensas en 1 o 2 frases antes de hablar"
+              : "Lee las respuestas completas palabra por palabra sin resumir",
           },
           {
             value: "trigger_dictate",
@@ -386,7 +388,7 @@ export class VoiceMenuComponent extends Container {
           {
             value: "goto_concurrency",
             label: `◆ Concurrencia entre sesiones (${config.concurrency ?? "queue"})...`,
-            description: "Coordinar audio entre múltiples sesiones (cola FIFO, interrupción o apagado)",
+            description: "Coordinar audio entre múltiples sesiones (cola FIFO, interrupción, foco o apagado)",
           },
           {
             value: "read_last",
@@ -823,18 +825,28 @@ export class VoiceMenuComponent extends Container {
         return [
           {
             value: "set_concurrency:queue",
-            label: `${cur === "queue" ? "● " : "○ "}Cola FIFO (queue)`,
+            label: `${cur === "queue" ? "● " : "○ "}Opción 1: Cola ordenada FIFO (Por defecto / Recomendado)`,
             description: "Espera ordenada en cola. Ninguna sesión corta a otra ni se mezclan las voces.",
           },
           {
             value: "set_concurrency:interrupt",
-            label: `${cur === "interrupt" ? "● " : "○ "}Interrupción inmediata (interrupt)`,
+            label: `${cur === "interrupt" ? "● " : "○ "}Opción 2: Interrumpir sesión previa (Takeover)`,
             description: "La sesión más reciente corta el audio en curso de cualquier otra sesión.",
           },
           {
+            value: "set_concurrency:focus",
+            label: `${cur === "focus" ? "● " : "○ "}Opción 3: Modo Foco (Solo habla la sesión activa)`,
+            description: "Solo emite audio la terminal donde estás trabajando; las demás se silencian.",
+          },
+          {
             value: "set_concurrency:off",
-            label: `${cur === "off" ? "● " : "○ "}Desactivada (off)`,
+            label: `${cur === "off" ? "● " : "○ "}Desactivado (Sin bloqueo)`,
             description: "Sin bloqueo inter-proceso. Múltiples sesiones pueden sonar al mismo tiempo.",
+          },
+          {
+            value: "toggle_announce_project",
+            label: `${config.announceProject ? "●" : "○"} Anunciar nombre de proyecto/sesión: ${config.announceProject ? "SÍ" : "NO"}`,
+            description: "Antepone 'En <proyecto>:' antes de hablar para identificar qué terminal emite el audio",
           },
           {
             value: "back",
@@ -943,10 +955,24 @@ export class VoiceMenuComponent extends Container {
       this.onConfigChanged(updated);
       const labels: Record<ConcurrencyMode, string> = {
         queue: "Cola FIFO (espera ordenada)",
-        interrupt: "Interrupción inmediata",
+        interrupt: "Interrupción previa (takeover)",
+        focus: "Modo Foco (solo terminal activa)",
         off: "Desactivada (sin coordinación)",
       };
       this.statusNotice = `Concurrencia inter-sesiones: ${labels[mode]}`;
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "toggle_announce_project") {
+      const config = this.configManager.getConfig();
+      const next = !config.announceProject;
+      const updated = this.configManager.save({ announceProject: next });
+      this.onConfigChanged(updated);
+      this.statusNotice = next
+        ? "Anuncio de nombre de proyecto ACTIVADO ('En <proyecto>:...')"
+        : "Anuncio de nombre de proyecto DESACTIVADO";
       this.renderScreen();
       this.tui.requestRender();
       return;

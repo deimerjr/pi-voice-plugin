@@ -34,8 +34,16 @@ Plugin / Extensión modular para **Pi CLI** que sintetiza en voz las respuestas 
   - **Interruptor independiente**: Activá o desactivá solo el anuncio de tests mediante `/voice tests [on|off]` (o `/voice pruebas [on|off]`) y desde el menú visual (`/voice menu` ➔ `Voces de Agentes y Roles`).
   - **Filtro inteligente y supresión de subagentes**: Si un subagente (como Santa / Auditor) está activo auditando, el orquestador suprime automáticamente sus avisos para no duplicar ni hablar encima de las locuciones del agente.
   - **Enfriamiento inteligente (debounce de 30s)**: Evita locuciones repetitivas al relanzar pruebas consecutivas rápidamente.
-- **Modo Audio TL;DR (Resumen Ejecutivo Breve)**:
-  - En lugar de escuchar toda una respuesta larga de 4 párrafos, el modo TL;DR (`/voice tldr`) sintetiza en 1 o 2 oraciones clave lo que se hizo antes de hablar.
+- **Concurrencia Multi-Sesión y Coordinación Inter-Proceso**:
+  - Permite tener múltiples terminales de Pi CLI abiertas en paralelo sin que se pisen los audios:
+    - **Opción 1: Cola FIFO (`queue` - Por Defecto / Recomendado)**: Espera ordenada con cerrojo atómico inter-proceso y tickets lexicográficos. Las sesiones esperan su turno y hablan una tras otra sin mezclarse.
+    - **Opción 2: Interrupción Previa (`interrupt` - Takeover)**: La sesión más reciente corta el audio en curso de la sesión previa y toma el control de inmediato.
+    - **Opción 3: Modo Foco (`focus`)**: Solo habla la terminal en la que estás trabajando activamente (donde escribiste o abriste el menú); las demás sesiones de fondo permanecen en silencio.
+    - **Desactivada (`off`)**: Sin coordinación inter-proceso.
+- **Anuncio de Nombre de Proyecto / Contexto (`announceProject`)**:
+  - Antepone `"En <proyecto>:"` (ej: *"En Voz: Alex arranca con la tarea..."*) para identificar al instante qué repositorio o terminal está hablando cuando tenés varias ventanas abiertas.
+- **Modo Audio TL;DR vs Lectura Completa**:
+  - Alterná entre síntesis ejecutiva breve (`/voice tldr`) y lectura completa palabra por palabra, con feedback transparente y explicativo en el menú visual.
 - **Entrada Directa de Voz (Dictado de Prompts / STT)**:
   - Presionás **`Alt + R`** (o hacés clic en `[ 🎙️ Dictar ]` o `/voice record`), hablás al micrófono y al volver a presionar la tecla, transcribe automáticamente con Whisper e inserta el texto directo en tu prompt de Pi CLI.
 - **Botón de Parada con un Clic e Indicador de Volumen**:
@@ -103,6 +111,8 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 | `/voice provider <tipo>` | Cambia de proveedor (`kokoro`, `openai`, `elevenlabs`, `custom`) |
 | `/voice voice <nombre>` | Cambia la voz (ej: `nova`, `alloy`, `echo`, `onyx`, o ID de ElevenLabs) |
 | `/voice custom <accion>` | Configura API custom (`url`, `method`, `format`, `activate`) |
+| `/voice concurrency [queue\|interrupt\|focus\|off]` | Configura coordinación entre sesiones simultáneas (cola FIFO, interrupción, foco o off) |
+| `/voice project [on\|off]` / `/voice proyecto [on\|off]` | Antepone el nombre del proyecto actual al hablar (`En <proyecto>:`) |
 | `/voice volume <0-150>` | Ajusta el volumen de reproducción (ej: `80`, `100`, `150`) |
 | `/voice speed <numero>` | Ajusta la velocidad de habla (ej: `1.0`, `1.25`) |
 | `/voice filter <modo>` | Tratamiento de código: `omit` (ignorar), `mention` (avisar), `raw` (leer todo) |

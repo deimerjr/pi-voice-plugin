@@ -6,6 +6,7 @@ import os from "node:os";
 import { spawn } from "node:child_process";
 import {
   PlaybackLockManager,
+  FocusSuppressionError,
   getIpcDirectory,
   isPidAlive,
   type LockMetadata,
@@ -217,5 +218,100 @@ describe("PlaybackLockManager & InterProcessLock", () => {
 
     manager.dispose();
     manager2.dispose();
+  });
+
+  it("records and inspects active session focus state accurately", () => {
+    const manager = new PlaybackLockManager({ ipcDir: tmpDir });
+
+    // Initially with no file, isFocusedSession() is true
+    assert.equal(manager.getActiveSession(), null);
+    assert.equal(manager.isFocusedSession(), true);
+
+    // Record current session
+    manager.recordActiveSession();
+    const active = manager.getActiveSession();
+    assert.ok(active !== null);
+    assert.equal(active.pid, process.pid);
+    assert.ok(typeof active.timestamp === "number");
+    assert.equal(manager.isFocusedSession(), true);
+
+    // Overwrite with a dead foreign PID
+    const deadPid = 9999991;
+    assert.equal(isPidAlive(deadPid), false);
+    fs.writeFileSync(
+      manager.getActiveSessionFilePath(),
+      JSON.stringify({ pid: deadPid, timestamp: Date.now() })
+    );
+    // Dead foreign PID allows current session to take focus
+    assert.equal(manager.isFocusedSession(), true);
+
+    // Overwrite with an alive foreign PID (we spawn a dummy child)
+    const dummy = spawn("sleep", ["30"], { stdio: "ignore" });
+    const aliveForeignPid = dummy.pid!;
+    try {
+      assert.equal(isPidAlive(aliveForeignPid), true);
+      fs.writeFileSync(
+        manager.getActiveSessionFilePath(),
+        JSON.stringify({ pid: aliveForeignPid, timestamp: Date.now() })
+      );
+
+      // Now current session is NOT in focus
+      assert.equal(manager.isFocusedSession(), false);
+
+      // Recording active session reclaims focus atomically
+      manager.recordActiveSession();
+      assert.equal(manager.isFocusedSession(), true);
+      assert.equal(manager.getActiveSession()?.pid, process.pid);
+    } finally {
+      dummy.kill("SIGKILL");
+    }
+
+    manager.dispose();
+  });
+
+  it("focus mode suppresses playback when session is not in focus and speaks with takeover when focused", async () => {
+    const manager = new PlaybackLockManager({ ipcDir: tmpDir, pollIntervalMs: 20 });
+    const dummy = spawn("sleep", ["30"], { stdio: "ignore" });
+    const aliveForeignPid = dummy.pid!;
+
+    try {
+      // Simulate foreign session holding active focus
+      fs.writeFileSync(
+        manager.getActiveSessionFilePath(),
+        JSON.stringify({ pid: aliveForeignPid, timestamp: Date.now() })
+      );
+
+      assert.equal(manager.isFocusedSession(), false);
+
+      // acquire("focus") must throw FocusSuppressionError
+      await assert.rejects(
+        async () => {
+          await manager.acquire("focus");
+        },
+        (err: any) => {
+          assert.ok(err instanceof FocusSuppressionError);
+          assert.equal(err.name, "FocusSuppressionError");
+          assert.match(err.message, /not in focus/i);
+          return true;
+        }
+      );
+
+      // Lock should not be held
+      assert.equal(manager.isHeldByCurrentSession(), false);
+
+      // Reclaim focus for current session
+      manager.recordActiveSession();
+      assert.equal(manager.isFocusedSession(), true);
+
+      // Now acquire("focus") succeeds and acts with takeover (interrupt)
+      const release = await manager.acquire("focus");
+      assert.equal(manager.isHeldByCurrentSession(), true);
+
+      await release();
+      assert.equal(manager.isHeldByCurrentSession(), false);
+    } finally {
+      dummy.kill("SIGKILL");
+      manager.dispose();
+    }
   });
 });

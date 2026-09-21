@@ -51,6 +51,10 @@ export class AudioPlayer {
     return this.lockManager;
   }
 
+  public isFocusedSession(): boolean {
+    return this.lockManager.isFocusedSession();
+  }
+
   /**
    * Acquires utterance-level lock across multiple Pi sessions.
    */

@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { Component, Theme, TuiMouseEvent, TuiMouseEventResult } from "@earendil-works/pi-tui";
 import { visibleWidth } from "@earendil-works/pi-tui";
@@ -7,7 +8,7 @@ import {
   type CodeFilterMode,
   type SpeechProviderType,
 } from "./config.ts";
-import type { ConcurrencyMode } from "./lock.ts";
+import { FocusSuppressionError, type ConcurrencyMode } from "./lock.ts";
 import { TextSanitizer } from "./sanitizer.ts";
 import { createTTSProvider } from "./providers/factory.ts";
 import { AudioPlayer } from "./player.ts";
@@ -181,6 +182,19 @@ export function isTestCommand(cmd: string): boolean {
 }
 
 export const TEST_ANNOUNCE_COOLDOWN_MS = 30_000;
+
+/**
+ * Returns the active project / working directory name.
+ */
+export function getProjectName(): string {
+  try {
+    const cwd = process.cwd();
+    const base = path.basename(cwd);
+    return base || "proyecto";
+  } catch {
+    return "proyecto";
+  }
+}
 
 function extractTextFromResult(result: any): string {
   if (!result) return "";
@@ -386,13 +400,28 @@ export default function (pi: ExtensionAPI) {
   const speakText = async (
     rawText: string,
     ctx?: ExtensionContext,
-    overrideVoice?: string
+    overrideVoice?: string,
+    isAgentOrOrch: boolean = false
   ): Promise<void> => {
     if (!rawText || !rawText.trim()) {
       return;
     }
 
-    const cleanText = TextSanitizer.sanitize(rawText, {
+    if (config.concurrency === "focus" && !player.getLockManager().isFocusedSession()) {
+      return;
+    }
+
+    let textToProcess = rawText;
+    if (config.announceProject && isAgentOrOrch) {
+      const proj = getProjectName();
+      const prefix = `En ${proj}: `;
+      const lowerPrefix = `en ${proj.toLowerCase()}:`;
+      if (!textToProcess.startsWith(prefix) && !textToProcess.toLowerCase().startsWith(lowerPrefix)) {
+        textToProcess = `${prefix}${textToProcess}`;
+      }
+    }
+
+    const cleanText = TextSanitizer.sanitize(textToProcess, {
       filterCode: config.filterCode,
       maxChars: config.maxCharsPerSpeech,
     });
@@ -437,6 +466,14 @@ export default function (pi: ExtensionAPI) {
         textToSpeak = await TldrSummarizer.summarize(cleanText);
       } catch {
         textToSpeak = cleanText;
+      }
+      if (config.announceProject && isAgentOrOrch) {
+        const proj = getProjectName();
+        const prefix = `En ${proj}: `;
+        const lowerPrefix = `en ${proj.toLowerCase()}:`;
+        if (!textToSpeak.startsWith(prefix) && !textToSpeak.toLowerCase().startsWith(lowerPrefix)) {
+          textToSpeak = `${prefix}${textToSpeak}`;
+        }
       }
     }
 
@@ -494,6 +531,9 @@ export default function (pi: ExtensionAPI) {
         await player.play(currentResult.audioBuffer, currentResult.format);
       }
     } catch (err: any) {
+      if (err instanceof FocusSuppressionError || err.name === "FocusSuppressionError") {
+        return;
+      }
       if (!signal.aborted && err.name !== "AbortError" && ctx?.ui) {
         ctx.ui.notify(`[Voice] Error de reproducción: ${err.message}`, "error");
       }
@@ -527,12 +567,14 @@ export default function (pi: ExtensionAPI) {
     player.setCustomCommand(config.playerCommand);
     player.setVolume(config.volume ?? 1.0);
     player.setConcurrency(config.concurrency ?? "queue");
+    player.getLockManager().recordActiveSession();
     registerAllShortcuts(ctx);
     updateUiState(ctx);
   });
 
   // User input cancels ongoing speech immediately
   pi.on("input", async (_event, _ctx) => {
+    player.getLockManager().recordActiveSession();
     stopPlayback();
   });
 
@@ -614,7 +656,7 @@ export default function (pi: ExtensionAPI) {
           msg = label ? `${role} iniciado: ${label}.` : `${role} iniciado.`;
         }
 
-        speakText(msg, ctx, voice).catch(() => {});
+        speakText(msg, ctx, voice, true).catch(() => {});
       }
       return;
     }
@@ -646,7 +688,7 @@ export default function (pi: ExtensionAPI) {
           const msg = config.subagents?.crewMode
             ? `${userTitle}, planifiqué el trabajo en ${count} ${count === 1 ? "fase" : "fases"}. Pongo manos a la obra.`
             : `Trabajo planificado en ${count} ${count === 1 ? "fase" : "fases"}.`;
-          speakText(msg, ctx, orchVoice).catch(() => {});
+          speakText(msg, ctx, orchVoice, true).catch(() => {});
         }
       } else if (action === "update" && typeof args.id === "number") {
         const existing = knownTodoTasks.get(args.id);
@@ -670,7 +712,7 @@ export default function (pi: ExtensionAPI) {
             const msg = config.subagents?.crewMode
               ? `${userTitle}, arranco la fase: ${cleanTitle}.`
               : `Iniciando fase: ${cleanTitle}.`;
-            speakText(msg, ctx, orchVoice).catch(() => {});
+            speakText(msg, ctx, orchVoice, true).catch(() => {});
           }
         } else if (newStatus === "done") {
           const phraseKey = `done:${args.id}:${cleanTitle}`;
@@ -679,7 +721,7 @@ export default function (pi: ExtensionAPI) {
             const msg = config.subagents?.crewMode
               ? `${userTitle}, quedó lista la fase: ${cleanTitle}.`
               : `Fase completada: ${cleanTitle}.`;
-            speakText(msg, ctx, orchVoice).catch(() => {});
+            speakText(msg, ctx, orchVoice, true).catch(() => {});
           }
         }
       } else if (action === "add" && args.title) {
@@ -689,7 +731,7 @@ export default function (pi: ExtensionAPI) {
           const msg = config.subagents?.crewMode
             ? `${userTitle}, arranco la fase: ${cleanTitle}.`
             : `Iniciando fase: ${cleanTitle}.`;
-          speakText(msg, ctx, orchVoice).catch(() => {});
+          speakText(msg, ctx, orchVoice, true).catch(() => {});
         }
       }
       return;
@@ -715,7 +757,7 @@ export default function (pi: ExtensionAPI) {
           const msg = config.subagents?.crewMode
             ? `${userTitle}, voy a correr las pruebas de verificación.`
             : "Ejecutando pruebas de verificación.";
-          speakText(msg, ctx, orchVoice).catch(() => {});
+          speakText(msg, ctx, orchVoice, true).catch(() => {});
         }
       }
       return;
@@ -744,7 +786,7 @@ export default function (pi: ExtensionAPI) {
             : config.subagents?.crewMode
               ? `${userTitle}, pruebas verificadas y pasadas con éxito.`
               : "Pruebas pasadas exitosamente.";
-          speakText(msg, ctx, orchVoice).catch(() => {});
+          speakText(msg, ctx, orchVoice, true).catch(() => {});
         }
       }
       return;
@@ -761,7 +803,7 @@ export default function (pi: ExtensionAPI) {
         const errorMsg = config.subagents.crewMode
           ? `${userTitle}, ${tracked.name} tuvo un problema: la tarea finalizó con error.`
           : `${tracked.role} finalizó con error.`;
-        speakText(errorMsg, ctx, tracked.voice).catch(() => {});
+        speakText(errorMsg, ctx, tracked.voice, true).catch(() => {});
       } else {
         const rawResult = extractTextFromResult(event.result);
         if (rawResult && rawResult.trim()) {
@@ -787,18 +829,18 @@ export default function (pi: ExtensionAPI) {
               finalMsg = `${tracked.role} completado: ${summary}`;
             }
 
-            speakText(finalMsg, ctx, tracked.voice).catch(() => {});
+            speakText(finalMsg, ctx, tracked.voice, true).catch(() => {});
           } catch {
             const fallbackMsg = config.subagents.crewMode
               ? `${userTitle}, ${tracked.name} terminó su tarea exitosamente.`
               : `${tracked.role} completó su tarea.`;
-            speakText(fallbackMsg, ctx, tracked.voice).catch(() => {});
+            speakText(fallbackMsg, ctx, tracked.voice, true).catch(() => {});
           }
         } else {
           const fallbackMsg = config.subagents.crewMode
             ? `${userTitle}, ${tracked.name} completó la tarea.`
             : `${tracked.role} completó su tarea.`;
-          speakText(fallbackMsg, ctx, tracked.voice).catch(() => {});
+          speakText(fallbackMsg, ctx, tracked.voice, true).catch(() => {});
         }
       }
     }
@@ -816,7 +858,7 @@ export default function (pi: ExtensionAPI) {
         lastAssistantText = text;
 
         if (config.enabled && config.autoRead) {
-          speakText(text, ctx).catch(() => {});
+          speakText(text, ctx, undefined, true).catch(() => {});
         }
       }
     }
@@ -838,6 +880,7 @@ export default function (pi: ExtensionAPI) {
       (pi as any).registerShortcut(sc.menu, {
         description: "Abrir menú interactivo de Pi Voice",
         handler: async (c: ExtensionContext) => {
+          player.getLockManager().recordActiveSession();
           await openVoiceMenu(c);
         },
       });
@@ -847,6 +890,7 @@ export default function (pi: ExtensionAPI) {
       (pi as any).registerShortcut(sc.stop, {
         description: "Detener reproducción de voz inmediatamente",
         handler: async (c: ExtensionContext) => {
+          player.getLockManager().recordActiveSession();
           stopPlayback(c);
           if (c.ui) {
             c.ui.notify("⏹️ Audio detenido", "info");
@@ -859,6 +903,7 @@ export default function (pi: ExtensionAPI) {
       (pi as any).registerShortcut(sc.record, {
         description: "Alternar grabación de voz para dictado de prompts",
         handler: async (c: ExtensionContext) => {
+          player.getLockManager().recordActiveSession();
           await toggleRecording(c);
         },
       });
@@ -868,6 +913,7 @@ export default function (pi: ExtensionAPI) {
       (pi as any).registerShortcut(sc.volumeUp, {
         description: "Subir volumen de voz (+10%)",
         handler: async (c: ExtensionContext) => {
+          player.getLockManager().recordActiveSession();
           const current = config.volume ?? 1.0;
           const next = Math.min(1.5, Math.round((current + 0.1) * 10) / 10);
           config = configManager.save({ volume: next });
@@ -884,6 +930,7 @@ export default function (pi: ExtensionAPI) {
       (pi as any).registerShortcut(sc.volumeDown, {
         description: "Bajar volumen de voz (-10%)",
         handler: async (c: ExtensionContext) => {
+          player.getLockManager().recordActiveSession();
           const current = config.volume ?? 1.0;
           const next = Math.max(0.0, Math.round((current - 0.1) * 10) / 10);
           config = configManager.save({ volume: next });
@@ -903,6 +950,7 @@ export default function (pi: ExtensionAPI) {
   pi.registerCommand("voice", {
     description: "Control de síntesis de voz (/voice menu para interfaz visual)",
     handler: async (args, ctx) => {
+      player.getLockManager().recordActiveSession();
       const parts = (args || "").trim().split(/\s+/);
       const sub = parts[0]?.toLowerCase() || "";
       const val = parts.slice(1).join(" ");
@@ -919,13 +967,14 @@ export default function (pi: ExtensionAPI) {
         case "concurrencia":
         case "cola": {
           const mode = val.toLowerCase().trim() as ConcurrencyMode;
-          if (mode === "queue" || mode === "interrupt" || mode === "off") {
+          if (mode === "queue" || mode === "interrupt" || mode === "focus" || mode === "off") {
             config = configManager.save({ concurrency: mode });
             player.setConcurrency(mode);
             updateUiState(ctx);
             const labels: Record<ConcurrencyMode, string> = {
               queue: "Cola FIFO (espera ordenada entre sesiones)",
               interrupt: "Interrupción (reproduce de inmediato cortando otra sesión)",
+              focus: "Modo Foco (solo habla la terminal activa en primer plano)",
               off: "Desactivada (reproducción concurrente sin coordinación)",
             };
             ctx.ui.notify(
@@ -935,15 +984,37 @@ export default function (pi: ExtensionAPI) {
           } else if (!val) {
             const currentMode = config.concurrency ?? "queue";
             ctx.ui.notify(
-              `Modo actual de concurrencia: ${currentMode}. Opciones: queue (cola FIFO), interrupt (interrumpir), off (desactivada). Uso: /voice concurrency <modo>`,
+              `Modo actual de concurrencia: ${currentMode}. Opciones: queue (cola FIFO), interrupt (interrumpir), focus (modo foco), off (desactivada). Uso: /voice concurrency <modo>`,
               "info"
             );
           } else {
             ctx.ui.notify(
-              `Modo de concurrencia inválido: "${val}". Opciones válidas: queue, interrupt, off`,
+              `Modo de concurrencia inválido: "${val}". Opciones válidas: queue, interrupt, focus, off`,
               "error"
             );
           }
+          break;
+        }
+
+        case "project":
+        case "proyecto":
+        case "contexto": {
+          const current = config.announceProject ?? false;
+          const normalized = val.toLowerCase().trim();
+          const next =
+            normalized === "on" || normalized === "si" || normalized === "sí" || normalized === "true"
+              ? true
+              : normalized === "off" || normalized === "no" || normalized === "false"
+              ? false
+              : !current;
+          config = configManager.save({ announceProject: next });
+          updateUiState(ctx);
+          ctx.ui.notify(
+            next
+              ? `🔊 Anuncio de proyecto/sesión ACTIVADO (antepone "En ${getProjectName()}:" al hablar)`
+              : `🔇 Anuncio de proyecto/sesión DESACTIVADO`,
+            "info"
+          );
           break;
         }
 
@@ -1324,6 +1395,7 @@ export default function (pi: ExtensionAPI) {
             `Velocidad: ${config.openai.speed}x`,
             `Volumen: ${Math.round((config.volume ?? 1.0) * 100)}%`,
             `Concurrencia inter-sesiones: ${config.concurrency ?? "queue"}`,
+            `Anuncio de proyecto/sesión: ${config.announceProject ? "ACTIVADO" : "DESACTIVADO"} (En ${getProjectName()}:)`,
             `Filtro de código: ${config.filterCode}`,
             `Reproductor de audio CLI: ${detected}`,
             `Archivo de configuración: ${configManager.getConfigPath()}`,
@@ -1351,6 +1423,7 @@ export default function (pi: ExtensionAPI) {
             "  /voice jefe <nombre>   - Atajo directo para cambiar tu apelativo",
             "  /voice record          - Inicia o detiene el dictado de prompts por voz (Alt+R)",
             "  /voice tldr            - Alterna el modo de resumen breve ejecutivo (TL;DR)",
+            "  /voice project [on|off] - Antepone el nombre del proyecto al hablar ('En <proyecto>:')",
             "  /voice on              - Activa la lectura automática tras cada respuesta",
             "  /voice off             - Desactiva la lectura automática",
             "  /voice toggle          - Alterna entre lectura automática on/off",
@@ -1362,7 +1435,7 @@ export default function (pi: ExtensionAPI) {
             "  /voice voice <nombre>  - Cambia la voz (ej: nova, alloy, echo, onyx)",
             "  /voice volume <0-150>  - Ajusta el volumen de habla (ej: 80, 100)",
             "  /voice custom <accion> - Configura API custom (url, method, format, activate)",
-            "  /voice concurrency [queue|interrupt|off] - Modo de concurrencia entre sesiones (cola, interrupción o off)",
+            "  /voice concurrency [queue|interrupt|focus|off] - Modo de concurrencia entre sesiones (cola, interrupción, foco o off)",
             "  /voice speed <numero>  - Cambia la velocidad (ej: 1.0, 1.25)",
             "  /voice filter <modo>   - Modo de código (omit | mention | raw)",
             "  /voice key <api-key>   - Guarda la API key del proveedor activo",
