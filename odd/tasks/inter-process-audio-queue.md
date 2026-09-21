@@ -6,4 +6,4 @@ Evitar que múltiples sesiones simultáneas de Pi CLI reproduzcan audio al mismo
 
 - [x] Task 1: Exploración y diseño del mecanismo de cerrojo y cola FIFO inter-proceso (`gentle-ai-explore` / Dora)
 - [x] Task 2: Implementación de InterProcessLock, AudioPlayer queueing y configuración en `src/player.ts`, `src/config.ts`, `src/menu.ts` y tests (`gentle-ai-worker` / Alex)
-- [ ] Task 3: Auditoría técnica y verificación con simulación de concurrencia inter-proceso (`gentle-ai-verify` / Santa)
+- [x] Task 3: Auditoría técnica y verificación con simulación de concurrencia inter-proceso (`gentle-ai-verify` / Santa) [commit: d8053ac]
