@@ -1,6 +1,10 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
 import { AudioPlayer } from "./player.ts";
+import { PlaybackLockManager } from "./lock.ts";
 
 describe("AudioPlayer", () => {
   it("detects system audio player", () => {
@@ -67,5 +71,61 @@ describe("AudioPlayer", () => {
 
     const scaled = AudioPlayer.adjustWavVolume(wav, 0.5);
     assert.equal(scaled.readInt16LE(44), 5000);
+  });
+
+  it("manages concurrency modes and utterance-level locking cleanly", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "player-lock-test-"));
+    try {
+      const lockManager = new PlaybackLockManager({ ipcDir: tmpDir, pollIntervalMs: 20 });
+      const player = new AudioPlayer({
+        customCommand: "true",
+        concurrency: "queue",
+        lockManager,
+      });
+
+      assert.equal(player.getConcurrency(), "queue");
+      player.setConcurrency("interrupt");
+      assert.equal(player.getConcurrency(), "interrupt");
+      player.setConcurrency("off");
+      assert.equal(player.getConcurrency(), "off");
+
+      // Switch back to queue mode for lease testing
+      player.setConcurrency("queue");
+
+      // 1. Acquire utterance-level lock
+      const releaseUtterance = await player.acquirePlaybackLock();
+      assert.equal(lockManager.isHeldByCurrentSession(), true);
+      assert.equal(fs.existsSync(lockManager.getLockFilePath()), true);
+
+      // 2. Play multiple chunks: lock should remain held throughout
+      const buffer = Buffer.from("audio-chunk");
+      await player.play(buffer, "wav");
+      assert.equal(lockManager.isHeldByCurrentSession(), true);
+      assert.equal(fs.existsSync(lockManager.getLockFilePath()), true);
+
+      await player.play(buffer, "wav");
+      assert.equal(lockManager.isHeldByCurrentSession(), true);
+      assert.equal(fs.existsSync(lockManager.getLockFilePath()), true);
+
+      // 3. Release outer utterance lock
+      await releaseUtterance();
+      assert.equal(lockManager.isHeldByCurrentSession(), false);
+      assert.equal(fs.existsSync(lockManager.getLockFilePath()), false);
+
+      // 4. Test player.stop() cleans up any active lock
+      await player.acquirePlaybackLock();
+      assert.equal(lockManager.isHeldByCurrentSession(), true);
+      player.stop();
+      assert.equal(lockManager.isHeldByCurrentSession(), false);
+      assert.equal(fs.existsSync(lockManager.getLockFilePath()), false);
+
+      lockManager.dispose();
+    } finally {
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
   });
 });

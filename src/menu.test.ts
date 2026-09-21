@@ -215,4 +215,52 @@ describe("VoiceMenuComponent", () => {
     await (menu as any).handleItemSelection("back_to_subagents");
     assert.equal((menu as any).currentScreen, "subagents");
   });
+
+  it("navigates to concurrency submenu, renders options with radio markers, updates mode and navigates back with Escape", async () => {
+    let closed = false;
+    let latestConfig: any = null;
+    const menu = new VoiceMenuComponent({
+      configManager,
+      player,
+      theme: mockTheme,
+      tui: mockTui,
+      ctx: mockCtx,
+      initialScreen: "main",
+      onClose: () => {
+        closed = true;
+      },
+      onConfigChanged: (cfg) => {
+        latestConfig = cfg;
+      },
+    });
+
+    // Verify main menu renders concurrency option
+    const mainLines = menu.render(80);
+    assert.ok(mainLines.some((l: string) => l.includes("Concurrencia entre sesiones")));
+
+    // 1. Navigate to concurrency screen
+    await (menu as any).handleItemSelection("goto_concurrency");
+    assert.equal((menu as any).currentScreen, "concurrency");
+
+    const concurrencyLines = menu.render(80);
+    assert.ok(concurrencyLines.some((l: string) => l.includes("Concurrencia de Audio entre Sesiones")));
+    assert.ok(concurrencyLines.some((l: string) => l.includes("Cola FIFO")));
+    assert.ok(concurrencyLines.some((l: string) => l.includes("Interrupción inmediata")));
+    assert.ok(concurrencyLines.some((l: string) => l.includes("Desactivada")));
+
+    // 2. Select interrupt mode
+    await (menu as any).handleItemSelection("set_concurrency:interrupt");
+    assert.equal(configManager.getConfig().concurrency, "interrupt");
+    assert.equal(player.getConcurrency(), "interrupt");
+    assert.equal(latestConfig?.concurrency, "interrupt");
+
+    // 3. Escape on concurrency screen returns to main menu
+    menu.handleInput("\x1b");
+    assert.equal(closed, false);
+    assert.equal((menu as any).currentScreen, "main");
+
+    // 4. Second Escape closes menu
+    menu.handleInput("\x1b");
+    assert.equal(closed, true);
+  });
 });

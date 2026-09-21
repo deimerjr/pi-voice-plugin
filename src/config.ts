@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import type { ConcurrencyMode } from "./lock.ts";
 
 export type SpeechProviderType = "openai" | "elevenlabs" | "kokoro" | "custom";
 export type CodeFilterMode = "omit" | "mention" | "raw";
@@ -80,6 +81,7 @@ export interface VoicePluginConfig {
   maxCharsPerSpeech: number;
   playerCommand?: string;
   volume: number;
+  concurrency?: ConcurrencyMode;
   openai: OpenAIProviderConfig;
   elevenlabs: ElevenLabsProviderConfig;
   kokoro: KokoroProviderConfig;
@@ -98,6 +100,7 @@ export const DEFAULT_CONFIG: VoicePluginConfig = {
   provider: "openai",
   maxCharsPerSpeech: 4000,
   volume: 1.0,
+  concurrency: "queue",
   openai: {
     baseUrl: "https://api.openai.com/v1",
     model: "tts-1",
@@ -264,6 +267,10 @@ export class ConfigManager {
         typeof incoming.volume === "number"
           ? Math.max(0.0, Math.min(1.5, incoming.volume))
           : base.volume ?? 1.0,
+      concurrency:
+        incoming.concurrency && ["queue", "interrupt", "off"].includes(incoming.concurrency)
+          ? incoming.concurrency
+          : base.concurrency ?? "queue",
       openai: {
         ...base.openai,
         ...(incoming.openai || {}),

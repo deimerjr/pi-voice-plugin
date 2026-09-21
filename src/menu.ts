@@ -24,6 +24,7 @@ import {
 } from "./config.ts";
 import { AudioPlayer } from "./player.ts";
 import { createTTSProvider } from "./providers/factory.ts";
+import type { ConcurrencyMode } from "./lock.ts";
 
 export type MenuScreen =
   | "main"
@@ -35,7 +36,8 @@ export type MenuScreen =
   | "subagent_voice"
   | "speed"
   | "filter"
-  | "user_title";
+  | "user_title"
+  | "concurrency";
 
 export type SubagentRoleKey = "scout" | "worker" | "reviewer" | "orchestrator";
 
@@ -207,6 +209,13 @@ export class VoiceMenuComponent extends Container {
       this.tui.requestRender();
       return;
     }
+    if (this.currentScreen === "concurrency") {
+      this.statusNotice = undefined;
+      this.currentScreen = "main";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
     if (this.currentScreen !== "main" && this.initialScreen !== this.currentScreen) {
       this.statusNotice = undefined;
       this.currentScreen = "main";
@@ -247,6 +256,7 @@ export class VoiceMenuComponent extends Container {
     else if (this.currentScreen === "user_title") titleText = "Apelativo de Usuario (Modo Cuadrilla)";
     else if (this.currentScreen === "speed") titleText = "Velocidad de Locución";
     else if (this.currentScreen === "filter") titleText = "Filtro de Código y Formato";
+    else if (this.currentScreen === "concurrency") titleText = "Concurrencia de Audio entre Sesiones";
 
     this.addChild(
       new Text(this.theme.fg("accent", this.theme.bold(` ◈ ${titleText} `)), 0, 0)
@@ -372,6 +382,11 @@ export class VoiceMenuComponent extends Container {
             value: "goto_filter",
             label: `◆ Filtro de código (${config.filterCode})...`,
             description: "Omitir código, mencionar bloques o leer todo",
+          },
+          {
+            value: "goto_concurrency",
+            label: `◆ Concurrencia entre sesiones (${config.concurrency ?? "queue"})...`,
+            description: "Coordinar audio entre múltiples sesiones (cola FIFO, interrupción o apagado)",
           },
           {
             value: "read_last",
@@ -794,6 +809,32 @@ export class VoiceMenuComponent extends Container {
         });
         return items;
       }
+
+      case "concurrency": {
+        const cur = config.concurrency ?? "queue";
+        return [
+          {
+            value: "set_concurrency:queue",
+            label: `${cur === "queue" ? "● " : "○ "}Cola FIFO (queue)`,
+            description: "Espera ordenada en cola. Ninguna sesión corta a otra ni se mezclan las voces.",
+          },
+          {
+            value: "set_concurrency:interrupt",
+            label: `${cur === "interrupt" ? "● " : "○ "}Interrupción inmediata (interrupt)`,
+            description: "La sesión más reciente corta el audio en curso de cualquier otra sesión.",
+          },
+          {
+            value: "set_concurrency:off",
+            label: `${cur === "off" ? "● " : "○ "}Desactivada (off)`,
+            description: "Sin bloqueo inter-proceso. Múltiples sesiones pueden sonar al mismo tiempo.",
+          },
+          {
+            value: "back",
+            label: "⬅ Volver al menú principal",
+            description: "Regresar a las opciones principales",
+          },
+        ];
+      }
     }
   }
 
@@ -874,6 +915,30 @@ export class VoiceMenuComponent extends Container {
     if (value === "goto_filter") {
       this.statusNotice = undefined;
       this.currentScreen = "filter";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "goto_concurrency") {
+      this.statusNotice = undefined;
+      this.currentScreen = "concurrency";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value.startsWith("set_concurrency:")) {
+      const mode = value.split(":")[1] as ConcurrencyMode;
+      const updated = this.configManager.save({ concurrency: mode });
+      this.player.setConcurrency(mode);
+      this.onConfigChanged(updated);
+      const labels: Record<ConcurrencyMode, string> = {
+        queue: "Cola FIFO (espera ordenada)",
+        interrupt: "Interrupción inmediata",
+        off: "Desactivada (sin coordinación)",
+      };
+      this.statusNotice = `Concurrencia inter-sesiones: ${labels[mode]}`;
       this.renderScreen();
       this.tui.requestRender();
       return;

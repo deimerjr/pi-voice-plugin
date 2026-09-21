@@ -7,6 +7,7 @@ import {
   type CodeFilterMode,
   type SpeechProviderType,
 } from "./config.ts";
+import type { ConcurrencyMode } from "./lock.ts";
 import { TextSanitizer } from "./sanitizer.ts";
 import { createTTSProvider } from "./providers/factory.ts";
 import { AudioPlayer } from "./player.ts";
@@ -193,6 +194,7 @@ export default function (pi: ExtensionAPI) {
   const player = new AudioPlayer({
     customCommand: config.playerCommand,
     volume: config.volume ?? 1.0,
+    concurrency: config.concurrency ?? "queue",
   });
 
   const recorder = new AudioRecorder();
@@ -431,7 +433,10 @@ export default function (pi: ExtensionAPI) {
     const chunks = TextSanitizer.splitSentences(textToSpeak, 70);
     if (chunks.length === 0) return;
 
+    let releaseLock: (() => Promise<void>) | null = null;
     try {
+      releaseLock = await player.acquirePlaybackLock(signal);
+
       // Pipeline: start synthesizing chunk 0
       let nextPromise: Promise<any> | null = provider.synthesize(chunks[0], signal);
       nextPromise.catch(() => {});
@@ -483,6 +488,9 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.notify(`[Voice] Error de reproducción: ${err.message}`, "error");
       }
     } finally {
+      if (releaseLock) {
+        await releaseLock().catch(() => {});
+      }
       if (!signal.aborted) {
         isSynthesizing = false;
         updateUiState(ctx);
@@ -508,6 +516,7 @@ export default function (pi: ExtensionAPI) {
     config = configManager.load();
     player.setCustomCommand(config.playerCommand);
     player.setVolume(config.volume ?? 1.0);
+    player.setConcurrency(config.concurrency ?? "queue");
     registerAllShortcuts(ctx);
     updateUiState(ctx);
   });
@@ -882,6 +891,38 @@ export default function (pi: ExtensionAPI) {
           break;
         }
 
+        case "concurrency":
+        case "concurrencia":
+        case "cola": {
+          const mode = val.toLowerCase().trim() as ConcurrencyMode;
+          if (mode === "queue" || mode === "interrupt" || mode === "off") {
+            config = configManager.save({ concurrency: mode });
+            player.setConcurrency(mode);
+            updateUiState(ctx);
+            const labels: Record<ConcurrencyMode, string> = {
+              queue: "Cola FIFO (espera ordenada entre sesiones)",
+              interrupt: "Interrupción (reproduce de inmediato cortando otra sesión)",
+              off: "Desactivada (reproducción concurrente sin coordinación)",
+            };
+            ctx.ui.notify(
+              `🔊 Concurrencia de audio inter-proceso configurada a: ${labels[mode]}`,
+              "info"
+            );
+          } else if (!val) {
+            const currentMode = config.concurrency ?? "queue";
+            ctx.ui.notify(
+              `Modo actual de concurrencia: ${currentMode}. Opciones: queue (cola FIFO), interrupt (interrumpir), off (desactivada). Uso: /voice concurrency <modo>`,
+              "info"
+            );
+          } else {
+            ctx.ui.notify(
+              `Modo de concurrencia inválido: "${val}". Opciones válidas: queue, interrupt, off`,
+              "error"
+            );
+          }
+          break;
+        }
+
         case "crew":
         case "cuadrilla": {
           const current = config.subagents?.crewMode ?? true;
@@ -1240,6 +1281,7 @@ export default function (pi: ExtensionAPI) {
             `Voz actual: ${config.provider === "openai" ? config.openai.voice : config.elevenlabs.voiceId}`,
             `Velocidad: ${config.openai.speed}x`,
             `Volumen: ${Math.round((config.volume ?? 1.0) * 100)}%`,
+            `Concurrencia inter-sesiones: ${config.concurrency ?? "queue"}`,
             `Filtro de código: ${config.filterCode}`,
             `Reproductor de audio CLI: ${detected}`,
             `Archivo de configuración: ${configManager.getConfigPath()}`,
@@ -1277,6 +1319,7 @@ export default function (pi: ExtensionAPI) {
             "  /voice voice <nombre>  - Cambia la voz (ej: nova, alloy, echo, onyx)",
             "  /voice volume <0-150>  - Ajusta el volumen de habla (ej: 80, 100)",
             "  /voice custom <accion> - Configura API custom (url, method, format, activate)",
+            "  /voice concurrency [queue|interrupt|off] - Modo de concurrencia entre sesiones (cola, interrupción o off)",
             "  /voice speed <numero>  - Cambia la velocidad (ej: 1.0, 1.25)",
             "  /voice filter <modo>   - Modo de código (omit | mention | raw)",
             "  /voice key <api-key>   - Guarda la API key del proveedor activo",
