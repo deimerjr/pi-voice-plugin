@@ -758,7 +758,9 @@ describe("Voice Extension Entrypoint", () => {
         { messages: [{ role: "assistant", content: "Mensaje en sesión enfocada." }] },
         mockCtx
       );
-      await new Promise((r) => setTimeout(r, 40));
+      for (let i = 0; i < 30 && notifications.length === 0; i++) {
+        await new Promise((r) => setTimeout(r, 15));
+      }
 
       // Now it attempts synthesis (and since no API key is provided, notifies error or synthesizes)
       assert.ok(notifications.length > 0);

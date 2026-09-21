@@ -16,4 +16,4 @@ Brindar control granular sobre:
 
 - [x] Task 1: Exploración y diseño de los prompts/heurísticas de niveles TL;DR y esquema de nombres (`gentle-ai-explore` / Dora)
 - [x] Task 2: Implementación en `src/config.ts`, `src/tldr.ts`, `src/index.ts`, `src/menu.ts` y tests (`gentle-ai-worker` / Alex)
-- [ ] Task 3: Verificación técnica integral y suite de pruebas (`gentle-ai-verify` / Santa)
+- [x] Task 3: Verificación técnica integral y suite de pruebas (`gentle-ai-verify` / Santa) [commit: 6391008]
