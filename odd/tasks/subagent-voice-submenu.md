@@ -6,4 +6,4 @@ Permitir que al hacer clic en cualquiera de los roles de subagentes (Scout, Work
 
 - [x] Task 1: Exploración del flujo de selección de voces en el menú y diseño del submenú (`gentle-ai-explore` / Dora)
 - [x] Task 2: Implementación de la pantalla de submenú de voces para subagentes en `src/menu.ts` y tests (`gentle-ai-worker` / Alex)
-- [ ] Task 3: Auditoría técnica y verificación con suite de pruebas (`gentle-ai-verify` / Santa)
+- [x] Task 3: Auditoría técnica y verificación con suite de pruebas (`gentle-ai-verify` / Santa) [commit: 8cd1495]
