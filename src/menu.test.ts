@@ -241,9 +241,9 @@ describe("VoiceMenuComponent", () => {
       },
     });
 
-    // Verify main menu renders concurrency option
-    const mainLines = menu.render(80);
-    assert.ok(mainLines.some((l: string) => l.includes("Concurrencia entre sesiones")));
+    // Verify main menu includes concurrency option
+    const mainItems = (menu as any).getItemsForScreen(configManager.getConfig());
+    assert.ok(mainItems.some((it: any) => it.value === "goto_concurrency" && it.label.includes("Concurrencia entre sesiones")));
 
     // 1. Navigate to concurrency screen
     await (menu as any).handleItemSelection("goto_concurrency");
@@ -457,5 +457,116 @@ describe("VoiceMenuComponent", () => {
     assert.equal(resetCfg.subagents.orchestratorName, "el Gentleman");
     assert.equal(latestConfig?.subagents?.scoutName, "Dora");
     assert.equal(latestConfig?.subagents?.workerName, "Alex");
+  });
+
+  it("navigates to shortcuts_guide from main and shortcuts, renders categories, and handles Escape navigation properly", async () => {
+    let closed = false;
+    const menu = new VoiceMenuComponent({
+      configManager,
+      player,
+      theme: mockTheme,
+      tui: mockTui,
+      ctx: mockCtx,
+      initialScreen: "main",
+      onClose: () => {
+        closed = true;
+      },
+      onConfigChanged: () => {},
+    });
+
+    // 1. Verify main screen items include updated goto_shortcuts and goto_shortcuts_guide
+    const mainItems = (menu as any).getItemsForScreen(configManager.getConfig());
+    const shortcutsMainItem = mainItems.find((i: any) => i.value === "goto_shortcuts");
+    assert.ok(shortcutsMainItem, "goto_shortcuts should exist on main screen");
+    assert.ok(shortcutsMainItem.label.includes("Atajos de Teclado y Controles..."));
+    assert.equal(shortcutsMainItem.description, "Personalizar teclas o consultar la guía completa de comandos");
+
+    const guideMainItem = mainItems.find((i: any) => i.value === "goto_shortcuts_guide");
+    assert.ok(guideMainItem, "goto_shortcuts_guide should exist on main screen");
+    assert.ok(guideMainItem.label.includes("Guía de Atajos y Controles (Cheat Sheet)..."));
+    assert.equal(guideMainItem.description, "Referencia rápida de atajos de teclado, mouse y comandos /voice");
+
+    // 2. Transition to shortcuts_guide from main
+    await (menu as any).handleItemSelection("goto_shortcuts_guide");
+    assert.equal((menu as any).currentScreen, "shortcuts_guide");
+
+    // 3. Render screen and verify header and categorized labels
+    const guideLines = menu.render(100);
+    assert.ok(guideLines.some((l: string) => l.includes("Guía Completa de Atajos y Controles")));
+    assert.ok(guideLines.some((l: string) => l.includes("[ GLOBAL ]")));
+    assert.ok(guideLines.some((l: string) => l.includes("[ TUI ]")));
+    assert.ok(guideLines.some((l: string) => l.includes("[ MOUSE ]")));
+    assert.ok(guideLines.some((l: string) => l.includes("[ COMANDO ]")));
+
+    // 4. Verify all guide items exist and contain expected configured keys and actions
+    const guideItems = (menu as any).getItemsForScreen(configManager.getConfig());
+    assert.equal(guideItems.length, 15);
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ GLOBAL ] Dictado por micrófono (STT)")));
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ GLOBAL ] Detener audio inmediato (Stop)")));
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ GLOBAL ] Abrir Menú Visual (TUI)")));
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ GLOBAL ] Subir / Bajar volumen")));
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ TUI ] Navegación en Menú")));
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ MOUSE ] Widget en Barra Inferior")));
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ COMANDO ] Leer Respuesta Completa")));
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ COMANDO ] Resumen Ejecutivo TL;DR")));
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ COMANDO ] Modo Cuadrilla y Título")));
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ COMANDO ] Nombres de Agentes")));
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ COMANDO ] Concurrencia Multi-Sesión")));
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ COMANDO ] Contexto de Proyecto")));
+    assert.ok(guideItems.some((i: any) => i.label.includes("[ COMANDO ] Pruebas de Verificación")));
+    assert.ok(guideItems.some((i: any) => i.value === "goto_shortcuts"));
+    assert.ok(guideItems.some((i: any) => i.value === "back"));
+
+    // 5. Selecting an informational guide item does not crash
+    await (menu as any).handleItemSelection("guide_global_record");
+    assert.equal((menu as any).currentScreen, "shortcuts_guide");
+
+    // 6. Escape in shortcuts_guide navigates back to shortcuts
+    menu.handleInput("\x1b");
+    assert.equal((menu as any).currentScreen, "shortcuts");
+    assert.equal(closed, false);
+
+    // 7. Verify shortcuts screen has goto_shortcuts_guide as top item
+    const shortcutsItems = (menu as any).getItemsForScreen(configManager.getConfig());
+    assert.equal(shortcutsItems[0].value, "goto_shortcuts_guide");
+    assert.ok(shortcutsItems[0].label.includes("Guía Completa de Atajos y Controles (Cheat Sheet)..."));
+
+    // 8. Select goto_shortcuts_guide from shortcuts screen
+    await (menu as any).handleItemSelection("goto_shortcuts_guide");
+    assert.equal((menu as any).currentScreen, "shortcuts_guide");
+
+    // 9. Back item returns to shortcuts
+    await (menu as any).handleItemSelection("back");
+    assert.equal((menu as any).currentScreen, "shortcuts");
+
+    // 10. Escape in shortcuts returns to main
+    menu.handleInput("\x1b");
+    assert.equal((menu as any).currentScreen, "main");
+    assert.equal(closed, false);
+
+    // 11. Escape on main closes
+    menu.handleInput("\x1b");
+    assert.equal(closed, true);
+
+    // 12. Verify initialScreen === "shortcuts_guide" navigates back to main on Escape
+    let closedGuide = false;
+    const directGuideMenu = new VoiceMenuComponent({
+      configManager,
+      player,
+      theme: mockTheme,
+      tui: mockTui,
+      ctx: mockCtx,
+      initialScreen: "shortcuts_guide",
+      onClose: () => {
+        closedGuide = true;
+      },
+      onConfigChanged: () => {},
+    });
+    assert.equal((directGuideMenu as any).currentScreen, "shortcuts_guide");
+    directGuideMenu.handleInput("\x1b");
+    assert.equal((directGuideMenu as any).currentScreen, "main");
+    assert.equal(closedGuide, false);
+    directGuideMenu.handleInput("\x1b");
+    assert.equal(closedGuide, true);
   });
 });

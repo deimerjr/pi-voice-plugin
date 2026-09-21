@@ -145,6 +145,15 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 | `Alt + Up` | Sube el volumen de voz (+10%) 🔊 |
 | `Alt + Down` | Baja el volumen de voz (-10%) 🔉 |
 
+### 📖 Guía Completa de Atajos y Controles (Cheat Sheet)
+
+Dentro del menú interactivo (`Alt + V` o `/voice`), podés acceder a la **Guía Completa de Atajos y Controles** tanto desde el menú principal como desde el submenú de atajos:
+- **Atajos Globales**: Dictado por micrófono (`Alt+R`), parada inmediata (`Alt+S`), apertura de menú (`Alt+V`) y control de volumen maestro (`Alt+Up` / `Alt+Down`).
+- **Navegación TUI**: Desplazamiento (`↑` / `↓`), confirmación (`Enter`) y retorno contextual (`Esc`).
+- **Controles de Mouse**: Clic interactivo directo en la barra inferior (Voice, Parar, Volumen, Dictar).
+- **Comandos CLI `/voice`**: Referencia rápida de lectura (`read`), resúmenes TL;DR (`tldr [alto|medio|bajo]`), cuadrilla y apelativo (`crew`, `title`), nombres de agentes (`name`), concurrencia (`concurrency`), prefijo de proyecto (`project`) y pruebas (`tests`).
+- **Personalización directa**: Enlace rápido para reasignar cualquier tecla global con persistencia automática.
+
 ---
 
 ## 🖥️ Servidor Kokoro TTS Local en Ubuntu

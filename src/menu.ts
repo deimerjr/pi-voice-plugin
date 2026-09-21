@@ -33,6 +33,7 @@ export type MenuScreen =
   | "api_hub"
   | "volume"
   | "shortcuts"
+  | "shortcuts_guide"
   | "subagents"
   | "subagent_voice"
   | "subagent_name"
@@ -216,6 +217,13 @@ export class VoiceMenuComponent extends Container {
       this.tui.requestRender();
       return;
     }
+    if (this.currentScreen === "shortcuts_guide") {
+      this.statusNotice = undefined;
+      this.currentScreen = this.initialScreen === "shortcuts_guide" ? "main" : "shortcuts";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
     if (this.currentScreen !== "main" && this.initialScreen !== this.currentScreen) {
       this.statusNotice = undefined;
       this.currentScreen = "main";
@@ -247,6 +255,7 @@ export class VoiceMenuComponent extends Container {
     else if (this.currentScreen === "api_hub") titleText = "Configuración de APIs y Proveedores";
     else if (this.currentScreen === "volume") titleText = "Control de Volumen";
     else if (this.currentScreen === "shortcuts") titleText = "Atajos de Teclado y Teclas";
+    else if (this.currentScreen === "shortcuts_guide") titleText = "Guía Completa de Atajos y Controles ◈";
     else if (this.currentScreen === "subagents") titleText = "Voces de Agentes y Roles";
     else if (this.currentScreen === "subagent_voice") {
       const role = this.selectedSubagentRole || "scout";
@@ -293,11 +302,14 @@ export class VoiceMenuComponent extends Container {
 
     // Build items for current screen
     const items = this.getItemsForScreen(config);
-    const maxVisible = Math.min(items.length, 12);
+    const maxVisible =
+      this.currentScreen === "shortcuts_guide"
+        ? Math.min(items.length, 16)
+        : Math.min(items.length, 12);
 
     const selectLayout = {
       minPrimaryColumnWidth: 38,
-      maxPrimaryColumnWidth: 54,
+      maxPrimaryColumnWidth: this.currentScreen === "shortcuts_guide" ? 84 : 54,
     };
     const list = new SelectList(items, maxVisible, selectTheme, selectLayout);
     list.onSelect = (selectedItem: SelectItem) => {
@@ -384,8 +396,13 @@ export class VoiceMenuComponent extends Container {
           },
           {
             value: "goto_shortcuts",
-            label: "◆ Atajos de Teclado...",
-            description: "Personalizar teclas para dictar, parar, volumen y menú",
+            label: "◆ Atajos de Teclado y Controles...",
+            description: "Personalizar teclas o consultar la guía completa de comandos",
+          },
+          {
+            value: "goto_shortcuts_guide",
+            label: "📖 Guía de Atajos y Controles (Cheat Sheet)...",
+            description: "Referencia rápida de atajos de teclado, mouse y comandos /voice",
           },
           {
             value: "goto_subagents",
@@ -598,15 +615,20 @@ export class VoiceMenuComponent extends Container {
       }
 
       case "shortcuts": {
-        const sc = config.shortcuts || {
-          menu: "alt+v",
-          stop: "alt+s",
-          record: "alt+r",
-          volumeUp: "alt+up",
-          volumeDown: "alt+down",
+        const sc = {
+          menu: config.shortcuts?.menu || "alt+v",
+          stop: config.shortcuts?.stop || "alt+s",
+          record: config.shortcuts?.record || "alt+r",
+          volumeUp: config.shortcuts?.volumeUp || "alt+up",
+          volumeDown: config.shortcuts?.volumeDown || "alt+down",
         };
 
         return [
+          {
+            value: "goto_shortcuts_guide",
+            label: "📖 Guía Completa de Atajos y Controles (Cheat Sheet)...",
+            description: "Ver todos los atajos globales, controles de mouse y comandos CLI",
+          },
           {
             value: "change_sc:record",
             label: `▸ Dictado de voz: [ ${sc.record} ]`,
@@ -636,6 +658,94 @@ export class VoiceMenuComponent extends Container {
             value: "reset_shortcuts",
             label: "🔄 Restaurar atajos por defecto (Alt+R, Alt+S, etc.)",
             description: "Reestablece las combinaciones recomendadas",
+          },
+          {
+            value: "back",
+            label: "⬅ Volver al menú principal",
+            description: "Regresar a las opciones principales",
+          },
+        ];
+      }
+
+      case "shortcuts_guide": {
+        const sc = {
+          menu: config.shortcuts?.menu || "alt+v",
+          stop: config.shortcuts?.stop || "alt+s",
+          record: config.shortcuts?.record || "alt+r",
+          volumeUp: config.shortcuts?.volumeUp || "alt+up",
+          volumeDown: config.shortcuts?.volumeDown || "alt+down",
+        };
+
+        return [
+          {
+            value: "guide_global_record",
+            label: `[ GLOBAL ] Dictado por micrófono (STT): [ ${sc.record.toUpperCase()} ]`,
+            description: "Hablar por micrófono para dictar prompts de texto a Pi",
+          },
+          {
+            value: "guide_global_stop",
+            label: `[ GLOBAL ] Detener audio inmediato (Stop): [ ${sc.stop.toUpperCase()} ]`,
+            description: "Cortar inmediatamente la reproducción de audio en curso",
+          },
+          {
+            value: "guide_global_menu",
+            label: `[ GLOBAL ] Abrir Menú Visual (TUI): [ ${sc.menu.toUpperCase()} ]`,
+            description: "Abrir o alternar el menú visual interactivo de configuración",
+          },
+          {
+            value: "guide_global_volume",
+            label: `[ GLOBAL ] Subir / Bajar volumen: [ ${sc.volumeUp.toUpperCase()} / ${sc.volumeDown.toUpperCase()} ]`,
+            description: "Ajustar volumen maestro de locución en pasos de 10%",
+          },
+          {
+            value: "guide_tui_nav",
+            label: "[ TUI ] Navegación en Menú: [ ↑ / ↓ / Enter / Esc ]",
+            description: "Moverse entre opciones, confirmar selección o volver/cerrar",
+          },
+          {
+            value: "guide_mouse_bar",
+            label: "[ MOUSE ] Widget en Barra Inferior: [ Clic Directo ]",
+            description: "Clic en botones de estado: Voz, Parar, Volumen o Dictar",
+          },
+          {
+            value: "guide_cmd_read",
+            label: "[ COMANDO ] Leer Respuesta Completa: [ /voice read ]",
+            description: "Reproducir por voz la última respuesta generada del asistente",
+          },
+          {
+            value: "guide_cmd_tldr",
+            label: "[ COMANDO ] Resumen Ejecutivo TL;DR: [ /voice tldr [alto|medio|bajo] ]",
+            description: "Activar/desactivar síntesis breve o configurar nivel de detalle",
+          },
+          {
+            value: "guide_cmd_crew",
+            label: "[ COMANDO ] Modo Cuadrilla y Título: [ /voice crew ] / [ /voice title <apodo> ]",
+            description: "Alternar voces de subagentes o personalizar apelativo de usuario",
+          },
+          {
+            value: "guide_cmd_name",
+            label: "[ COMANDO ] Nombres de Agentes: [ /voice name <rol> <nombre> ]",
+            description: "Asignar nombre personalizado a scout, worker, reviewer u orquestador",
+          },
+          {
+            value: "guide_cmd_concurrency",
+            label: "[ COMANDO ] Concurrencia Multi-Sesión: [ /voice concurrency [queue|interrupt|focus] ]",
+            description: "Coordinar audio entre terminales concurrentes (cola, interrupción, foco)",
+          },
+          {
+            value: "guide_cmd_project",
+            label: "[ COMANDO ] Contexto de Proyecto: [ /voice project [on|off] ]",
+            description: "Anteponer el nombre del proyecto activo antes de locutar",
+          },
+          {
+            value: "guide_cmd_tests",
+            label: "[ COMANDO ] Pruebas de Verificación: [ /voice tests [on|off] ]",
+            description: "Anunciar verbalmente si los tests de verificación pasan o fallan",
+          },
+          {
+            value: "goto_shortcuts",
+            label: "⚙️ Personalizar teclas de atajos...",
+            description: "Configurar teclas personalizadas para las acciones globales",
           },
           {
             value: "back",
@@ -1040,6 +1150,18 @@ export class VoiceMenuComponent extends Container {
       this.currentScreen = "shortcuts";
       this.renderScreen();
       this.tui.requestRender();
+      return;
+    }
+
+    if (value === "goto_shortcuts_guide") {
+      this.statusNotice = undefined;
+      this.currentScreen = "shortcuts_guide";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value.startsWith("guide_")) {
       return;
     }
 
