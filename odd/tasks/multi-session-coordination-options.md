@@ -15,4 +15,4 @@ Brindar control integral sobre cómo interactúan múltiples sesiones de Pi abie
 
 - [x] Task 1: Exploración y diseño técnico de Modo Foco y Prefijo de Proyecto (`gentle-ai-explore` / Dora)
 - [x] Task 2: Implementación en `src/lock.ts`, `src/config.ts`, `src/index.ts`, `src/menu.ts` y tests (`gentle-ai-worker` / Alex)
-- [ ] Task 3: Verificación técnica integral y suite de pruebas (`gentle-ai-verify` / Santa)
+- [x] Task 3: Verificación técnica integral y suite de pruebas (`gentle-ai-verify` / Santa) [commit: 5bc9d7e]
