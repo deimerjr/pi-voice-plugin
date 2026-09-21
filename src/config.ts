@@ -6,6 +6,7 @@ import type { ConcurrencyMode } from "./lock.ts";
 export type SpeechProviderType = "openai" | "elevenlabs" | "kokoro" | "custom";
 export type CodeFilterMode = "omit" | "mention" | "raw";
 export type SpeechMode = "final" | "all";
+export type TldrLevel = "high" | "medium" | "low";
 
 export interface OpenAIProviderConfig {
   apiKey?: string;
@@ -70,12 +71,17 @@ export interface SubagentVoicesConfig {
   worker: string;
   reviewer: string;
   userTitle?: string;
+  scoutName?: string;
+  workerName?: string;
+  reviewerName?: string;
+  orchestratorName?: string;
 }
 
 export interface VoicePluginConfig {
   enabled: boolean;
   autoRead: boolean;
   tldr: boolean;
+  tldrLevel?: TldrLevel;
   announceProject?: boolean;
   mode: SpeechMode;
   filterCode: CodeFilterMode;
@@ -97,6 +103,7 @@ export const DEFAULT_CONFIG: VoicePluginConfig = {
   enabled: true,
   autoRead: false,
   tldr: false,
+  tldrLevel: "medium",
   announceProject: false,
   mode: "final",
   filterCode: "omit",
@@ -159,6 +166,10 @@ export const DEFAULT_CONFIG: VoicePluginConfig = {
     worker: "em_alex",
     reviewer: "em_santa",
     userTitle: "Jefe",
+    scoutName: "Dora",
+    workerName: "Alex",
+    reviewerName: "Santa",
+    orchestratorName: "el Gentleman",
   },
 };
 
@@ -267,6 +278,10 @@ export class ConfigManager {
       ...base,
       ...incoming,
       tldr: typeof incoming.tldr === "boolean" ? incoming.tldr : base.tldr ?? false,
+      tldrLevel:
+        incoming.tldrLevel && ["high", "medium", "low"].includes(incoming.tldrLevel)
+          ? incoming.tldrLevel
+          : base.tldrLevel ?? "medium",
       announceProject:
         typeof incoming.announceProject === "boolean"
           ? incoming.announceProject
@@ -306,6 +321,22 @@ export class ConfigManager {
       subagents: {
         ...base.subagents,
         ...(incoming.subagents || {}),
+        scoutName:
+          typeof incoming.subagents?.scoutName === "string" && incoming.subagents.scoutName.trim()
+            ? incoming.subagents.scoutName.trim()
+            : base.subagents?.scoutName ?? "Dora",
+        workerName:
+          typeof incoming.subagents?.workerName === "string" && incoming.subagents.workerName.trim()
+            ? incoming.subagents.workerName.trim()
+            : base.subagents?.workerName ?? "Alex",
+        reviewerName:
+          typeof incoming.subagents?.reviewerName === "string" && incoming.subagents.reviewerName.trim()
+            ? incoming.subagents.reviewerName.trim()
+            : base.subagents?.reviewerName ?? "Santa",
+        orchestratorName:
+          typeof incoming.subagents?.orchestratorName === "string" && incoming.subagents.orchestratorName.trim()
+            ? incoming.subagents.orchestratorName.trim()
+            : base.subagents?.orchestratorName ?? "el Gentleman",
       },
     };
   }

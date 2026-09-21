@@ -1,4 +1,5 @@
 import { TextSanitizer } from "./sanitizer.ts";
+import type { TldrLevel } from "./config.ts";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -11,11 +12,15 @@ export interface TldrOptions {
   role?: string;
   crewMode?: boolean;
   userTitle?: string;
+  level?: TldrLevel;
 }
 
 export class TldrSummarizer {
   /**
-   * Generates a concise 1-2 sentence executive summary in Spanish for audio playback.
+   * Generates a concise summary in Spanish for audio playback according to the configured level.
+   * - "high": 1 punchy direct sentence in Spanish (max ~25 words).
+   * - "medium": balanced executive summary of 2-3 sentences.
+   * - "low": high detail preservation (80-90% detail), omitting code/tables.
    * If the input is in English, it guarantees a Spanish translation.
    */
   public static async summarize(
@@ -25,16 +30,35 @@ export class TldrSummarizer {
     const clean = TextSanitizer.sanitize(text);
     if (!clean) return "";
 
+    const level: TldrLevel = options.level || "medium";
     const isEnglish = this.isLikelyEnglish(clean);
 
-    // If already in Spanish and short, no heavy summarization needed
-    if (!isEnglish && clean.length < 180) {
+    // When level === "low": High detail preservation (almost original response, 80-90% detail).
+    // Clean code blocks and tables, return clean text if Spanish; if English, call summarizeWithLLM
+    // with max_tokens: 450 preserving full paragraphs, falling back to quickTranslateCommonEnglish(clean).
+    if (level === "low") {
+      if (!isEnglish) {
+        return clean;
+      }
+      try {
+        const summary = await this.summarizeWithLLM(clean, { ...options, level: "low" });
+        if (summary && summary.trim().length > 5) {
+          return TextSanitizer.sanitize(summary.trim());
+        }
+      } catch {
+        // Fallback to quickTranslateCommonEnglish(clean)
+      }
+      return this.quickTranslateCommonEnglish(clean);
+    }
+
+    // If already in Spanish and short, for medium no heavy summarization needed
+    if (level === "medium" && !isEnglish && clean.length < 180) {
       return clean;
     }
 
     // Attempt AI-powered fast executive summary & translation to Spanish
     try {
-      const summary = await this.summarizeWithLLM(clean, options);
+      const summary = await this.summarizeWithLLM(clean, { ...options, level });
       if (summary && summary.trim().length > 5) {
         return TextSanitizer.sanitize(summary.trim());
       }
@@ -43,7 +67,7 @@ export class TldrSummarizer {
     }
 
     const userTitle = options.userTitle || "Jefe";
-    const heuristic = this.extractHeuristicSummary(clean);
+    const heuristic = this.extractHeuristicSummary(clean, level);
     const translated = this.quickTranslateCommonEnglish(heuristic);
     if (options.crewMode && !translated.toLowerCase().includes(userTitle.toLowerCase())) {
       return `${userTitle}, ${translated}`;
@@ -146,11 +170,33 @@ export class TldrSummarizer {
       const url = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
       const model = options.model || (baseUrl.includes("8317") ? "gemini-3.8-flash-high" : "gpt-4o-mini");
 
+      const level = options.level || "medium";
+      let maxTokens = 95;
+      if (level === "high") {
+        maxTokens = 45;
+      } else if (level === "low") {
+        maxTokens = 450;
+      }
+
       const userTitle = options.userTitle || "Jefe";
-      const systemContent =
-        options.crewMode && options.role
-          ? `Sos ${options.role} de un equipo técnico en terminal reportándole a tu "${userTitle}". Generá un reporte oral de lo que lograste en máximo 2 oraciones directas, 100% en español rioplatense natural. Dirigite a él como "${userTitle}" con camaradería profesional y pasale la palabra al equipo si corresponde. Sin introducciones innecesarias ni markdown.`
-          : "Sos un asistente de voz en español. Traducí y sintetizá la información técnica en máximo 2 oraciones breves, 100% en idioma español natural, para ser leídas por voz. Aunque la entrada esté en inglés o sea un reporte técnico, respondé SIEMPRE en español fluido. Sin introducciones ni markdown.";
+      let systemContent: string;
+
+      if (level === "high") {
+        systemContent =
+          options.crewMode && options.role
+            ? `Sos ${options.role} de un equipo técnico reportándole a tu "${userTitle}". Generá una síntesis ejecutiva ultra-breve de exactamente 1 sola frase directa y contundente (máximo 25 palabras) en español rioplatense natural sobre lo que lograste. Dirigite a él como "${userTitle}". Sin introducciones innecesarias ni markdown.`
+            : "Sos un asistente de voz en español. Generá una síntesis ultra-breve de exactamente 1 sola frase directa y contundente (máximo 25 palabras) en idioma español natural para ser leída por voz. Sin introducciones ni markdown.";
+      } else if (level === "low") {
+        systemContent =
+          options.crewMode && options.role
+            ? `Sos ${options.role} de un equipo técnico reportándole a tu "${userTitle}". Traducí y explicá oralmente en detalle lo que lograste, 100% en español rioplatense natural, preservando todos los párrafos y explicaciones completas (80-90% de detalle). Sin código crudo, sin introducciones innecesarias ni markdown.`
+            : "Sos un asistente de voz en español. Traducí y explicá la información técnica en español fluido y natural, preservando todos los párrafos y explicaciones completas (80-90% de detalle) para ser leídos por voz. Sin código crudo, sin introducciones ni markdown.";
+      } else {
+        systemContent =
+          options.crewMode && options.role
+            ? `Sos ${options.role} de un equipo técnico en terminal reportándole a tu "${userTitle}". Generá un reporte oral de lo que lograste en 2 a 3 oraciones directas, 100% en español rioplatense natural. Dirigite a él como "${userTitle}" con camaradería profesional y pasale la palabra al equipo si corresponde. Sin introducciones innecesarias ni markdown.`
+            : "Sos un asistente de voz en español. Traducí y sintetizá la información técnica en 2 a 3 oraciones breves y directas, 100% en idioma español natural, para ser leídas por voz. Aunque la entrada esté en inglés o sea un reporte técnico, respondé SIEMPRE en español fluido. Sin introducciones ni markdown.";
+      }
 
       const payload = {
         model,
@@ -164,7 +210,7 @@ export class TldrSummarizer {
             content: text,
           },
         ],
-        max_tokens: 95,
+        max_tokens: maxTokens,
         temperature: 0.3,
       };
 
@@ -193,12 +239,51 @@ export class TldrSummarizer {
   }
 
   /**
-   * Fast offline heuristic summary: extracts the most relevant 1-2 sentences.
+   * Fast offline heuristic summary: extracts sentences according to the configured level.
+   * - "high": extracts only 1 conclusive sentence.
+   * - "medium": extracts 2-3 sentences.
+   * - "low": returns the full cleaned text.
    */
-  public static extractHeuristicSummary(text: string): string {
-    const sentences = TextSanitizer.splitSentences(text, 50);
-    if (sentences.length <= 2) {
+  public static extractHeuristicSummary(
+    text: string,
+    level: TldrLevel = "medium"
+  ): string {
+    if (level === "low") {
       return text;
+    }
+
+    const sentences = TextSanitizer.splitSentences(text, 50);
+    if (sentences.length <= 1) {
+      return text;
+    }
+
+    if (level === "high") {
+      // Extract only the single most conclusive sentence
+      const keywords = [
+        "en resumen",
+        "listo",
+        "corregí",
+        "agregué",
+        "implementé",
+        "se solucionó",
+        "quedó",
+        "aprobado",
+        "completado",
+        "pasaron",
+        "éxito",
+      ];
+      for (const s of sentences) {
+        const lower = s.toLowerCase();
+        if (keywords.some((k) => lower.includes(k))) {
+          return s;
+        }
+      }
+      return sentences[0];
+    }
+
+    // level === "medium": 2-3 sentences
+    if (sentences.length <= 3) {
+      return sentences.join(" ");
     }
 
     // Check for sentences containing conclusion keywords

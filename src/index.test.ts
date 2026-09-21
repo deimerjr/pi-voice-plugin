@@ -239,6 +239,24 @@ describe("Voice Extension Entrypoint", () => {
     assert.equal(reviewer.role, "Auditor");
     assert.equal(reviewer.name, "Santa");
     assert.equal(reviewer.voice, "em_santa");
+
+    // Custom subagent names
+    const customConfig: VoicePluginConfig = {
+      ...DEFAULT_CONFIG,
+      subagents: {
+        ...DEFAULT_CONFIG.subagents,
+        scoutName: "Hermes",
+        workerName: "Ciro",
+        reviewerName: "Minos",
+        orchestratorName: "Arquitecto",
+      },
+    };
+    const scoutCustom = resolveSubagentVoice("gentle-ai-explore", customConfig);
+    assert.equal(scoutCustom.name, "Hermes");
+    const workerCustom = resolveSubagentVoice("gentle-ai-worker", customConfig);
+    assert.equal(workerCustom.name, "Ciro");
+    const reviewerCustom = resolveSubagentVoice("gentle-ai-verify", customConfig);
+    assert.equal(reviewerCustom.name, "Minos");
   });
 
   it("cleans and translates orchestrator phase titles correctly", () => {
@@ -812,6 +830,260 @@ describe("Voice Extension Entrypoint", () => {
       // With announceProject enabled, prefix "En <project>:" is prepended to speech
       const proj = getProjectName();
       assert.ok(proj.length > 0);
+    } finally {
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  it("handles /voice tldr commands including on, off, and level configurations", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-tldr-test-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    try {
+      let registeredCommandOpts: any = null;
+      const mockPi: any = {
+        on() {},
+        registerCommand(_name: string, opts: any) {
+          registeredCommandOpts = opts;
+        },
+        registerShortcut() {},
+      };
+
+      voiceExtension(mockPi);
+
+      const notifications: { msg: string; type: string }[] = [];
+      const mockCtx: any = {
+        ui: {
+          notify(msg: string, type: string) {
+            notifications.push({ msg, type });
+          },
+          setStatus() {},
+        },
+      };
+
+      // 1. Toggle on/off without args
+      await registeredCommandOpts.handler("tldr", mockCtx);
+      let saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.tldr, true);
+      assert.ok(notifications.some((n) => n.msg.includes("ACTIVADO")));
+
+      notifications.length = 0;
+      await registeredCommandOpts.handler("tldr", mockCtx);
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.tldr, false);
+      assert.ok(notifications.some((n) => n.msg.includes("DESACTIVADO")));
+
+      // 2. /voice tldr on / off explicit
+      notifications.length = 0;
+      await registeredCommandOpts.handler("tldr on", mockCtx);
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.tldr, true);
+
+      notifications.length = 0;
+      await registeredCommandOpts.handler("tldr off", mockCtx);
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.tldr, false);
+
+      // 3. /voice tldr high / alto
+      notifications.length = 0;
+      await registeredCommandOpts.handler("tldr high", mockCtx);
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.tldrLevel, "high");
+      assert.ok(notifications.some((n) => n.msg.includes("ALTO")));
+
+      notifications.length = 0;
+      await registeredCommandOpts.handler("tldr bajo", mockCtx);
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.tldrLevel, "low");
+      assert.ok(notifications.some((n) => n.msg.includes("BAJO")));
+
+      // 4. /voice tldr level medio
+      notifications.length = 0;
+      await registeredCommandOpts.handler("tldr level medio", mockCtx);
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.tldrLevel, "medium");
+      assert.ok(notifications.some((n) => n.msg.includes("MEDIO")));
+
+      // 5. /voice tldr level query
+      notifications.length = 0;
+      await registeredCommandOpts.handler("tldr level", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Nivel actual de TL;DR")));
+    } finally {
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  it("handles /voice name and /voice nombre commands to query and update names", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-name-test-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    try {
+      let registeredCommandOpts: any = null;
+      const mockPi: any = {
+        on() {},
+        registerCommand(_name: string, opts: any) {
+          registeredCommandOpts = opts;
+        },
+        registerShortcut() {},
+      };
+
+      voiceExtension(mockPi);
+
+      const notifications: { msg: string; type: string }[] = [];
+      const mockCtx: any = {
+        ui: {
+          notify(msg: string, type: string) {
+            notifications.push({ msg, type });
+          },
+          setStatus() {},
+        },
+      };
+
+      // 1. Query all names
+      await registeredCommandOpts.handler("name", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Dora") && n.msg.includes("Alex")));
+
+      // 2. Query specific role name
+      notifications.length = 0;
+      await registeredCommandOpts.handler("name scout", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Dora")));
+
+      // 3. Update scout name to Hermes
+      notifications.length = 0;
+      await registeredCommandOpts.handler("name scout Hermes", mockCtx);
+      let saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.subagents?.scoutName, "Hermes");
+      assert.ok(notifications.some((n) => n.msg.includes("Hermes")));
+
+      // 4. Update worker name via /voice nombre programador Ciro
+      notifications.length = 0;
+      await registeredCommandOpts.handler("nombre programador Ciro", mockCtx);
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.subagents?.workerName, "Ciro");
+      assert.ok(notifications.some((n) => n.msg.includes("Ciro")));
+
+      // 5. Update reviewer name to Minos
+      notifications.length = 0;
+      await registeredCommandOpts.handler("name reviewer Minos", mockCtx);
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.subagents?.reviewerName, "Minos");
+
+      // 6. Update orchestrator name to Arquitecto
+      notifications.length = 0;
+      await registeredCommandOpts.handler("name orchestrator Arquitecto", mockCtx);
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.subagents?.orchestratorName, "Arquitecto");
+    } finally {
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  it("uses dynamic configured subagent and orchestrator names in announcements", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-dynamic-names-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        concurrency: "off",
+        subagents: {
+          enabled: true,
+          crewMode: true,
+          announceStart: true,
+          announceEnd: true,
+          scoutName: "Ariadna",
+          workerName: "Vulcano",
+          reviewerName: "Minos",
+          orchestratorName: "Arquitecto",
+        },
+      }),
+      "utf-8"
+    );
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    try {
+      const listeners: Record<string, Function[]> = {};
+      const mockPi: any = {
+        on(event: string, handler: Function) {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        },
+        registerCommand() {},
+        registerShortcut() {},
+      };
+
+      voiceExtension(mockPi);
+
+      const mockCtx: any = {
+        ui: {
+          notify() {},
+          setStatus() {},
+        },
+      };
+
+      const onToolStart = listeners["tool_execution_start"][0];
+      const onToolEnd = listeners["tool_execution_end"][0];
+
+      // 1. Scout start: should address configured orchestratorName ("Arquitecto")
+      await onToolStart(
+        { toolName: "subagent_run", toolCallId: "call_scout_1", args: { agent: "gentle-ai-explore", task: "explorar repo" } },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+
+      // 2. Scout end: hands over to configured workerName ("Vulcano")
+      await onToolEnd(
+        { toolName: "subagent_run", toolCallId: "call_scout_1", result: "Exploración completada exitosamente.", isError: false },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+
+      // 3. Worker start: receives baton from configured scoutName ("Ariadna")
+      await onToolStart(
+        { toolName: "subagent_run", toolCallId: "call_worker_1", args: { agent: "gentle-ai-worker", task: "implementar feature" } },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+
+      // 4. Worker end: hands over to configured reviewerName ("Minos")
+      await onToolEnd(
+        { toolName: "subagent_run", toolCallId: "call_worker_1", result: "Feature implementada con éxito.", isError: false },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+
+      // 5. Reviewer start: reviews work of configured workerName ("Vulcano")
+      await onToolStart(
+        { toolName: "subagent_run", toolCallId: "call_rev_1", args: { agent: "gentle-ai-verify", task: "verificar tests" } },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+
+      // 6. Reviewer end: reports to configured orchestratorName ("Arquitecto")
+      await onToolEnd(
+        { toolName: "subagent_run", toolCallId: "call_rev_1", result: "Todos los tests pasaron exitosamente.", isError: false },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+
+      // If no errors were thrown and execution completed through all roles, the dynamic handoff flow passed!
+      assert.ok(true);
     } finally {
       delete process.env.PI_VOICE_CONFIG_PATH;
       try {

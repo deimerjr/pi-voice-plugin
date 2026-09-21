@@ -42,8 +42,21 @@ Plugin / Extensión modular para **Pi CLI** que sintetiza en voz las respuestas 
     - **Desactivada (`off`)**: Sin coordinación inter-proceso.
 - **Anuncio de Nombre de Proyecto / Contexto (`announceProject`)**:
   - Antepone `"En <proyecto>:"` (ej: *"En Voz: Alex arranca con la tarea..."*) para identificar al instante qué repositorio o terminal está hablando cuando tenés varias ventanas abiertas.
-- **Modo Audio TL;DR vs Lectura Completa**:
-  - Alterná entre síntesis ejecutiva breve (`/voice tldr`) y lectura completa palabra por palabra, con feedback transparente y explicativo en el menú visual.
+- **Modo Audio TL;DR con 3 Niveles Granulares vs Lectura Completa**:
+  - Alterná entre síntesis ejecutiva y lectura completa palabra por palabra, con feedback transparente y explicativo en el menú visual.
+  - **3 Niveles de Detalle TL;DR**:
+    - **`high` (Alto)**: Síntesis ejecutiva máxima (1 sola frase contundente, ultra-breve, ~25 palabras).
+    - **`medium` (Medio - Predeterminado)**: Resumen balanceado de 2-3 oraciones con resultado y contexto esencial.
+    - **`low` (Bajo)**: Alta fidelidad (80-90% de detalle), conservando párrafos completos y omitiendo solo código crudo o tablas.
+  - Se configura con `/voice tldr [alto|medio|bajo]` o desde el menú visual interactivo (`▸ Nivel de Resumen: [ Alto / Medio / Bajo ]`).
+- **Nombres de Agentes y Roles Configurables**:
+  - Personalizá cómo se llaman los 4 integrantes de la cuadrilla:
+    - **Explorador (`scoutName`)**: por defecto *"Dora"*.
+    - **Programador (`workerName`)**: por defecto *"Alex"*.
+    - **Auditor (`reviewerName`)**: por defecto *"Santa"*.
+    - **Orquestador (`orchestratorName`)**: por defecto *"el Gentleman"*.
+  - **Traspaso de posta dinámico**: Las locuciones de saludo, confirmación y pasaje de tareas entre agentes usan dinámicamente los nombres que elijas (ej: *"Recibido Hermes, tomo la posta. Jefe, arranco a programar..."*).
+  - Se configura con `/voice name <scout|worker|reviewer|orchestrator> <nombre>` o desde el menú visual con presets y campo libre.
 - **Entrada Directa de Voz (Dictado de Prompts / STT)**:
   - Presionás **`Alt + R`** (o hacés clic en `[ 🎙️ Dictar ]` o `/voice record`), hablás al micrófono y al volver a presionar la tecla, transcribe automáticamente con Whisper e inserta el texto directo en tu prompt de Pi CLI.
 - **Botón de Parada con un Clic e Indicador de Volumen**:
@@ -100,7 +113,8 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 | `/voice agents [on\|off]` | Alterna las voces diferenciadas y avisos para subagentes |
 | `/voice phases [on\|off]` | Alterna la locución de fases del orquestador en ejecuciones directas |
 | `/voice tests [on\|off]` / `/voice pruebas [on\|off]` | Alterna el anuncio oral de pruebas de verificación directas |
-| `/voice tldr` / `/voice resumen` | Alterna el modo de resumen ejecutivo breve (TL;DR) |
+| `/voice tldr [on\|off\|alto\|medio\|bajo]` | Alterna o configura el nivel del resumen ejecutivo (TL;DR) |
+| `/voice name <rol> [nombre]` / `/voice nombre` | Consulta o cambia el nombre del subagente (`scout`, `worker`, `reviewer`, `orchestrator`) |
 | `/voice on` | Activa la lectura automática tras cada respuesta |
 | `/voice off` | Desactiva la lectura automática (modo silencioso) |
 | `/voice toggle` | Alterna entre lectura automática ON / OFF |

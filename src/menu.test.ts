@@ -334,4 +334,128 @@ describe("VoiceMenuComponent", () => {
     assert.equal(latestConfig?.subagents?.announceTests, true);
     assert.equal((menu as any).statusNotice, "Anuncio de pruebas de verificación ACTIVADO");
   });
+
+  it("navigates to tldr_level submenu, renders radio options, updates level and navigates back with Escape", async () => {
+    let closed = false;
+    let latestConfig: any = null;
+    const menu = new VoiceMenuComponent({
+      configManager,
+      player,
+      theme: mockTheme,
+      tui: mockTui,
+      ctx: mockCtx,
+      initialScreen: "main",
+      onClose: () => {
+        closed = true;
+      },
+      onConfigChanged: (cfg) => {
+        latestConfig = cfg;
+      },
+    });
+
+    // 1. Check main menu renders Nivel de Resumen option
+    const mainLines = menu.render(80);
+    assert.ok(mainLines.some((l: string) => l.includes("Nivel de Resumen")));
+
+    // 2. Navigate to tldr_level screen
+    await (menu as any).handleItemSelection("goto_tldr_level");
+    assert.equal((menu as any).currentScreen, "tldr_level");
+
+    const tldrLines = menu.render(80);
+    assert.ok(tldrLines.some((l: string) => l.includes("Nivel de Resumen TL;DR")));
+    assert.ok(tldrLines.some((l: string) => l.includes("Alto: 1 frase")));
+    assert.ok(tldrLines.some((l: string) => l.includes("Medio: 2-3 frases")));
+    assert.ok(tldrLines.some((l: string) => l.includes("Bajo: 80-90% detalle")));
+
+    // 3. Select 'high'
+    await (menu as any).handleItemSelection("set_tldr_level:high");
+    assert.equal(configManager.getConfig().tldrLevel, "high");
+    assert.equal(latestConfig?.tldrLevel, "high");
+    assert.equal((menu as any).currentScreen, "main");
+
+    // 4. Return to tldr_level and select 'low'
+    await (menu as any).handleItemSelection("goto_tldr_level");
+    await (menu as any).handleItemSelection("set_tldr_level:low");
+    assert.equal(configManager.getConfig().tldrLevel, "low");
+    assert.equal(latestConfig?.tldrLevel, "low");
+
+    // 5. Test Escape on tldr_level navigates back to main
+    await (menu as any).handleItemSelection("goto_tldr_level");
+    assert.equal((menu as any).currentScreen, "tldr_level");
+    menu.handleInput("\x1b");
+    assert.equal((menu as any).currentScreen, "main");
+    assert.equal(closed, false);
+
+    // Escape on main closes
+    menu.handleInput("\x1b");
+    assert.equal(closed, true);
+  });
+
+  it("navigates to subagent_name submenu, renders role presets, updates names and handles Escape and reset", async () => {
+    let latestConfig: any = null;
+    const inputCtx: any = {
+      ...mockCtx,
+      ui: {
+        ...mockCtx.ui,
+        input: async (_prompt: string, _def: string) => "Ciro",
+      },
+    };
+
+    const menu = new VoiceMenuComponent({
+      configManager,
+      player,
+      theme: mockTheme,
+      tui: mockTui,
+      ctx: inputCtx,
+      initialScreen: "subagents",
+      onClose: () => {},
+      onConfigChanged: (cfg) => {
+        latestConfig = cfg;
+      },
+    });
+
+    // 1. Verify subagents screen displays agent name items
+    const subLines = menu.render(80);
+    assert.ok(subLines.some((l: string) => l.includes("Nombre de Explorador")));
+    assert.ok(subLines.some((l: string) => l.includes("Nombre de Programador")));
+    assert.ok(subLines.some((l: string) => l.includes("Nombre de Auditor")));
+    assert.ok(subLines.some((l: string) => l.includes("Nombre de Orquestador")));
+
+    // 2. Select sub_name:scout to open subagent_name screen
+    await (menu as any).handleItemSelection("sub_name:scout");
+    assert.equal((menu as any).currentScreen, "subagent_name");
+    assert.equal((menu as any).selectedSubagentRole, "scout");
+
+    const scoutLines = menu.render(80);
+    assert.ok(scoutLines.some((l: string) => l.includes("Nombre para Explorador / Scout")));
+    assert.ok(scoutLines.some((l: string) => l.includes("Dora")));
+    assert.ok(scoutLines.some((l: string) => l.includes("Hermes")));
+
+    // 3. Select Hermes preset for scout
+    await (menu as any).handleItemSelection("set_sub_name:scout:Hermes");
+    assert.equal(configManager.getConfig().subagents.scoutName, "Hermes");
+    assert.equal(latestConfig?.subagents?.scoutName, "Hermes");
+    assert.equal((menu as any).currentScreen, "subagents");
+
+    // 4. Test Escape in subagent_name returns to subagents
+    await (menu as any).handleItemSelection("sub_name:worker");
+    assert.equal((menu as any).currentScreen, "subagent_name");
+    menu.handleInput("\x1b");
+    assert.equal((menu as any).currentScreen, "subagents");
+
+    // 5. Test custom_sub_name for worker using input dialog
+    await (menu as any).handleItemSelection("custom_sub_name:worker");
+    assert.equal(configManager.getConfig().subagents.workerName, "Ciro");
+    assert.equal(latestConfig?.subagents?.workerName, "Ciro");
+
+    // 6. Test sub_reset restores default names
+    await (menu as any).handleItemSelection("sub_reset");
+    const resetCfg = configManager.getConfig();
+    assert.equal(resetCfg.subagents.scoutName, "Dora");
+    assert.equal(resetCfg.subagents.workerName, "Alex");
+    assert.equal(resetCfg.subagents.reviewerName, "Santa");
+    assert.equal(resetCfg.subagents.orchestratorName, "el Gentleman");
+    assert.equal(latestConfig?.subagents?.scoutName, "Dora");
+    assert.equal(latestConfig?.subagents?.workerName, "Alex");
+  });
 });

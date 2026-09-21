@@ -32,6 +32,11 @@ describe("ConfigManager", () => {
     assert.equal(config.openai.voice, "nova");
     assert.equal(config.concurrency, "queue");
     assert.equal(config.announceProject, false);
+    assert.equal(config.tldrLevel, "medium");
+    assert.equal(config.subagents.scoutName, "Dora");
+    assert.equal(config.subagents.workerName, "Alex");
+    assert.equal(config.subagents.reviewerName, "Santa");
+    assert.equal(config.subagents.orchestratorName, "el Gentleman");
     assert.equal(config.subagents.announceTests, true);
   });
 
@@ -131,5 +136,50 @@ describe("ConfigManager", () => {
         delete process.env.OPENAI_API_KEY;
       }
     }
+  });
+
+  it("persists and validates tldrLevel cleanly", () => {
+    const manager = new ConfigManager(tmpConfigFile);
+    assert.equal(manager.getConfig().tldrLevel, "medium");
+
+    manager.save({ tldrLevel: "high" });
+    assert.equal(manager.getConfig().tldrLevel, "high");
+
+    const reloaded = new ConfigManager(tmpConfigFile);
+    assert.equal(reloaded.getConfig().tldrLevel, "high");
+
+    manager.save({ tldrLevel: "low" });
+    assert.equal(manager.getConfig().tldrLevel, "low");
+
+    // Invalid value falls back to existing or medium
+    manager.save({ tldrLevel: "invalid" as any });
+    assert.equal(manager.getConfig().tldrLevel, "low");
+  });
+
+  it("persists and reloads custom subagent names cleanly", () => {
+    const manager = new ConfigManager(tmpConfigFile);
+    assert.equal(manager.getConfig().subagents.scoutName, "Dora");
+    assert.equal(manager.getConfig().subagents.workerName, "Alex");
+    assert.equal(manager.getConfig().subagents.reviewerName, "Santa");
+    assert.equal(manager.getConfig().subagents.orchestratorName, "el Gentleman");
+
+    manager.updateNested("subagents", {
+      scoutName: "Hermes",
+      workerName: "Ciro",
+      reviewerName: "Minos",
+      orchestratorName: "Arquitecto",
+    });
+
+    const cfg = manager.getConfig();
+    assert.equal(cfg.subagents.scoutName, "Hermes");
+    assert.equal(cfg.subagents.workerName, "Ciro");
+    assert.equal(cfg.subagents.reviewerName, "Minos");
+    assert.equal(cfg.subagents.orchestratorName, "Arquitecto");
+
+    const reloaded = new ConfigManager(tmpConfigFile);
+    assert.equal(reloaded.getConfig().subagents.scoutName, "Hermes");
+    assert.equal(reloaded.getConfig().subagents.workerName, "Ciro");
+    assert.equal(reloaded.getConfig().subagents.reviewerName, "Minos");
+    assert.equal(reloaded.getConfig().subagents.orchestratorName, "Arquitecto");
   });
 });

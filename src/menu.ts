@@ -21,6 +21,7 @@ import {
   type CodeFilterMode,
   type VoiceShortcutsConfig,
   type SubagentVoicesConfig,
+  type TldrLevel,
 } from "./config.ts";
 import { AudioPlayer } from "./player.ts";
 import { createTTSProvider } from "./providers/factory.ts";
@@ -34,6 +35,8 @@ export type MenuScreen =
   | "shortcuts"
   | "subagents"
   | "subagent_voice"
+  | "subagent_name"
+  | "tldr_level"
   | "speed"
   | "filter"
   | "user_title"
@@ -195,21 +198,18 @@ export class VoiceMenuComponent extends Container {
   }
 
   private goBackOrClose(): void {
-    if (this.currentScreen === "subagent_voice") {
+    if (
+      this.currentScreen === "subagent_voice" ||
+      this.currentScreen === "subagent_name" ||
+      this.currentScreen === "user_title"
+    ) {
       this.statusNotice = undefined;
       this.currentScreen = "subagents";
       this.renderScreen();
       this.tui.requestRender();
       return;
     }
-    if (this.currentScreen === "user_title") {
-      this.statusNotice = undefined;
-      this.currentScreen = "subagents";
-      this.renderScreen();
-      this.tui.requestRender();
-      return;
-    }
-    if (this.currentScreen === "concurrency") {
+    if (this.currentScreen === "concurrency" || this.currentScreen === "tldr_level") {
       this.statusNotice = undefined;
       this.currentScreen = "main";
       this.renderScreen();
@@ -253,6 +253,12 @@ export class VoiceMenuComponent extends Container {
       const roleLabel = ROLE_LABELS[role] || role;
       titleText = `Seleccionar Voz: ${roleLabel}`;
     }
+    else if (this.currentScreen === "subagent_name") {
+      const role = this.selectedSubagentRole || "scout";
+      const roleLabel = ROLE_LABELS[role] || role;
+      titleText = `Nombre para ${roleLabel}`;
+    }
+    else if (this.currentScreen === "tldr_level") titleText = "Nivel de Resumen TL;DR";
     else if (this.currentScreen === "user_title") titleText = "Apelativo de Usuario (Modo Cuadrilla)";
     else if (this.currentScreen === "speed") titleText = "Velocidad de Locución";
     else if (this.currentScreen === "filter") titleText = "Filtro de Código y Formato";
@@ -344,6 +350,17 @@ export class VoiceMenuComponent extends Container {
             description: config.tldr
               ? "Sintetiza respuestas extensas en 1 o 2 frases antes de hablar"
               : "Lee las respuestas completas palabra por palabra sin resumir",
+          },
+          {
+            value: "goto_tldr_level",
+            label: `▸ Nivel de Resumen: [ ${
+              (config.tldrLevel || "medium") === "high"
+                ? "Alto"
+                : (config.tldrLevel || "medium") === "low"
+                ? "Bajo"
+                : "Medio"
+            } ]`,
+            description: "Ajustar nivel de detalle y síntesis para TL;DR (Alto, Medio, Bajo)",
           },
           {
             value: "trigger_dictate",
@@ -628,6 +645,41 @@ export class VoiceMenuComponent extends Container {
         ];
       }
 
+      case "tldr_level": {
+        const current = config.tldrLevel || "medium";
+        const levels: { level: TldrLevel; title: string; desc: string }[] = [
+          {
+            level: "high",
+            title: "Alto: 1 frase (Máxima síntesis, ~25 palabras)",
+            desc: "Ideal para escuchar solo la conclusión directa más importante",
+          },
+          {
+            level: "medium",
+            title: "Medio: 2-3 frases (Resumen ejecutivo balanceado)",
+            desc: "Equilibrio óptimo entre contexto y brevedad (Predeterminado)",
+          },
+          {
+            level: "low",
+            title: "Bajo: 80-90% detalle (Alta fidelidad)",
+            desc: "Conserva párrafos y detalles técnicos casi como la respuesta original",
+          },
+        ];
+
+        const items: SelectItem[] = levels.map((l) => ({
+          value: `set_tldr_level:${l.level}`,
+          label: `${current === l.level ? "● " : "○ "}${l.title}`,
+          description: l.desc,
+        }));
+
+        items.push({
+          value: "back",
+          label: "⬅ Volver al menú principal",
+          description: "Regresar a las opciones principales",
+        });
+
+        return items;
+      }
+
       case "subagents": {
         const sub = config.subagents || {
           enabled: true,
@@ -653,6 +705,26 @@ export class VoiceMenuComponent extends Container {
             value: "goto_user_title",
             label: `▸ Apelativo / Título: [ ${sub.userTitle || "Jefe"} ]`,
             description: "Cómo te llaman los agentes (Jefe, Comandante, Líder, etc.)",
+          },
+          {
+            value: "sub_name:scout",
+            label: `▸ Nombre de Explorador: [ ${sub.scoutName || "Dora"} ]`,
+            description: "Personalizar el nombre para el rol de exploración",
+          },
+          {
+            value: "sub_name:worker",
+            label: `▸ Nombre de Programador: [ ${sub.workerName || "Alex"} ]`,
+            description: "Personalizar el nombre para el rol de implementación",
+          },
+          {
+            value: "sub_name:reviewer",
+            label: `▸ Nombre de Auditor: [ ${sub.reviewerName || "Santa"} ]`,
+            description: "Personalizar el nombre para el rol de verificación",
+          },
+          {
+            value: "sub_name:orchestrator",
+            label: `▸ Nombre de Orquestador: [ ${sub.orchestratorName || "el Gentleman"} ]`,
+            description: "Personalizar el nombre para el orquestador principal",
           },
           {
             value: "sub_toggle_start",
@@ -696,8 +768,8 @@ export class VoiceMenuComponent extends Container {
           },
           {
             value: "sub_reset",
-            label: "🔄 Restaurar voces en español por defecto",
-            description: "Dora Heart, Dora, Alex y Santa",
+            label: "🔄 Restaurar voces y nombres por defecto",
+            description: "Dora, Alex, Santa y el Gentleman",
           },
           {
             value: "back",
@@ -733,6 +805,56 @@ export class VoiceMenuComponent extends Container {
           value: `custom_sub_voice:${role}`,
           label: "✏️ Voz personalizada o fórmula manual...",
           description: `Ingresar nombre o mezcla Kokoro (actual: ${currentVoice})`,
+        });
+
+        items.push({
+          value: "back_to_subagents",
+          label: "⬅ Volver a Voces de Agentes",
+          description: "Regresar a la configuración de subagentes",
+        });
+
+        return items;
+      }
+
+      case "subagent_name": {
+        const sub = config.subagents || {};
+        const role = this.selectedSubagentRole || "scout";
+        const roleLabel = ROLE_LABELS[role] || role;
+        const currentName =
+          role === "scout"
+            ? sub.scoutName || "Dora"
+            : role === "worker"
+            ? sub.workerName || "Alex"
+            : role === "reviewer"
+            ? sub.reviewerName || "Santa"
+            : sub.orchestratorName || "el Gentleman";
+
+        let presets: string[] = [];
+        if (role === "scout") {
+          presets = ["Dora", "Scout", "Hermes", "Atlas", "Ariadna"];
+        } else if (role === "worker") {
+          presets = ["Alex", "Worker", "Hermes", "Ciro", "Vulcano"];
+        } else if (role === "reviewer") {
+          presets = ["Santa", "Reviewer", "Minos", "Argos", "Auditor"];
+        } else if (role === "orchestrator") {
+          presets = ["el Gentleman", "Gentleman", "Director", "Arquitecto", "Orquestador"];
+        }
+
+        const items: SelectItem[] = presets.map((preset) => {
+          const isSelected = currentName.trim().toLowerCase() === preset.toLowerCase();
+          return {
+            value: `set_sub_name:${role}:${preset}`,
+            label: `${isSelected ? "●" : "○"} ${preset}`,
+            description: isSelected
+              ? `Nombre actualmente asignado (${preset})`
+              : `Asignar nombre "${preset}" al rol de ${roleLabel}`,
+          };
+        });
+
+        items.push({
+          value: `custom_sub_name:${role}`,
+          label: "✏️ Nombre personalizado...",
+          description: `Ingresar un nombre libre (actual: ${currentName})`,
         });
 
         items.push({
@@ -879,6 +1001,27 @@ export class VoiceMenuComponent extends Container {
     if (value === "goto_voices") {
       this.statusNotice = undefined;
       this.currentScreen = "voices";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "goto_tldr_level") {
+      this.statusNotice = undefined;
+      this.currentScreen = "tldr_level";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value.startsWith("set_tldr_level:")) {
+      const level = value.slice(15) as TldrLevel;
+      const updated = this.configManager.save({ tldrLevel: level });
+      this.onConfigChanged(updated);
+      const levelLabel =
+        level === "high" ? "Alto (1 frase)" : level === "low" ? "Bajo (80-90% detalle)" : "Medio (2-3 frases)";
+      this.statusNotice = `Nivel TL;DR configurado en: ${levelLabel}`;
+      this.currentScreen = "main";
       this.renderScreen();
       this.tui.requestRender();
       return;
@@ -1455,6 +1598,82 @@ export class VoiceMenuComponent extends Container {
       return;
     }
 
+    if (value.startsWith("sub_name:")) {
+      this.selectedSubagentRole = value.slice(9) as SubagentRoleKey;
+      this.statusNotice = undefined;
+      this.currentScreen = "subagent_name";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value.startsWith("set_sub_name:")) {
+      const parts = value.split(":");
+      const role = parts[1] as SubagentRoleKey;
+      const name = parts.slice(2).join(":");
+      const propKey =
+        role === "scout"
+          ? "scoutName"
+          : role === "worker"
+          ? "workerName"
+          : role === "reviewer"
+          ? "reviewerName"
+          : "orchestratorName";
+
+      const updated = this.configManager.updateNested("subagents", {
+        [propKey]: name,
+      });
+      this.onConfigChanged(updated);
+      this.statusNotice = `Nombre para ${ROLE_LABELS[role]}: "${name}"`;
+      this.currentScreen = "subagents";
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value.startsWith("custom_sub_name:")) {
+      const role = value.slice(16) as SubagentRoleKey;
+      const propKey =
+        role === "scout"
+          ? "scoutName"
+          : role === "worker"
+          ? "workerName"
+          : role === "reviewer"
+          ? "reviewerName"
+          : "orchestratorName";
+
+      const currentSub = this.configManager.getConfig().subagents;
+      const currentName =
+        (currentSub as any)?.[propKey] ||
+        (role === "scout"
+          ? "Dora"
+          : role === "worker"
+          ? "Alex"
+          : role === "reviewer"
+          ? "Santa"
+          : "el Gentleman");
+
+      if (this.ctx.ui.input) {
+        this.onClose();
+        const newName = await this.ctx.ui.input(
+          `Ingresá el nombre para ${ROLE_LABELS[role]}:`,
+          currentName
+        );
+        if (newName && newName.trim()) {
+          const cleanName = newName.trim();
+          const updated = this.configManager.updateNested("subagents", {
+            [propKey]: cleanName,
+          });
+          this.onConfigChanged(updated);
+          this.ctx.ui.notify(
+            `Nombre para ${ROLE_LABELS[role]} configurado: "${cleanName}"`,
+            "info"
+          );
+        }
+      }
+      return;
+    }
+
     if (value === "sub_reset") {
       const updated = this.configManager.updateNested("subagents", {
         enabled: true,
@@ -1468,9 +1687,13 @@ export class VoiceMenuComponent extends Container {
         worker: "em_alex",
         reviewer: "em_santa",
         userTitle: "Jefe",
+        scoutName: "Dora",
+        workerName: "Alex",
+        reviewerName: "Santa",
+        orchestratorName: "el Gentleman",
       });
       this.onConfigChanged(updated);
-      this.statusNotice = "Voces y apelativo en español restaurados por defecto";
+      this.statusNotice = "Voces y nombres en español restaurados por defecto";
       this.renderScreen();
       this.tui.requestRender();
       return;

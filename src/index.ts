@@ -143,19 +143,23 @@ export function resolveSubagentVoice(
     scout: "ef_dora",
     worker: "em_alex",
     reviewer: "em_santa",
+    scoutName: "Dora",
+    workerName: "Alex",
+    reviewerName: "Santa",
+    orchestratorName: "el Gentleman",
   };
 
   if (/scout|explore|plan|investig/i.test(lower)) {
-    return { role: "Exploradora", name: "Dora", voice: sub.scout || "ef_dora" };
+    return { role: "Exploradora", name: sub.scoutName || "Dora", voice: sub.scout || "ef_dora" };
   }
   if (/verify|reviewer|judge|audit|review/i.test(lower)) {
-    return { role: "Auditor", name: "Santa", voice: sub.reviewer || "em_santa" };
+    return { role: "Auditor", name: sub.reviewerName || "Santa", voice: sub.reviewer || "em_santa" };
   }
   if (/worker|implement|apply|code|dev/i.test(lower)) {
-    return { role: "Programador", name: "Alex", voice: sub.worker || "em_alex" };
+    return { role: "Programador", name: sub.workerName || "Alex", voice: sub.worker || "em_alex" };
   }
 
-  return { role: "Agente", name: "Alex", voice: sub.worker || "em_alex" };
+  return { role: "Agente", name: sub.workerName || "Alex", voice: sub.worker || "em_alex" };
 }
 
 export function cleanPhaseTitle(rawText?: string): string {
@@ -463,7 +467,9 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.setStatus("pi-voice", "⏳ Generando resumen TL;DR...");
       }
       try {
-        textToSpeak = await TldrSummarizer.summarize(cleanText);
+        textToSpeak = await TldrSummarizer.summarize(cleanText, {
+          level: config.tldrLevel,
+        });
       } catch {
         textToSpeak = cleanText;
       }
@@ -624,16 +630,22 @@ export default function (pi: ExtensionAPI) {
       if (config.subagents.announceStart) {
         let msg: string;
         const userTitle = getUserTitle();
+        const sub = config.subagents || {};
+        const scoutName = sub.scoutName || "Dora";
+        const workerName = sub.workerName || "Alex";
+        const reviewerName = sub.reviewerName || "Santa";
+        const orchestratorName = sub.orchestratorName || "el Gentleman";
+
         if (config.subagents.crewMode) {
           if (role === "Exploradora") {
             msg = label
-              ? `A la orden, Gentleman. ${userTitle}, me pongo a explorar: ${label}.`
-              : `A la orden, Gentleman. ${userTitle}, me pongo a explorar el terreno.`;
+              ? `A la orden, ${orchestratorName}. ${userTitle}, me pongo a explorar: ${label}.`
+              : `A la orden, ${orchestratorName}. ${userTitle}, me pongo a explorar el terreno.`;
           } else if (role === "Programador") {
             if (lastFinishedRole === "Exploradora") {
               msg = label
-                ? `Recibido Dora, tomo la posta. ${userTitle}, arranco a programar: ${label}.`
-                : `Recibido Dora, tomo la posta. ${userTitle}, arranco con la implementación.`;
+                ? `Recibido ${scoutName}, tomo la posta. ${userTitle}, arranco a programar: ${label}.`
+                : `Recibido ${scoutName}, tomo la posta. ${userTitle}, arranco con la implementación.`;
             } else {
               msg = label
                 ? `A la orden, ${userTitle}. Me pongo a programar: ${label}.`
@@ -642,8 +654,8 @@ export default function (pi: ExtensionAPI) {
           } else if (role === "Auditor") {
             if (lastFinishedRole === "Programador") {
               msg = label
-                ? `A ver qué hiciste, Alex... ${userTitle}, voy a auditar con lupa: ${label}.`
-                : `A ver qué hiciste, Alex... ${userTitle}, voy a auditar y correr las pruebas.`;
+                ? `A ver qué hiciste, ${workerName}... ${userTitle}, voy a auditar con lupa: ${label}.`
+                : `A ver qué hiciste, ${workerName}... ${userTitle}, voy a auditar y correr las pruebas.`;
             } else {
               msg = label
                 ? `${userTitle}, entro a auditar y verificar: ${label}.`
@@ -812,16 +824,22 @@ export default function (pi: ExtensionAPI) {
               role: tracked.role,
               crewMode: config.subagents.crewMode,
               userTitle,
+              level: config.tldrLevel,
             });
 
             let finalMsg: string;
+            const sub = config.subagents || {};
+            const workerName = sub.workerName || "Alex";
+            const reviewerName = sub.reviewerName || "Santa";
+            const orchestratorName = sub.orchestratorName || "el Gentleman";
+
             if (config.subagents.crewMode) {
               if (tracked.role === "Exploradora") {
-                finalMsg = `${summary} Alex, te dejo la cancha lista.`;
+                finalMsg = `${summary} ${workerName}, te dejo la cancha lista.`;
               } else if (tracked.role === "Programador") {
-                finalMsg = `${summary} Santa, pasale la lupa y fijate si no rompí nada.`;
+                finalMsg = `${summary} ${reviewerName}, pasale la lupa y fijate si no rompí nada.`;
               } else if (tracked.role === "Auditor") {
-                finalMsg = `${summary} Gentleman, todo verificado y aprobado para ${userTitle}.`;
+                finalMsg = `${summary} ${orchestratorName}, todo verificado y aprobado para ${userTitle}.`;
               } else {
                 finalMsg = `${summary}`;
               }
@@ -1139,15 +1157,136 @@ export default function (pi: ExtensionAPI) {
 
         case "tldr":
         case "resumen": {
-          const nextState = !config.tldr;
-          config = configManager.save({ tldr: nextState });
+          const rawArg = val.trim().toLowerCase();
+          if (!rawArg) {
+            const nextState = !config.tldr;
+            config = configManager.save({ tldr: nextState });
+            updateUiState(ctx);
+            ctx.ui.notify(
+              nextState
+                ? "🔊 Modo Resumen TL;DR ACTIVADO (hablará en síntesis breve)"
+                : "🔊 Modo Resumen TL;DR DESACTIVADO (hablará respuesta completa)",
+              "info"
+            );
+            break;
+          }
+
+          if (rawArg === "on") {
+            config = configManager.save({ tldr: true });
+            updateUiState(ctx);
+            ctx.ui.notify("🔊 Modo Resumen TL;DR ACTIVADO (hablará en síntesis breve)", "info");
+            break;
+          }
+
+          if (rawArg === "off") {
+            config = configManager.save({ tldr: false });
+            updateUiState(ctx);
+            ctx.ui.notify("🔊 Modo Resumen TL;DR DESACTIVADO (hablará respuesta completa)", "info");
+            break;
+          }
+
+          let levelArg = rawArg;
+          if (levelArg.startsWith("level ") || levelArg.startsWith("nivel ")) {
+            levelArg = levelArg.replace(/^(?:level|nivel)\s+/i, "").trim();
+          } else if (levelArg === "level" || levelArg === "nivel") {
+            const cur = config.tldrLevel || "medium";
+            const curLabel = cur === "high" ? "Alto (1 frase)" : cur === "low" ? "Bajo (80-90% detalle)" : "Medio (2-3 frases)";
+            ctx.ui.notify(`Nivel actual de TL;DR: ${curLabel}. Opciones: alto, medio, bajo`, "info");
+            break;
+          }
+
+          if (levelArg === "high" || levelArg === "alto") {
+            config = configManager.save({ tldrLevel: "high" });
+            updateUiState(ctx);
+            ctx.ui.notify("🔊 Nivel de resumen TL;DR configurado en: ALTO (máxima síntesis, 1 frase)", "info");
+          } else if (levelArg === "medium" || levelArg === "medio") {
+            config = configManager.save({ tldrLevel: "medium" });
+            updateUiState(ctx);
+            ctx.ui.notify("🔊 Nivel de resumen TL;DR configurado en: MEDIO (balanceado, 2-3 frases)", "info");
+          } else if (levelArg === "low" || levelArg === "bajo") {
+            config = configManager.save({ tldrLevel: "low" });
+            updateUiState(ctx);
+            ctx.ui.notify("🔊 Nivel de resumen TL;DR configurado en: BAJO (alta fidelidad, 80-90% detalle)", "info");
+          } else {
+            ctx.ui.notify("Uso: /voice tldr [on|off|high|medium|low|alto|medio|bajo|level <nivel>]", "warning");
+          }
+          break;
+        }
+
+        case "name":
+        case "nombre": {
+          const sub = config.subagents || {
+            enabled: true,
+            crewMode: true,
+            announceStart: true,
+            announceEnd: true,
+            announceOrchestratorPhases: true,
+            announceTests: true,
+            orchestrator: "dora_heart",
+            scout: "ef_dora",
+            worker: "em_alex",
+            reviewer: "em_santa",
+            userTitle: "Jefe",
+            scoutName: "Dora",
+            workerName: "Alex",
+            reviewerName: "Santa",
+            orchestratorName: "el Gentleman",
+          };
+
+          const parts = val.trim().split(/\s+/);
+          const roleArg = parts[0]?.toLowerCase();
+          const targetName = parts.slice(1).join(" ").trim();
+
+          if (!roleArg) {
+            ctx.ui.notify(
+              `Nombres actuales de la cuadrilla:\n• Explorador (scout): ${sub.scoutName || "Dora"}\n• Programador (worker): ${sub.workerName || "Alex"}\n• Auditor (reviewer): ${sub.reviewerName || "Santa"}\n• Orquestador (orchestrator): ${sub.orchestratorName || "el Gentleman"}`,
+              "info"
+            );
+            break;
+          }
+
+          let propKey: "scoutName" | "workerName" | "reviewerName" | "orchestratorName" | undefined;
+          let roleLabel = "";
+
+          if (["scout", "explorador", "exploradora"].includes(roleArg)) {
+            propKey = "scoutName";
+            roleLabel = "Explorador";
+          } else if (["worker", "programador", "dev", "coder"].includes(roleArg)) {
+            propKey = "workerName";
+            roleLabel = "Programador";
+          } else if (["reviewer", "auditor", "judge", "revisor"].includes(roleArg)) {
+            propKey = "reviewerName";
+            roleLabel = "Auditor";
+          } else if (["orchestrator", "orquestador", "gentleman", "principal"].includes(roleArg)) {
+            propKey = "orchestratorName";
+            roleLabel = "Orquestador";
+          }
+
+          if (!propKey) {
+            ctx.ui.notify(
+              "Rol no reconocido. Uso: /voice name <scout|worker|reviewer|orchestrator> <nombre>",
+              "warning"
+            );
+            break;
+          }
+
+          if (!targetName) {
+            const curName =
+              sub[propKey] ||
+              (propKey === "scoutName"
+                ? "Dora"
+                : propKey === "workerName"
+                ? "Alex"
+                : propKey === "reviewerName"
+                ? "Santa"
+                : "el Gentleman");
+            ctx.ui.notify(`Nombre actual de ${roleLabel}: ${curName}`, "info");
+            break;
+          }
+
+          config = configManager.updateNested("subagents", { [propKey]: targetName });
           updateUiState(ctx);
-          ctx.ui.notify(
-            nextState
-              ? "🔊 Modo Resumen TL;DR ACTIVADO (hablará en síntesis breve)"
-              : "🔊 Modo Resumen TL;DR DESACTIVADO (hablará respuesta completa)",
-            "info"
-          );
+          ctx.ui.notify(`Nombre de ${roleLabel} actualizado a: "${targetName}"`, "info");
           break;
         }
 
@@ -1421,8 +1560,9 @@ export default function (pi: ExtensionAPI) {
             "  /voice crew [on|off]   - Alterna el modo conversacional de cuadrilla",
             "  /voice title <nombre>  - Cambia el apelativo del usuario (ej: Jefe, Comandante)",
             "  /voice jefe <nombre>   - Atajo directo para cambiar tu apelativo",
+            "  /voice name <rol> <nom>- Cambia el nombre de un subagente (scout, worker, reviewer, orchestrator)",
             "  /voice record          - Inicia o detiene el dictado de prompts por voz (Alt+R)",
-            "  /voice tldr            - Alterna el modo de resumen breve ejecutivo (TL;DR)",
+            "  /voice tldr [on|off|alto|medio|bajo] - Alterna o configura el nivel de resumen TL;DR",
             "  /voice project [on|off] - Antepone el nombre del proyecto al hablar ('En <proyecto>:')",
             "  /voice on              - Activa la lectura automática tras cada respuesta",
             "  /voice off             - Desactiva la lectura automática",
