@@ -57,6 +57,15 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
       assert.match(html, /data-agent="santa"/);
     });
 
+    it("contains the cloned and hybrid voices catalog with data-agent attributes", () => {
+      assert.match(html, /id="voces-clonadas"/);
+      assert.match(html, /data-agent="juan_carlos"/);
+      assert.match(html, /data-agent="valeria"/);
+      assert.match(html, /data-agent="fenrir"/);
+      assert.match(html, /data-agent="ximena"/);
+      assert.match(html, /data-agent="mateo"/);
+    });
+
     it("contains quickstart installation snippet and copy button", () => {
       assert.match(html, /id="cmd-install"/);
       assert.match(html, /id="btn-copy-install"/);
@@ -167,9 +176,14 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
       "alex.wav",
       "santa.wav",
       "test-engine.wav",
+      "juan_carlos.wav",
+      "valeria.wav",
+      "fenrir.wav",
+      "ximena.wav",
+      "mateo.wav",
     ];
 
-    it("verifies all 5 authentic Kokoro audio files exist", () => {
+    it("verifies all 10 authentic Kokoro audio files exist", () => {
       for (const file of requiredAudios) {
         const filePath = path.join(audioDir, file);
         assert.ok(fs.existsSync(filePath), `${file} must exist in landing/audio/`);
@@ -196,6 +210,11 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
       assert.match(js, /audio\/alex\.wav/);
       assert.match(js, /audio\/santa\.wav/);
       assert.match(js, /audio\/test-engine\.wav/);
+      assert.match(js, /audio\/juan_carlos\.wav/);
+      assert.match(js, /audio\/valeria\.wav/);
+      assert.match(js, /audio\/fenrir\.wav/);
+      assert.match(js, /audio\/ximena\.wav/);
+      assert.match(js, /audio\/mateo\.wav/);
     });
   });
 
