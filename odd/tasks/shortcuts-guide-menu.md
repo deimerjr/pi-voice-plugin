@@ -11,4 +11,4 @@ Agregar al menú visual de Pi Voice una pantalla dedicada de guía y lista de at
 
 - [x] Task 1: Exploración y diseño de la pantalla de guía de atajos en `src/menu.ts` (`gentle-ai-explore` / Dora)
 - [x] Task 2: Implementación de `shortcuts_guide`, integración en el menú y tests unitarios (`gentle-ai-worker` / Alex)
-- [ ] Task 3: Verificación técnica con suite de pruebas completa (`gentle-ai-verify` / Santa)
+- [x] Task 3: Verificación técnica con suite de pruebas completa (`gentle-ai-verify` / Santa) [commit: c28642a]
