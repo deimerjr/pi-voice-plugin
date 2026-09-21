@@ -416,6 +416,7 @@ export class VoiceMenuComponent extends Container {
         } else if (config.provider === "kokoro") {
           const kokoroVoices = [
             { id: "ef_dora", name: "Dora (Español)", desc: "Femenina, natural y fluida" },
+            { id: "ximena", name: "Ximena (Español México)", desc: "Femenina cálida, melódica y suave con acento mexicano/latino" },
             { id: "em_alex", name: "Alex (Español)", desc: "Masculina, clara y cercana" },
             { id: "em_santa", name: "Santa (Español)", desc: "Masculina, tono narrador" },
             { id: "mateo", name: "Mateo (Español)", desc: "Masculina fresca, clara y natural (Híbrida Michael)" },
