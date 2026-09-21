@@ -269,6 +269,7 @@ body {
 .pill-pink { background: var(--c-pink); color: var(--c-white); }
 .pill-yellow { background: var(--c-yellow); }
 .pill-white { background: var(--c-white); }
+.pill-purple { background: var(--c-purple); color: var(--c-white); }
 
 /* HERO SECTION */
 .hero-section {
