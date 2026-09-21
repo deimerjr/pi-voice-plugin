@@ -629,8 +629,11 @@ export class VoiceMenuComponent extends Container {
       case "subagents": {
         const sub = config.subagents || {
           enabled: true,
+          crewMode: true,
           announceStart: true,
           announceEnd: true,
+          announceOrchestratorPhases: true,
+          announceTests: true,
           orchestrator: "dora_heart",
           scout: "ef_dora",
           worker: "em_alex",
@@ -663,6 +666,11 @@ export class VoiceMenuComponent extends Container {
             value: "sub_toggle_orchestrator_phases",
             label: `${sub.announceOrchestratorPhases ?? true ? "●" : "○"} Fases del Orquestador: ${sub.announceOrchestratorPhases ?? true ? "SÍ" : "NO"}`,
             description: "Locución de cada fase de trabajo cuando el orquestador trabaja directo",
+          },
+          {
+            value: "sub_toggle_tests",
+            label: `${sub.announceTests ?? true ? "●" : "○"} Anunciar pruebas de verificación: ${sub.announceTests ?? true ? "SÍ" : "NO"}`,
+            description: "Locución oral al ejecutar tests en consola sin subagentes",
           },
           {
             value: "sub_voice:scout",
@@ -1353,6 +1361,19 @@ export class VoiceMenuComponent extends Container {
       return;
     }
 
+    if (value === "sub_toggle_tests") {
+      const config = this.configManager.getConfig();
+      const current = config.subagents?.announceTests ?? true;
+      const updated = this.configManager.updateNested("subagents", { announceTests: !current });
+      this.statusNotice = !current
+        ? "Anuncio de pruebas de verificación ACTIVADO"
+        : "Anuncio de pruebas de verificación DESACTIVADO";
+      this.onConfigChanged(updated);
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
     if (value.startsWith("sub_voice:")) {
       const role = value.slice(10) as SubagentRoleKey;
       this.selectedSubagentRole = role;
@@ -1411,8 +1432,11 @@ export class VoiceMenuComponent extends Container {
     if (value === "sub_reset") {
       const updated = this.configManager.updateNested("subagents", {
         enabled: true,
+        crewMode: true,
         announceStart: true,
         announceEnd: true,
+        announceOrchestratorPhases: true,
+        announceTests: true,
         orchestrator: "dora_heart",
         scout: "ef_dora",
         worker: "em_alex",

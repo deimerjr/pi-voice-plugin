@@ -31,6 +31,7 @@ describe("ConfigManager", () => {
     assert.equal(config.provider, "openai");
     assert.equal(config.openai.voice, "nova");
     assert.equal(config.concurrency, "queue");
+    assert.equal(config.subagents.announceTests, true);
   });
 
   it("persists and reloads config updates including concurrency mode", () => {
@@ -65,6 +66,23 @@ describe("ConfigManager", () => {
     assert.equal(config.openai.voice, "alloy");
     assert.equal(config.openai.speed, 1.25);
     assert.equal(config.openai.model, "tts-1");
+  });
+
+  it("persists and reloads announceTests toggle in subagents config", () => {
+    const manager = new ConfigManager(tmpConfigFile);
+    assert.equal(manager.getConfig().subagents.announceTests, true);
+
+    manager.updateNested("subagents", { announceTests: false });
+    assert.equal(manager.getConfig().subagents.announceTests, false);
+
+    const reloadedManager = new ConfigManager(tmpConfigFile);
+    assert.equal(reloadedManager.getConfig().subagents.announceTests, false);
+
+    reloadedManager.updateNested("subagents", { announceTests: true });
+    assert.equal(reloadedManager.getConfig().subagents.announceTests, true);
+
+    const reloadedManager2 = new ConfigManager(tmpConfigFile);
+    assert.equal(reloadedManager2.getConfig().subagents.announceTests, true);
   });
 
   it("resolves API key from config or environment variables", () => {

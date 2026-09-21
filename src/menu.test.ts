@@ -263,4 +263,48 @@ describe("VoiceMenuComponent", () => {
     menu.handleInput("\x1b");
     assert.equal(closed, true);
   });
+
+  it("toggles announceTests in subagents screen via sub_toggle_tests", async () => {
+    let latestConfig: any = null;
+    const menu = new VoiceMenuComponent({
+      configManager,
+      player,
+      theme: mockTheme,
+      tui: mockTui,
+      ctx: mockCtx,
+      initialScreen: "main",
+      onClose: () => {},
+      onConfigChanged: (cfg) => {
+        latestConfig = cfg;
+      },
+    });
+
+    // Navigate to subagents screen
+    await (menu as any).handleItemSelection("goto_subagents");
+    assert.equal((menu as any).currentScreen, "subagents");
+
+    const items = (menu as any).getItemsForScreen(configManager.getConfig());
+    const testToggleItem = items.find((it: any) => it.value === "sub_toggle_tests");
+    assert.ok(testToggleItem, "sub_toggle_tests should exist in subagents screen");
+    assert.ok(testToggleItem.label.includes("Anunciar pruebas de verificación: SÍ"));
+    assert.ok(testToggleItem.label.includes("●"));
+    assert.equal(testToggleItem.description, "Locución oral al ejecutar tests en consola sin subagentes");
+
+    // Toggle OFF
+    await (menu as any).handleItemSelection("sub_toggle_tests");
+    assert.equal(configManager.getConfig().subagents.announceTests, false);
+    assert.equal(latestConfig?.subagents?.announceTests, false);
+    assert.equal((menu as any).statusNotice, "Anuncio de pruebas de verificación DESACTIVADO");
+
+    const itemsAfterOff = (menu as any).getItemsForScreen(configManager.getConfig());
+    const itemOff = itemsAfterOff.find((it: any) => it.value === "sub_toggle_tests");
+    assert.ok(itemOff.label.includes("Anunciar pruebas de verificación: NO"));
+    assert.ok(itemOff.label.includes("○"));
+
+    // Toggle ON again
+    await (menu as any).handleItemSelection("sub_toggle_tests");
+    assert.equal(configManager.getConfig().subagents.announceTests, true);
+    assert.equal(latestConfig?.subagents?.announceTests, true);
+    assert.equal((menu as any).statusNotice, "Anuncio de pruebas de verificación ACTIVADO");
+  });
 });

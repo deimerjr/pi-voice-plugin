@@ -3,7 +3,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import voiceExtension, { VoiceControlBarComponent, resolveSubagentVoice, cleanPhaseTitle } from "./index.ts";
+import voiceExtension, {
+  VoiceControlBarComponent,
+  resolveSubagentVoice,
+  cleanPhaseTitle,
+  isTestCommand,
+  TEST_ANNOUNCE_COOLDOWN_MS,
+} from "./index.ts";
 import { DEFAULT_CONFIG } from "./config.ts";
 import { TldrSummarizer } from "./tldr.ts";
 
@@ -82,6 +88,41 @@ describe("Voice Extension Entrypoint", () => {
       await registeredCommandOpts.handler("phases on", mockCtx);
       assert.ok(notifications.some((n) => n.msg.includes("fases del orquestador ACTIVADA")));
       assert.ok(notifications.some((n) => n.msg.includes("TL;DR ACTIVADO")));
+
+      // Run /voice tests off
+      notifications.length = 0;
+      await registeredCommandOpts.handler("tests off", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("pruebas de verificación DESACTIVADO")));
+
+      // Run /voice tests on
+      notifications.length = 0;
+      await registeredCommandOpts.handler("tests on", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("pruebas de verificación ACTIVADO")));
+
+      // Run /voice pruebas off
+      notifications.length = 0;
+      await registeredCommandOpts.handler("pruebas off", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("pruebas de verificación DESACTIVADO")));
+
+      // Run /voice pruebas on
+      notifications.length = 0;
+      await registeredCommandOpts.handler("pruebas on", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("pruebas de verificación ACTIVADO")));
+
+      // Run /voice test off
+      notifications.length = 0;
+      await registeredCommandOpts.handler("test off", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("pruebas de verificación DESACTIVADO")));
+
+      // Run /voice test on
+      notifications.length = 0;
+      await registeredCommandOpts.handler("test on", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("pruebas de verificación ACTIVADO")));
+
+      // Run /voice test <frase> (backward compatibility)
+      notifications.length = 0;
+      await registeredCommandOpts.handler("test probando sonido", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("Reproduciendo prueba con")));
 
       // Test input cancels speech
       assert.doesNotThrow(() => {
@@ -296,6 +337,191 @@ describe("Voice Extension Entrypoint", () => {
         }
       );
       assert.ok(summary.startsWith("Capitán,"));
+    } finally {
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  it("evaluates isTestCommand accurately for diverse runners", () => {
+    assert.equal(isTestCommand("npm test"), true);
+    assert.equal(isTestCommand("npm run test"), true);
+    assert.equal(isTestCommand("npm test -- --watch"), true);
+    assert.equal(isTestCommand("node --test"), true);
+    assert.equal(isTestCommand("node --test landing/landing.test.js"), true);
+    assert.equal(isTestCommand("pytest tests/test_core.py"), true);
+    assert.equal(isTestCommand("cargo test --release"), true);
+    assert.equal(isTestCommand("go test ./..."), true);
+    assert.equal(isTestCommand("pnpm test"), true);
+    assert.equal(isTestCommand("yarn test"), true);
+    assert.equal(isTestCommand("bun test"), true);
+    assert.equal(isTestCommand("vitest run"), true);
+    assert.equal(isTestCommand("jest"), true);
+
+    // Negative cases
+    assert.equal(isTestCommand("npm run build"), false);
+    assert.equal(isTestCommand("git status"), false);
+    assert.equal(isTestCommand("ls -la"), false);
+    assert.equal(isTestCommand("echo test"), false);
+    assert.equal(isTestCommand("node index.js"), false);
+    assert.equal(isTestCommand(""), false);
+    assert.equal(isTestCommand("   "), false);
+    assert.equal(isTestCommand(null as any), false);
+    assert.equal(isTestCommand(undefined as any), false);
+  });
+
+  it("handles direct test announcements with 30s debounce and suppresses during subagent execution", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-test-announce-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    fs.writeFileSync(configPath, JSON.stringify({ concurrency: "off" }), "utf-8");
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    try {
+      const listeners: Record<string, Function[]> = {};
+      let registeredCommandOpts: any = null;
+
+      const mockPi: any = {
+        on(event: string, handler: Function) {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        },
+        registerCommand(_name: string, opts: any) {
+          registeredCommandOpts = opts;
+        },
+        registerShortcut() {},
+      };
+
+      voiceExtension(mockPi);
+
+      const onToolStart = listeners["tool_execution_start"][0];
+      const onToolEnd = listeners["tool_execution_end"][0];
+
+      const notifications: { msg: string; type: string }[] = [];
+      const mockCtx: any = {
+        ui: {
+          notify(msg: string, type: string) {
+            notifications.push({ msg, type });
+          },
+          setStatus() {},
+        },
+      };
+
+      // 1. Direct test start (no subagent running): triggers announcement speech attempt
+      notifications.length = 0;
+      await onToolStart(
+        { toolName: "bash", toolCallId: "call_test_1", args: { command: "npm test" } },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+      assert.equal(notifications.length, 1);
+      assert.ok(notifications[0].msg.includes("[Voice] Error de reproducción"));
+
+      // 2. Debounce check: second test started immediately (< 30s cooldown)
+      notifications.length = 0;
+      await onToolStart(
+        { toolName: "bash", toolCallId: "call_test_2", args: { command: "npm test" } },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+      // Suppressed by debounce at start!
+      assert.equal(notifications.length, 0);
+
+      // 3. Direct test end for call_test_1: triggers outcome announcement
+      notifications.length = 0;
+      await onToolEnd(
+        { toolName: "bash", toolCallId: "call_test_1", args: { command: "npm test" }, isError: false },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+      assert.equal(notifications.length, 1);
+      assert.ok(notifications[0].msg.includes("[Voice] Error de reproducción"));
+
+      // And for call_test_2: tracked and speaks outcome on completion
+      notifications.length = 0;
+      await onToolEnd(
+        { toolName: "bash", toolCallId: "call_test_2", args: { command: "npm test" }, isError: false },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+      assert.equal(notifications.length, 1);
+      assert.ok(notifications[0].msg.includes("[Voice] Error de reproducción"));
+
+      // 4. Subagent suppression: when a subagent is running, bash tests are suppressed
+      // Launch subagent
+      notifications.length = 0;
+      await onToolStart(
+        {
+          toolName: "subagent_run",
+          toolCallId: "agent_verify_1",
+          args: { agent: "gentle-ai-verify", task: "auditar cambios" },
+        },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+      assert.equal(notifications.length, 1);
+
+      // Subagent runs a test in bash
+      notifications.length = 0;
+      await onToolStart(
+        { toolName: "bash", toolCallId: "subagent_bash_1", args: { command: "npm test" } },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+      // Must be completely suppressed at start while subagent is running!
+      assert.equal(notifications.length, 0);
+
+      // Subagent bash test finishes
+      notifications.length = 0;
+      await onToolEnd(
+        {
+          toolName: "bash",
+          toolCallId: "subagent_bash_1",
+          args: { command: "npm test" },
+          isError: false,
+        },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+      // Must be completely suppressed at end (not in activeDirectTestCalls)!
+      assert.equal(notifications.length, 0);
+
+      // Subagent finishes
+      notifications.length = 0;
+      await onToolEnd(
+        {
+          toolName: "subagent_run",
+          toolCallId: "agent_verify_1",
+          isError: false,
+          result: "Verificación completada sin errores",
+        },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+      assert.equal(notifications.length, 1);
+
+      // 5. Test announcement disabled via /voice tests off
+      await registeredCommandOpts.handler("tests off", mockCtx);
+
+      notifications.length = 0;
+      await onToolStart(
+        { toolName: "bash", toolCallId: "call_test_3", args: { command: "npm test" } },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+      // Suppressed by config toggle
+      assert.equal(notifications.length, 0);
+
+      await onToolEnd(
+        { toolName: "bash", toolCallId: "call_test_3", args: { command: "npm test" }, isError: false },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+      // Suppressed by config toggle
+      assert.equal(notifications.length, 0);
     } finally {
       delete process.env.PI_VOICE_CONFIG_PATH;
       try {

@@ -23,13 +23,17 @@ Plugin / Extensión modular para **Pi CLI** que sintetiza en voz las respuestas 
     - **Programador (`gentle-ai-worker` / Worker)**: `em_alex` (masculina técnica y directa).
     - **Auditor (`gentle-ai-verify` / Reviewer)**: `em_santa` (grave, pausada y autoritaria).
   - Anuncia oralmente cuándo inicia cada subagente y sintetiza un resumen ejecutivo TL;DR de lo logrado al finalizar su tarea.
-- **Locución de Fases del Orquestador (Transmisión en Vivo)**:
+- **Locución de Fases del Orquestador y Control de Pruebas**:
   - Cuando el orquestador trabaja de forma directa (sin delegar subagentes o en desarrollo ODD), transmite oralmente cada fase en tiempo real:
     - Anuncia la planificación inicial de fases (herramienta `todo`).
     - Anuncia el inicio de cada fase (*"Jefe, arranco la fase: [nombre]..."*).
     - Anuncia el cierre de cada fase (*"Jefe, quedó lista la fase: [nombre]..."*).
-    - Anuncia la ejecución y el resultado de las suites de prueba (*"Jefe, voy a correr las pruebas..."* y confirmación de resultado).
   - Se controla con `/voice phases [on|off]` o desde el menú visual interactivo.
+- **Anuncio Inteligente de Pruebas de Verificación**:
+  - Locución oral al correr suites de verificación (`npm test`, `node --test`, `pytest`, `cargo test`, `go test`, etc.) en consola sin subagentes (*"Jefe, voy a correr las pruebas..."* y confirmación de resultado).
+  - **Interruptor independiente**: Activá o desactivá solo el anuncio de tests mediante `/voice tests [on|off]` (o `/voice pruebas [on|off]`) y desde el menú visual (`/voice menu` ➔ `Voces de Agentes y Roles`).
+  - **Filtro inteligente y supresión de subagentes**: Si un subagente (como Santa / Auditor) está activo auditando, el orquestador suprime automáticamente sus avisos para no duplicar ni hablar encima de las locuciones del agente.
+  - **Enfriamiento inteligente (debounce de 30s)**: Evita locuciones repetitivas al relanzar pruebas consecutivas rápidamente.
 - **Modo Audio TL;DR (Resumen Ejecutivo Breve)**:
   - En lugar de escuchar toda una respuesta larga de 4 párrafos, el modo TL;DR (`/voice tldr`) sintetiza en 1 o 2 oraciones clave lo que se hizo antes de hablar.
 - **Entrada Directa de Voz (Dictado de Prompts / STT)**:
@@ -87,6 +91,7 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 | `/voice jefe <nombre>` | Atajo directo para configurar el apelativo del usuario |
 | `/voice agents [on\|off]` | Alterna las voces diferenciadas y avisos para subagentes |
 | `/voice phases [on\|off]` | Alterna la locución de fases del orquestador en ejecuciones directas |
+| `/voice tests [on\|off]` / `/voice pruebas [on\|off]` | Alterna el anuncio oral de pruebas de verificación directas |
 | `/voice tldr` / `/voice resumen` | Alterna el modo de resumen ejecutivo breve (TL;DR) |
 | `/voice on` | Activa la lectura automática tras cada respuesta |
 | `/voice off` | Desactiva la lectura automática (modo silencioso) |
@@ -179,6 +184,7 @@ El plugin resuelve las claves de API en el siguiente orden:
     "announceStart": true,
     "announceEnd": true,
     "announceOrchestratorPhases": true,
+    "announceTests": true,
     "orchestrator": "dora_heart",
     "scout": "ef_dora",
     "worker": "em_alex",

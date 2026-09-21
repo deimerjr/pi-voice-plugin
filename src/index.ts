@@ -137,6 +137,7 @@ export function resolveSubagentVoice(
     announceStart: true,
     announceEnd: true,
     announceOrchestratorPhases: true,
+    announceTests: true,
     orchestrator: "dora_heart",
     scout: "ef_dora",
     worker: "em_alex",
@@ -171,6 +172,15 @@ export function cleanPhaseTitle(rawText?: string): string {
   }
   return clean.trim();
 }
+
+export function isTestCommand(cmd: string): boolean {
+  if (!cmd || typeof cmd !== "string") return false;
+  return /\b(npm\s+(?:run\s+)?test|pnpm\s+(?:run\s+)?test|yarn\s+test|bun\s+test|node\s+--test|pytest|cargo\s+test|go\s+test|vitest|jest)\b/i.test(
+    cmd.trim()
+  );
+}
+
+export const TEST_ANNOUNCE_COOLDOWN_MS = 30_000;
 
 function extractTextFromResult(result: any): string {
   if (!result) return "";
@@ -545,6 +555,10 @@ export default function (pi: ExtensionAPI) {
   >();
   let lastAnnouncedTodoPhase: string | null = null;
 
+  // Debounce tracking and active direct test calls
+  let lastTestStartAnnouncedAt = 0;
+  const activeDirectTestCalls = new Set<string>();
+
   pi.on("tool_execution_start", async (event: any, ctx: ExtensionContext) => {
     if (!config.subagents?.enabled) return;
 
@@ -681,22 +695,30 @@ export default function (pi: ExtensionAPI) {
       return;
     }
 
-    // 3. Orchestrator Direct Verification announcements (Test runs)
+    // 3. Direct Verification announcements (Test runs)
     if (
       event.toolName === "bash" &&
-      config.subagents?.announceOrchestratorPhases !== false
+      config.subagents?.announceTests !== false &&
+      activeSubagents.size === 0
     ) {
       const cmd = String(event.args?.command || "").trim();
-      const isTestCmd = /\b(npm\s+test|node\s+--test|pytest|cargo\s+test|go\s+test)\b/i.test(cmd);
-      if (isTestCmd) {
-        const orchVoice =
-          config.subagents?.orchestrator || config.kokoro?.voice || "dora_heart";
-        const userTitle = getUserTitle();
-        const msg = config.subagents?.crewMode
-          ? `${userTitle}, voy a correr las pruebas de verificación.`
-          : "Ejecutando pruebas de verificación.";
-        speakText(msg, ctx, orchVoice).catch(() => {});
+      if (isTestCommand(cmd)) {
+        if (event.toolCallId) {
+          activeDirectTestCalls.add(String(event.toolCallId));
+        }
+        const now = Date.now();
+        if (now - lastTestStartAnnouncedAt >= TEST_ANNOUNCE_COOLDOWN_MS) {
+          lastTestStartAnnouncedAt = now;
+          const orchVoice =
+            config.subagents?.orchestrator || config.kokoro?.voice || "dora_heart";
+          const userTitle = getUserTitle();
+          const msg = config.subagents?.crewMode
+            ? `${userTitle}, voy a correr las pruebas de verificación.`
+            : "Ejecutando pruebas de verificación.";
+          speakText(msg, ctx, orchVoice).catch(() => {});
+        }
       }
+      return;
     }
   });
 
@@ -704,26 +726,28 @@ export default function (pi: ExtensionAPI) {
     if (!config.subagents?.enabled) return;
 
     // Direct Verification conclusion
-    if (
-      event.toolName === "bash" &&
-      config.subagents?.announceOrchestratorPhases !== false
-    ) {
-      const cmd = String(event.args?.command || "").trim();
-      const isTestCmd = /\b(npm\s+test|node\s+--test|pytest|cargo\s+test|go\s+test)\b/i.test(cmd);
-      if (isTestCmd) {
-        const orchVoice =
-          config.subagents?.orchestrator || config.kokoro?.voice || "dora_heart";
-        const userTitle = getUserTitle();
-        const msg = event.isError
-          ? config.subagents?.crewMode
-            ? `${userTitle}, atención: las pruebas fallaron.`
-            : "Las pruebas fallaron."
-          : config.subagents?.crewMode
-            ? `${userTitle}, pruebas verificadas y pasadas con éxito.`
-            : "Pruebas pasadas exitosamente.";
-        speakText(msg, ctx, orchVoice).catch(() => {});
-        return;
+    if (event.toolName === "bash") {
+      const isTracked = activeDirectTestCalls.has(event.toolCallId);
+      if (isTracked) {
+        activeDirectTestCalls.delete(event.toolCallId);
       }
+      if (config.subagents?.announceTests !== false && isTracked) {
+        const cmd = String(event.args?.command || "").trim();
+        if (isTestCommand(cmd)) {
+          const orchVoice =
+            config.subagents?.orchestrator || config.kokoro?.voice || "dora_heart";
+          const userTitle = getUserTitle();
+          const msg = event.isError
+            ? config.subagents?.crewMode
+              ? `${userTitle}, atención: las pruebas fallaron.`
+              : "Las pruebas fallaron."
+            : config.subagents?.crewMode
+              ? `${userTitle}, pruebas verificadas y pasadas con éxito.`
+              : "Pruebas pasadas exitosamente.";
+          speakText(msg, ctx, orchVoice).catch(() => {});
+        }
+      }
+      return;
     }
 
     const tracked = activeSubagents.get(event.toolCallId);
@@ -1016,6 +1040,32 @@ export default function (pi: ExtensionAPI) {
           break;
         }
 
+        case "tests":
+        case "pruebas":
+        case "test": {
+          const normalizedVal = val.toLowerCase().trim();
+          if (sub === "test" && normalizedVal !== "on" && normalizedVal !== "off") {
+            const testPhrase =
+              val || "¡Hola! El sistema de voz de Pi CLI está configurado y funcionando correctamente.";
+            ctx.ui.notify(`🔊 Reproduciendo prueba con ${config.provider}...`, "info");
+            speakText(testPhrase, ctx).catch(() => {});
+            break;
+          }
+
+          const current = config.subagents?.announceTests ?? true;
+          const next =
+            normalizedVal === "on" ? true : normalizedVal === "off" ? false : !current;
+          config = configManager.updateNested("subagents", { announceTests: next });
+          updateUiState(ctx);
+          ctx.ui.notify(
+            next
+              ? "🔊 Anuncio de pruebas de verificación ACTIVADO"
+              : "🔇 Anuncio de pruebas de verificación DESACTIVADO",
+            "info"
+          );
+          break;
+        }
+
         case "tldr":
         case "resumen": {
           const nextState = !config.tldr;
@@ -1078,14 +1128,6 @@ export default function (pi: ExtensionAPI) {
         case "mic":
         case "dictar": {
           await toggleRecording(ctx);
-          break;
-        }
-
-        case "test": {
-          const testPhrase =
-            val || "¡Hola! El sistema de voz de Pi CLI está configurado y funcionando correctamente.";
-          ctx.ui.notify(`🔊 Reproduciendo prueba con ${config.provider}...`, "info");
-          speakText(testPhrase, ctx).catch(() => {});
           break;
         }
 
@@ -1303,6 +1345,7 @@ export default function (pi: ExtensionAPI) {
             "  /voice menu            - Abre el menú visual interactivo con mouse",
             "  /voice agents [on|off] - Alterna las voces diferenciadas para subagentes",
             "  /voice phases [on|off] - Alterna la locución de fases del orquestador",
+            "  /voice tests [on|off]  - Alterna el anuncio de pruebas de verificación",
             "  /voice crew [on|off]   - Alterna el modo conversacional de cuadrilla",
             "  /voice title <nombre>  - Cambia el apelativo del usuario (ej: Jefe, Comandante)",
             "  /voice jefe <nombre>   - Atajo directo para cambiar tu apelativo",
