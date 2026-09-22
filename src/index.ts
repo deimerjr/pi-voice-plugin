@@ -171,7 +171,7 @@ export function cleanPhaseTitle(rawText?: string): string {
   // Strip markdown formatting
   clean = clean.replace(/[`*_~[\]]/g, "");
   // Translate common English technical phrases to Spanish
-  clean = TldrSummarizer.quickTranslateCommonEnglish(clean);
+  clean = TldrSummarizer.translateTaskLabel(clean);
   // Cap at 100 chars
   if (clean.length > 100) {
     clean = clean.slice(0, 97) + "...";
@@ -642,9 +642,13 @@ export default function (pi: ExtensionAPI) {
       const { role, name, voice } = resolveSubagentVoice(agentName, config);
       const rawLabel =
         event.args?.label ||
-        (event.args?.task ? String(event.args.task).slice(0, 80) : undefined);
+        event.args?.task ||
+        event.args?.prompt ||
+        event.args?.instruction ||
+        event.args?.description ||
+        (event.args?.command ? String(event.args.command).slice(0, 80) : undefined);
       const label = rawLabel
-        ? TldrSummarizer.quickTranslateCommonEnglish(rawLabel)
+        ? TldrSummarizer.translateTaskLabel(String(rawLabel))
         : undefined;
 
       activeSubagents.set(event.toolCallId, { role, name, voice, label });
@@ -850,7 +854,8 @@ export default function (pi: ExtensionAPI) {
         const rawResult = extractTextFromResult(event.result);
         if (rawResult && rawResult.trim()) {
           try {
-            const summary = await TldrSummarizer.summarize(rawResult, {
+            const focusedOutcome = TldrSummarizer.extractSubagentOutcome(rawResult);
+            const summary = await TldrSummarizer.summarize(focusedOutcome, {
               role: tracked.role,
               crewMode: config.subagents.crewMode,
               userTitle,

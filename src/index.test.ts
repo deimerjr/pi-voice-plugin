@@ -13,6 +13,7 @@ import voiceExtension, {
 } from "./index.ts";
 import { DEFAULT_CONFIG } from "./config.ts";
 import { TldrSummarizer } from "./tldr.ts";
+import { TextSanitizer } from "./sanitizer.ts";
 
 describe("Voice Extension Entrypoint", () => {
   it("registers event listeners and /voice command", async () => {
@@ -260,10 +261,8 @@ describe("Voice Extension Entrypoint", () => {
   });
 
   it("cleans and translates orchestrator phase titles correctly", () => {
-    assert.equal(
-      cleanPhaseTitle("Task 1: HTML Architecture & Semantic Structure"),
-      "HTML Architecture & Semantic Structure"
-    );
+    const title1 = cleanPhaseTitle("Task 1: HTML Architecture & Semantic Structure");
+    assert.ok(title1.includes("arquitectura") && title1.includes("semántica"));
     assert.equal(
       cleanPhaseTitle("#2 - `src/index.ts` setup"),
       "src/index.ts setup"
@@ -1087,6 +1086,210 @@ describe("Voice Extension Entrypoint", () => {
       // If no errors were thrown and execution completed through all roles, the dynamic handoff flow passed!
       assert.ok(true);
     } finally {
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  it("translates English labels to Spanish in subagent start announcements", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-subagent-start-test-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        ...DEFAULT_CONFIG,
+        subagents: {
+          ...DEFAULT_CONFIG.subagents,
+          enabled: true,
+          announceStart: true,
+          crewMode: true,
+        },
+      }),
+      "utf-8"
+    );
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    try {
+      const listeners: Record<string, Function[]> = {};
+      const mockPi: any = {
+        on(event: string, handler: Function) {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        },
+        registerCommand() {},
+        registerShortcut() {},
+      };
+
+      voiceExtension(mockPi);
+
+      const spokenChunks: string[] = [];
+      const origSplit = TextSanitizer.splitSentences;
+      TextSanitizer.splitSentences = (text: string, minChunk: number = 60) => {
+        spokenChunks.push(text);
+        return origSplit.call(TextSanitizer, text, minChunk);
+      };
+
+      const mockCtx: any = {
+        ui: { notify() {}, setStatus() {} },
+      };
+
+      const onToolStart = listeners["tool_execution_start"][0];
+
+      // 1. Scout start with English label: "map landing page contact form"
+      await onToolStart(
+        {
+          toolName: "subagent_run",
+          toolCallId: "scout_en_1",
+          args: { agent: "gentle-ai-explore", task: "map landing page contact form" },
+        },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+
+      const scoutSpeech = spokenChunks.find((c) => c.includes("explorar"));
+      assert.ok(scoutSpeech, "Scout speech should contain 'explorar'");
+      assert.ok(scoutSpeech.includes("formulario de contacto"));
+      assert.equal(TldrSummarizer.isLikelyEnglish(scoutSpeech), false);
+
+      // 2. Worker start with English label: "implement contact form in landing"
+      spokenChunks.length = 0;
+      await onToolStart(
+        {
+          toolName: "subagent_run",
+          toolCallId: "worker_en_1",
+          args: { agent: "gentle-ai-worker", task: "implement contact form in landing" },
+        },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+
+      const workerSpeech = spokenChunks.find(
+        (c) => c.includes("programar") || c.includes("implementar")
+      );
+      assert.ok(workerSpeech, "Worker speech should contain 'implementar'");
+      assert.ok(workerSpeech.includes("formulario de contacto"));
+      assert.equal(TldrSummarizer.isLikelyEnglish(workerSpeech), false);
+
+      // 3. Auditor start with English label: "audit contact form landing"
+      spokenChunks.length = 0;
+      await onToolStart(
+        {
+          toolName: "subagent_run",
+          toolCallId: "audit_en_1",
+          args: { agent: "gentle-ai-verify", task: "audit contact form landing" },
+        },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+
+      const auditSpeech = spokenChunks.find((c) => c.includes("auditar"));
+      assert.ok(auditSpeech, "Auditor speech should contain 'auditar'");
+      assert.ok(auditSpeech.includes("formulario de contacto"));
+      assert.equal(TldrSummarizer.isLikelyEnglish(auditSpeech), false);
+
+      TextSanitizer.splitSentences = origSplit;
+    } finally {
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  it("translates English outcomes to Spanish in subagent end announcements", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-subagent-end-test-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        ...DEFAULT_CONFIG,
+        tldr: false,
+        subagents: {
+          ...DEFAULT_CONFIG.subagents,
+          enabled: true,
+          announceEnd: true,
+          crewMode: true,
+        },
+      }),
+      "utf-8"
+    );
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    const origSummarize = TldrSummarizer.summarize;
+    TldrSummarizer.summarize = (text, opts) => {
+      return origSummarize.call(TldrSummarizer, text, { ...opts, timeoutMs: 1 });
+    };
+
+    try {
+      const listeners: Record<string, Function[]> = {};
+      const mockPi: any = {
+        on(event: string, handler: Function) {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        },
+        registerCommand() {},
+        registerShortcut() {},
+      };
+
+      voiceExtension(mockPi);
+
+      const spokenChunks: string[] = [];
+      const origSplit = TextSanitizer.splitSentences;
+      TextSanitizer.splitSentences = (text: string, minChunk: number = 60) => {
+        spokenChunks.push(text);
+        return origSplit.call(TextSanitizer, text, minChunk);
+      };
+
+      const mockCtx: any = {
+        ui: { notify() {}, setStatus() {} },
+      };
+
+      const onToolStart = listeners["tool_execution_start"][0];
+      const onToolEnd = listeners["tool_execution_end"][0];
+
+      // Track worker
+      await onToolStart(
+        {
+          toolName: "subagent_run",
+          toolCallId: "worker_end_1",
+          args: { agent: "gentle-ai-worker", task: "implement feature" },
+        },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 20));
+
+      // Worker ends with English YAML summary
+      spokenChunks.length = 0;
+      await onToolEnd(
+        {
+          toolName: "subagent_run",
+          toolCallId: "worker_end_1",
+          result: `status: completed\nsummary: "Implemented contact form in landing page and updated styles."`,
+          isError: false,
+        },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 40));
+
+      const endSpeech = spokenChunks.find((c) => c.includes("Jefe") || c.includes("Santa")) || "";
+      assert.ok(endSpeech.length > 0, "Expected an announcement on tool execution end");
+      assert.ok(
+        endSpeech.includes("Implementé") ||
+        endSpeech.includes("implementé") ||
+        endSpeech.includes("implementación") ||
+        endSpeech.includes("formulario de contacto")
+      );
+      assert.equal(TldrSummarizer.isLikelyEnglish(endSpeech), false);
+
+      TextSanitizer.splitSentences = origSplit;
+    } finally {
+      TldrSummarizer.summarize = origSummarize;
       delete process.env.PI_VOICE_CONFIG_PATH;
       try {
         fs.rmSync(tmpDir, { recursive: true, force: true });
