@@ -278,6 +278,19 @@ Ejecuta las pruebas de:
 
 ---
 
+## 📚 Documentación Técnica Detallada
+
+Para comprender a fondo el diseño interno, la configuración avanzada y las guías de desarrollo, consultá los siguientes documentos:
+
+- **[Arquitectura del Sistema y Ciclo de Vida de Eventos](docs/architecture.md)**: Diagrama general de flujo, interceptores de ciclo de vida (`tool_execution_start`, `tool_execution_end`, `agent_end`), compuertas de filtrado y subsistemas centrales.
+- **[Coordinación Inter-Proceso y Concurrencia Multi-Sesión](docs/concurrency.md)**: Exclusión mutua POSIX en `/tmp/pi-voice-<uid>/`, comparativa de los 4 modos (`queue`, `interrupt`, `focus`, `off`) y prefijo contextual de proyecto.
+- **[Referencia Completa de Configuración y Comandos](docs/configuration.md)**: Estructura exhaustiva de `~/.pi/agent/voice.json`, jerarquía de resolución de claves, catálogo de voces y tabla completa de comandos CLI.
+- **[Servidor Kokoro Local, Clonación de Voces y Operación 100% Offline](docs/kokoro-offline.md)**: Arquitectura ONNX de 0 tokens, gestión del servicio systemd (`kokoro-tts`), pipeline de clonación a `.npy` y benchmarks de latencia.
+- **[Historial de Versiones y Cambios (Changelog)](CHANGELOG.md)**: Registro estructurado de versiones bajo formato Keep a Changelog (v1.1.0 y v1.0.0).
+- **[Guía de Contribución y Desarrollo](CONTRIBUTING.md)**: Filosofía de diseño, principios ODD, estándares de TypeScript sin compiladores externos y checklist para Pull Requests.
+
+---
+
 ## 📄 Licencia
 
 MIT
