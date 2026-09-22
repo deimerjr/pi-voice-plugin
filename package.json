@@ -1,6 +1,6 @@
 {
   "name": "pi-voice-plugin",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Universal AI Text-to-Speech plugin for Pi CLI (OpenAI, ElevenLabs, compatible APIs)",
   "type": "module",
   "main": "./src/index.ts",

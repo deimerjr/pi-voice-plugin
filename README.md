@@ -10,6 +10,28 @@ Plugin / Extensión modular para **Pi CLI** que sintetiza en voz las respuestas 
   - Un botón widget interactivo colocado al pie del editor `[ 🎙️ Voice: ON/OFF (voz) • Clic: Menú ⚙️ ]` que podés clickear directamente con el ratón.
   - Interfaz visual por overlays con navegación por mouse y teclado (flechas, Enter, Escape).
   - Atajo rápido global `ctrl+alt+v` o comando `/voice menu` / `/voice`.
+- **Modo Solo Decisiones y Permisos (`decisionsOnly`)**:
+  - Filtro inteligente de excepciones: Pi silencia el parloteo de fondo, las ejecuciones autónomas de subagentes, las fases de desarrollo y los resúmenes puramente informativos.
+  - **Voz activa únicamente ante la necesidad de acción humana**:
+    - **Opciones a elegir**: Preguntas con alternativas múltiples (`1. ... 2. ...` o `A) ... B) ...`) o disyunciones binarias (*"¿Preferís X o Y?"*).
+    - **Solicitud de permisos o autorizaciones**: Cuando el asistente requiere confirmación para proceder (*"¿Me das permiso para...?"*, *"¿Confirmás la acción?"*, *"¿Querés que aplique los cambios?"*).
+    - **Herramientas de decisión interactivas**: Intercepta y vocaliza de inmediato herramientas como `question`, `ask_user_choice`, `ask_user_question` o `ask_user_confirmation`.
+  - **Inmunidad a código**: Desparásita bloques de código markdown para que preguntas dentro de comentarios o firmas de funciones no disparen falsos positivos.
+  - **Auto-acoplamiento inteligente**: Al activarse desde el menú o consola, enciende automáticamente la lectura si estaba apagada.
+  - Se activa con `/voice decisions [on|off]` (alias: `decisiones`, `permisos`, `solo-decisiones`) o desde el menú visual interactivo.
+- **Traducción Integral al Español para Subagentes**:
+  - Los subagentes de la cuadrilla (**Dora**, **Alex**, **Santa**) y el orquestador (**el Gentleman**) **NUNCA leen tareas ni instrucciones en inglés**, aun cuando el harness delegue tareas con enunciados técnicos en inglés.
+  - **Traductor síncrono instantáneo (`translateTaskLabel`)**: Traduce verbos de ingeniería y términos técnicos al español en menos de 1 ms (*"map landing page contact form"* $\rightarrow$ *"explorar el formulario de contacto en la landing page"*).
+  - **Conjugación por Rol en Primera Persona**: Al concluir, el reporte técnico se conjuga según la personalidad del agente (*"Implementé el formulario..."*, *"Exploré la estructura..."*, *"Verifiqué todas las pruebas..."*).
+  - **Barrera de seguridad garantizada**: Si por alguna razón técnica quedara residuo en inglés, el sistema bloquea el audio en inglés y emite una confirmación garantizada en español según el rol.
+- **Consumo de Tokens de IA: 100% Offline y Gratis con Kokoro Local**:
+  - **Generación de Voz (Kokoro Local)**: 0 tokens (corre en tu propia GPU/CPU local vía ONNX sin costo ni internet).
+  - **Detección de Decisiones y Permisos**: 0 tokens (análisis sintáctico local por expresiones regulares).
+  - **Traducción de Tareas e Instrucciones**: 0 tokens (motor síncrono compilado en memoria).
+  - **Coordinación Multi-Sesión y Cerrojos FIFO**: 0 tokens (Node.js POSIX local).
+  - *(Solo consume tokens de forma opcional si decidís usar OpenAI/ElevenLabs en la nube o dictado por micrófono con Whisper).*
+- **Landing Page Neo-Brutalista con Formulario de Contacto**:
+  - Ubicada en `landing/`, con Terminal Theater animado en vivo con el tema `Gentleman-Sexy-Djr` de Pi CLI, osciloscopio en canvas, soundboard de la cuadrilla, catálogo de voces clonadas y formulario de inscripción accesible con efectos sonoros Web Audio API y persistencia local sin trackers.
 - **Modo Cuadrilla ("Jefe" o Apelativo Personalizado) e Interacción Dinámica de Equipo**:
   - Los subagentes se coordinan en vivo, se dirigen a vos por tu apelativo preferido (por defecto **"Jefe"**, configurable a **"Comandante"**, **"Líder"**, **"Sensei"**, **"Capitán"** o cualquier nombre personalizado) y se pasan la posta entre ellos con roles definidos:
     - **Dora (Exploradora / Scout)**: *"<Apelativo>, me pongo a explorar el terreno..."* y al terminar: *"Alex, te dejo la cancha lista."*
@@ -113,6 +135,7 @@ Dentro de Pi CLI tenés disponible el comando `/voice`:
 | `/voice agents [on\|off]` | Alterna las voces diferenciadas y avisos para subagentes |
 | `/voice phases [on\|off]` | Alterna la locución de fases del orquestador en ejecuciones directas |
 | `/voice tests [on\|off]` / `/voice pruebas [on\|off]` | Alterna el anuncio oral de pruebas de verificación directas |
+| `/voice decisions [on\|off]` / `/voice decisiones` / `/voice permisos` | Alterna el modo solo decisiones y permisos (habla solo si requiere acción) |
 | `/voice tldr [on\|off\|alto\|medio\|bajo]` | Alterna o configura el nivel del resumen ejecutivo (TL;DR) |
 | `/voice name <rol> [nombre]` / `/voice nombre` | Consulta o cambia el nombre del subagente (`scout`, `worker`, `reviewer`, `orchestrator`) |
 | `/voice on` | Activa la lectura automática tras cada respuesta |
@@ -231,18 +254,27 @@ El plugin resuelve las claves de API en el siguiente orden:
 
 ## 🧪 Pruebas Automatizadas
 
-El proyecto cuenta con una suite completa de pruebas unitarias ejecutadas directamente sobre el motor nativo de Node.js:
+El proyecto cuenta con una suite completa de **140 pruebas automatizadas** ejecutadas al 100% directamente sobre el motor nativo de Node.js:
 
 ```bash
+# Pruebas del plugin TypeScript (103 tests unitarios)
 npm test
+
+# Pruebas de la landing page Neo-Brutalista (37 tests unitarios)
+node --test landing/landing.test.js
 ```
 
 Ejecuta las pruebas de:
-- `ConfigManager` (carga, persistencia, resolución de claves y fallbacks de entorno).
+- `ConfigManager` (carga, persistencia, resolución de claves y flag `decisionsOnly`).
+- `DecisionGate` (detección de permisos en español/inglés, opciones múltiples, descarte de bloques de código y herramientas interactivas).
+- `TldrSummarizer` (traducción de tareas `translateTaskLabel`, conjugación por rol, extractor de outcomes y barrera de seguridad en español).
+- `PlaybackLockManager` (concurrencia multi-sesión, cola FIFO, modo interrupción y modo foco).
+- `VoiceMenuComponent` (menú interactivo TUI, navegación de submenús y guía de atajos).
 - `TextSanitizer` (filtrado de markdown, bloques de código, tablas y tags `<think>`).
-- `TTS Providers` (formateo de payloads y endpoints para OpenAI, ElevenLabs y Custom HTTP).
-- `AudioPlayer` (detección de binarios CLI y señales de parada).
-- `Extension Entrypoint` (registro de comandos `/voice` y manejadores de ciclo de vida).
+- `TTS Providers` (formateo de payloads y endpoints para Kokoro local, OpenAI, ElevenLabs y Custom HTTP).
+- `AudioPlayer` y `AudioRecorder` (detección de binarios CLI y señales de parada).
+- `Extension Entrypoint` (registro de comandos `/voice`, compuertas de eventos y anuncios dinámicos de cuadrilla).
+- `Landing Page Neo-Brutalista` (semántica HTML5, estilos CSS, accesibilidad, cero emojis genéricos, arpegios Web Audio y persistencia local).
 
 ---
 
