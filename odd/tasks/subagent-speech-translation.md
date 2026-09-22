@@ -10,7 +10,7 @@ Garantizar que los subagentes (Exploradora Dora, Programador Alex, Auditor Santa
 - [x] Task 5: Ejecutar suite completa de pruebas unitarias y auditar con subagente de verificación
 
 ## Evidence & Work-Unit Commits
-- Commit: `feat(voice): implement full spanish translation pipeline for subagent tasks and outcomes`
+- Commit: `dd6f7f8` - `feat(voice): implement full spanish translation pipeline for subagent tasks and outcomes`
 - Test Verification:
   - `npm test`: 103/103 tests passing across 15 suites (0 failures).
   - `node --test landing/landing.test.js`: 37/37 tests passing across 7 suites (0 failures).
