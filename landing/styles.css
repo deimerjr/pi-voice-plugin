@@ -1363,6 +1363,259 @@ kbd {
   color: #888;
 }
 
+/* ==========================================================================
+   FORMULARIO DE CONTACTO / INSCRIPCIÓN NEO-BRUTALISTA
+   ========================================================================== */
+
+.contact-card-wrapper {
+  background: var(--c-white);
+  border: var(--border-thick);
+  box-shadow: var(--shadow-hard-lg);
+  margin-top: 32px;
+  overflow: hidden;
+}
+
+.contact-card-header {
+  background: var(--c-black);
+  color: var(--c-white);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: var(--border-thick);
+}
+
+.contact-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.contact-card-title {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: var(--c-white);
+  text-transform: uppercase;
+}
+
+.contact-badge-status {
+  background: var(--c-green);
+  color: var(--c-black);
+  font-size: 11px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border: var(--border-thin);
+  letter-spacing: 1px;
+}
+
+.brutalist-form {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group-full {
+  grid-column: 1 / -1;
+}
+
+.form-label {
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--c-black);
+}
+
+.label-tag {
+  color: var(--c-pink);
+  font-weight: 900;
+}
+
+.required-star {
+  color: var(--c-pink);
+  font-weight: 900;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  padding: 12px 14px;
+  background: var(--bg-canvas);
+  color: var(--c-black);
+  border: var(--border-med);
+  box-shadow: var(--shadow-hard-sm);
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  background: var(--c-white);
+  border-color: var(--c-black);
+  box-shadow: 4px 4px 0px var(--c-cyan);
+  outline: none;
+}
+
+.input-invalid {
+  border-color: var(--c-pink) !important;
+  box-shadow: 4px 4px 0px var(--c-pink) !important;
+  background: #fff5f8 !important;
+}
+
+.form-error-msg {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-pink);
+  min-height: 18px;
+  display: block;
+}
+
+.role-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.role-option {
+  cursor: pointer;
+  position: relative;
+  display: block;
+}
+
+.role-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.role-box {
+  border: var(--border-med);
+  background: var(--bg-canvas);
+  padding: 14px 10px;
+  text-align: center;
+  box-shadow: var(--shadow-hard-sm);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.role-code {
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.role-desc {
+  font-size: 11px;
+  color: #444444;
+  line-height: 1.2;
+}
+
+.role-option:hover .role-box {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-hard);
+  background: var(--c-white);
+}
+
+.role-input:checked + .role-box {
+  background: var(--c-yellow);
+  border-color: var(--c-black);
+  box-shadow: var(--shadow-hard);
+  transform: translate(-2px, -2px);
+}
+
+.input-with-action {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.input-with-action .form-select {
+  flex: 1;
+}
+
+.btn-select-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  font-weight: 800;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  background: var(--c-cyan);
+  color: var(--c-black);
+  border: var(--border-med);
+  box-shadow: var(--shadow-hard-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s ease;
+}
+
+.btn-select-preview:hover {
+  box-shadow: var(--shadow-hard);
+  transform: translate(-2px, -2px);
+}
+
+.btn-select-preview:active {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-hard-pressed);
+}
+
+.form-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.form-feedback-banner {
+  padding: 14px 18px;
+  border: var(--border-thick);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  display: block;
+  box-shadow: var(--shadow-hard-sm);
+}
+
+.form-feedback-banner.hidden {
+  display: none;
+}
+
+.form-feedback-banner.success {
+  background: var(--c-green);
+  color: var(--c-black);
+  border-color: var(--c-black);
+}
+
+.form-feedback-banner.error {
+  background: var(--c-pink);
+  color: var(--c-white);
+  border-color: var(--c-black);
+}
+
 /* RESPONSIVE DESIGN */
 @media (max-width: 900px) {
   .hero-grid {
@@ -1373,6 +1626,24 @@ kbd {
   }
   .navbar .nav-links {
     display: none;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .role-selector-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .form-actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .input-with-action {
+    flex-direction: column;
+  }
+  .btn-select-preview {
+    justify-content: center;
+    padding: 12px;
   }
 }
 
@@ -1493,5 +1764,103 @@ body.dark-mode .card-pink .b-avatar-box {
   background: #181822;
   color: #00ff66;
 }
+
+body.dark-mode .contact-card-wrapper {
+  background: #121218;
+  border-color: #00ff66;
+  box-shadow: 5px 5px 0px #00ff66;
+}
+
+body.dark-mode .contact-card-header {
+  background: #08080c;
+  border-bottom-color: #00ff66;
+  color: #ffffff;
+}
+
+body.dark-mode .contact-badge-status {
+  background: #00ff66;
+  color: #000000;
+  border-color: #00ff66;
+}
+
+body.dark-mode .form-label {
+  color: #ffffff;
+}
+
+body.dark-mode .form-input,
+body.dark-mode .form-select,
+body.dark-mode .form-textarea {
+  background: #181822;
+  color: #e5e5e5;
+  border-color: #00ff66;
+  box-shadow: 3px 3px 0px #00ff66;
+}
+
+body.dark-mode .form-input:focus,
+body.dark-mode .form-select:focus,
+body.dark-mode .form-textarea:focus {
+  background: #20202d;
+  border-color: #00ff66;
+  box-shadow: 4px 4px 0px #00f0ff;
+}
+
+body.dark-mode .input-invalid {
+  border-color: #ff0055 !important;
+  box-shadow: 4px 4px 0px #ff0055 !important;
+  background: #2d101b !important;
+}
+
+body.dark-mode .role-box {
+  background: #181822;
+  color: #e5e5e5;
+  border-color: #00ff66;
+  box-shadow: 3px 3px 0px #00ff66;
+}
+
+body.dark-mode .role-desc {
+  color: #a0a0a0;
+}
+
+body.dark-mode .role-option:hover .role-box {
+  background: #222230;
+  box-shadow: 5px 5px 0px #00ff66;
+}
+
+body.dark-mode .role-input:checked + .role-box {
+  background: #00ff66;
+  color: #000000;
+  border-color: #00ff66;
+  box-shadow: 5px 5px 0px #00ff66;
+}
+
+body.dark-mode .role-input:checked + .role-box .role-desc {
+  color: #000000;
+}
+
+body.dark-mode .btn-select-preview {
+  background: #181822;
+  color: #00ff66;
+  border-color: #00ff66;
+  box-shadow: 3px 3px 0px #00ff66;
+}
+
+body.dark-mode .btn-select-preview:hover {
+  background: #00ff66;
+  color: #000000;
+  box-shadow: 5px 5px 0px #00ff66;
+}
+
+body.dark-mode .form-feedback-banner.success {
+  background: #00ff66;
+  color: #000000;
+  border-color: #00ff66;
+}
+
+body.dark-mode .form-feedback-banner.error {
+  background: #ff0055;
+  color: #ffffff;
+  border-color: #00ff66;
+}
+
 
 
