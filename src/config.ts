@@ -80,6 +80,7 @@ export interface SubagentVoicesConfig {
 export interface VoicePluginConfig {
   enabled: boolean;
   autoRead: boolean;
+  decisionsOnly?: boolean;
   tldr: boolean;
   tldrLevel?: TldrLevel;
   announceProject?: boolean;
@@ -102,6 +103,7 @@ export interface VoicePluginConfig {
 export const DEFAULT_CONFIG: VoicePluginConfig = {
   enabled: true,
   autoRead: false,
+  decisionsOnly: false,
   tldr: false,
   tldrLevel: "medium",
   announceProject: false,
@@ -277,6 +279,10 @@ export class ConfigManager {
     return {
       ...base,
       ...incoming,
+      decisionsOnly:
+        typeof incoming.decisionsOnly === "boolean"
+          ? incoming.decisionsOnly
+          : base.decisionsOnly ?? false,
       tldr: typeof incoming.tldr === "boolean" ? incoming.tldr : base.tldr ?? false,
       tldrLevel:
         incoming.tldrLevel && ["high", "medium", "low"].includes(incoming.tldrLevel)

@@ -569,4 +569,51 @@ describe("VoiceMenuComponent", () => {
     directGuideMenu.handleInput("\x1b");
     assert.equal(closedGuide, true);
   });
+
+  it("toggles toggle_decisions_only in main screen and auto-enables autoRead", async () => {
+    const tmpSubDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-menu-decisions-"));
+    const tmpCfg = path.join(tmpSubDir, "voice.json");
+    const testConfigManager = new ConfigManager(tmpCfg);
+    testConfigManager.save({ autoRead: false, decisionsOnly: false });
+
+    let latestConfig = testConfigManager.getConfig();
+    const menu = new VoiceMenuComponent({
+      configManager: testConfigManager,
+      player,
+      theme: mockTheme,
+      tui: mockTui,
+      ctx: mockCtx,
+      onClose: () => {},
+      onConfigChanged: (cfg) => {
+        latestConfig = cfg;
+      },
+    });
+
+    // 1. Verify toggle_decisions_only exists on main screen
+    const items = (menu as any).getItemsForScreen(testConfigManager.getConfig());
+    const decItem = items.find((i: any) => i.value === "toggle_decisions_only");
+    assert.ok(decItem, "toggle_decisions_only should be on the main screen");
+    assert.ok(decItem.label.includes("DESACTIVADO"));
+    assert.ok(decItem.description.includes("preguntas con opciones"));
+
+    // 2. Toggle to ACTIVADO -> auto-enables autoRead
+    await (menu as any).handleItemSelection("toggle_decisions_only");
+    assert.equal(latestConfig.decisionsOnly, true);
+    assert.equal(latestConfig.autoRead, true);
+    assert.ok((menu as any).statusNotice.includes("ACTIVADO"));
+
+    // Label should now show ACTIVADO
+    const items2 = (menu as any).getItemsForScreen(testConfigManager.getConfig());
+    const decItem2 = items2.find((i: any) => i.value === "toggle_decisions_only");
+    assert.ok(decItem2.label.includes("ACTIVADO"));
+
+    // 3. Toggle back to DESACTIVADO
+    await (menu as any).handleItemSelection("toggle_decisions_only");
+    assert.equal(latestConfig.decisionsOnly, false);
+    assert.ok((menu as any).statusNotice.includes("DESACTIVADO"));
+
+    try {
+      fs.rmSync(tmpSubDir, { recursive: true, force: true });
+    } catch {}
+  });
 });

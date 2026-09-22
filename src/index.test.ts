@@ -1095,4 +1095,216 @@ describe("Voice Extension Entrypoint", () => {
       }
     }
   });
+
+  it("handles /voice decisions commands, toggles, and auto-enables autoRead", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-decisions-cmd-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        autoRead: false,
+        decisionsOnly: false,
+      }),
+      "utf-8"
+    );
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    try {
+      const listeners: Record<string, Function[]> = {};
+      let registeredCommandOpts: any = null;
+
+      const mockPi: any = {
+        on(event: string, handler: Function) {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        },
+        registerCommand(name: string, opts: any) {
+          registeredCommandOpts = opts;
+        },
+        registerShortcut() {},
+      };
+
+      voiceExtension(mockPi);
+
+      const notifications: { msg: string; type: string }[] = [];
+      const mockCtx: any = {
+        ui: {
+          notify(msg: string, type: string) {
+            notifications.push({ msg, type });
+          },
+          setStatus() {},
+        },
+      };
+
+      // 1. Turn decisions on -> auto-couples autoRead to true
+      await registeredCommandOpts.handler("decisions on", mockCtx);
+      let saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.decisionsOnly, true);
+      assert.equal(saved.autoRead, true);
+      assert.ok(notifications.some((n) => n.msg.includes("ACTIVADO")));
+
+      // 2. Turn decisions off
+      notifications.length = 0;
+      await registeredCommandOpts.handler("decisiones off", mockCtx);
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.decisionsOnly, false);
+      assert.ok(notifications.some((n) => n.msg.includes("DESACTIVADO")));
+
+      // 3. Toggle with permisos
+      notifications.length = 0;
+      await registeredCommandOpts.handler("permisos", mockCtx);
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.decisionsOnly, true);
+
+      // 4. Toggle back with solo-decisiones
+      notifications.length = 0;
+      await registeredCommandOpts.handler("solo-decisiones", mockCtx);
+      saved = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      assert.equal(saved.decisionsOnly, false);
+
+      // 5. Check /voice status
+      notifications.length = 0;
+      await registeredCommandOpts.handler("status", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("decisions: OFF")));
+
+      await registeredCommandOpts.handler("decisions on", mockCtx);
+      notifications.length = 0;
+      await registeredCommandOpts.handler("status", mockCtx);
+      assert.ok(notifications.some((n) => n.msg.includes("decisions: ON")));
+    } finally {
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  it("decisionsOnly mode suppresses subagents and informational messages but speaks on decisions and decision tools", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "voice-decisions-gate-"));
+    const configPath = path.join(tmpDir, "voice.json");
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        concurrency: "off",
+        autoRead: true,
+        decisionsOnly: true,
+        subagents: {
+          enabled: true,
+          crewMode: true,
+          announceStart: true,
+          announceEnd: true,
+          announceTests: true,
+          announceOrchestratorPhases: true,
+        },
+      }),
+      "utf-8"
+    );
+    process.env.PI_VOICE_CONFIG_PATH = configPath;
+
+    try {
+      const listeners: Record<string, Function[]> = {};
+      const mockPi: any = {
+        on(event: string, handler: Function) {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        },
+        registerCommand() {},
+        registerShortcut() {},
+      };
+
+      voiceExtension(mockPi);
+
+      const notifications: { msg: string; type: string }[] = [];
+      const mockCtx: any = {
+        ui: {
+          notify(msg: string, type: string) {
+            notifications.push({ msg, type });
+          },
+          setStatus() {},
+        },
+      };
+
+      const onToolStart = listeners["tool_execution_start"][0];
+      const onToolEnd = listeners["tool_execution_end"][0];
+      const onAgentEnd = listeners["agent_end"][0];
+
+      // 1. Subagent launch should be SILENT when decisionsOnly is true
+      notifications.length = 0;
+      await onToolStart(
+        { toolName: "subagent_run", toolCallId: "call_sub_1", args: { agent: "gentle-ai-worker", task: "code feature" } },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 40));
+      assert.equal(notifications.length, 0, "Subagent start should not speak in decisionsOnly mode");
+
+      // 2. Subagent end should be SILENT when decisionsOnly is true
+      notifications.length = 0;
+      await onToolEnd(
+        { toolName: "subagent_run", toolCallId: "call_sub_1", result: "Feature terminada", isError: false },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 40));
+      assert.equal(notifications.length, 0, "Subagent end should not speak in decisionsOnly mode");
+
+      // 3. Test execution start & end should be SILENT
+      notifications.length = 0;
+      await onToolStart(
+        { toolName: "bash", toolCallId: "call_bash_1", args: { command: "npm test" } },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 40));
+      assert.equal(notifications.length, 0, "Bash test start should not speak in decisionsOnly mode");
+
+      await onToolEnd(
+        { toolName: "bash", toolCallId: "call_bash_1", args: { command: "npm test" }, isError: false },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 40));
+      assert.equal(notifications.length, 0, "Bash test end should not speak in decisionsOnly mode");
+
+      // 4. Regular informational agent response should be SILENT
+      notifications.length = 0;
+      await onAgentEnd(
+        { messages: [{ role: "assistant", content: "He terminado de configurar todo. Todos los tests pasaron." }] },
+        mockCtx
+      );
+      await new Promise((r) => setTimeout(r, 40));
+      assert.equal(notifications.length, 0, "Informational message should not speak in decisionsOnly mode");
+
+      // 5. Interactive decision tool (ask_user_choice) SHOULD speak
+      notifications.length = 0;
+      await onToolStart(
+        {
+          toolName: "ask_user_choice",
+          toolCallId: "call_choice_1",
+          args: { question: "¿Qué entorno querés desplegar?", choices: ["Staging", "Producción"] },
+        },
+        mockCtx
+      );
+      for (let i = 0; i < 30 && notifications.length === 0; i++) {
+        await new Promise((r) => setTimeout(r, 15));
+      }
+      assert.ok(notifications.length > 0, "Decision tool should speak in decisionsOnly mode");
+
+      // 6. Agent response asking for permission or presenting choices SHOULD speak
+      notifications.length = 0;
+      await onAgentEnd(
+        { messages: [{ role: "assistant", content: "¿Confirmás la eliminación del archivo temporal?" }] },
+        mockCtx
+      );
+      for (let i = 0; i < 30 && notifications.length === 0; i++) {
+        await new Promise((r) => setTimeout(r, 15));
+      }
+      assert.ok(notifications.length > 0, "Permission request from agent should speak in decisionsOnly mode");
+    } finally {
+      delete process.env.PI_VOICE_CONFIG_PATH;
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+    }
+  });
 });

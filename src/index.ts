@@ -16,6 +16,7 @@ import { AudioRecorder } from "./recorder.ts";
 import { AudioTranscriber } from "./transcriber.ts";
 import { TldrSummarizer } from "./tldr.ts";
 import { VoiceMenuComponent, type MenuScreen } from "./menu.ts";
+import { DecisionGate } from "./decision-gate.ts";
 
 export class VoiceControlBarComponent implements Component {
   private theme: Theme;
@@ -608,6 +609,27 @@ export default function (pi: ExtensionAPI) {
   const activeDirectTestCalls = new Set<string>();
 
   pi.on("tool_execution_start", async (event: any, ctx: ExtensionContext) => {
+    if (config.decisionsOnly) {
+      const decisionTool = DecisionGate.isDecisionTool(event.toolName, event.args);
+      if (decisionTool.shouldSpeak) {
+        speakText(decisionTool.speakableText, ctx, undefined, true).catch(() => {});
+      }
+      if (event.toolCallId) {
+        if (
+          event.toolName === "subagent_run" ||
+          event.toolName === "Agent" ||
+          event.toolName === "subagent_continue"
+        ) {
+          const agentName = String(event.args?.agent || event.args?.name || "");
+          const { role, name, voice } = resolveSubagentVoice(agentName, config);
+          activeSubagents.set(event.toolCallId, { role, name, voice });
+        } else if (event.toolName === "bash") {
+          activeDirectTestCalls.add(String(event.toolCallId));
+        }
+      }
+      return;
+    }
+
     if (!config.subagents?.enabled) return;
 
     // 1. Subagent tool execution start
@@ -777,6 +799,14 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("tool_execution_end", async (event: any, ctx: ExtensionContext) => {
+    if (config.decisionsOnly) {
+      if (event.toolCallId) {
+        activeDirectTestCalls.delete(String(event.toolCallId));
+        activeSubagents.delete(event.toolCallId);
+      }
+      return;
+    }
+
     if (!config.subagents?.enabled) return;
 
     // Direct Verification conclusion
@@ -876,7 +906,14 @@ export default function (pi: ExtensionAPI) {
         lastAssistantText = text;
 
         if (config.enabled && config.autoRead) {
-          speakText(text, ctx, undefined, true).catch(() => {});
+          if (config.decisionsOnly) {
+            const evalResult = DecisionGate.evaluateAssistantText(text);
+            if (evalResult.shouldSpeak) {
+              speakText(text, ctx, undefined, true).catch(() => {});
+            }
+          } else {
+            speakText(text, ctx, undefined, true).catch(() => {});
+          }
         }
       }
     }
@@ -1290,6 +1327,33 @@ export default function (pi: ExtensionAPI) {
           break;
         }
 
+        case "decisions":
+        case "decisiones":
+        case "permisos":
+        case "solo-decisiones": {
+          const current = config.decisionsOnly ?? false;
+          const normalized = val.toLowerCase().trim();
+          const next =
+            normalized === "on" || normalized === "si" || normalized === "sí" || normalized === "true"
+              ? true
+              : normalized === "off" || normalized === "no" || normalized === "false"
+              ? false
+              : !current;
+          const updates: Partial<VoicePluginConfig> = { decisionsOnly: next };
+          if (next && !config.autoRead) {
+            updates.autoRead = true;
+          }
+          config = configManager.save(updates);
+          updateUiState(ctx);
+          ctx.ui.notify(
+            next
+              ? "🔊 Modo Solo Decisiones y Permisos ACTIVADO (la voz hablará únicamente ante preguntas, opciones o autorizaciones)"
+              : "🔊 Modo Solo Decisiones y Permisos DESACTIVADO (locución estándar)",
+            "info"
+          );
+          break;
+        }
+
         case "on": {
           config = configManager.save({ autoRead: true });
           updateUiState(ctx);
@@ -1528,6 +1592,7 @@ export default function (pi: ExtensionAPI) {
           const apiKeySet = Boolean(configManager.getActiveApiKey());
           const info = [
             `Estado auto-lectura: ${config.autoRead ? "ACTIVADO" : "DESACTIVADO"}`,
+            `Solo Decisiones/Permisos: ${config.decisionsOnly ? "ACTIVADO" : "DESACTIVADO"}`,
             `Proveedor activo: ${config.provider}`,
             `API Key detectada: ${apiKeySet ? "Sí (configurada)" : "No configurada"}`,
             `Voz actual: ${config.provider === "openai" ? config.openai.voice : config.elevenlabs.voiceId}`,
@@ -1543,7 +1608,7 @@ export default function (pi: ExtensionAPI) {
           if (ctx.ui.editor) {
             await ctx.ui.editor("Estado de Pi Voice", info);
           } else {
-            ctx.ui.notify(`[Voice] ${config.provider} | ${config.autoRead ? "ON" : "OFF"} | player: ${detected}`, "info");
+            ctx.ui.notify(`[Voice] ${config.provider} | ${config.autoRead ? "ON" : "OFF"} | decisions: ${config.decisionsOnly ? "ON" : "OFF"} | player: ${detected}`, "info");
           }
           break;
         }
@@ -1562,6 +1627,7 @@ export default function (pi: ExtensionAPI) {
             "  /voice jefe <nombre>   - Atajo directo para cambiar tu apelativo",
             "  /voice name <rol> <nom>- Cambia el nombre de un subagente (scout, worker, reviewer, orchestrator)",
             "  /voice record          - Inicia o detiene el dictado de prompts por voz (Alt+R)",
+            "  /voice decisions [on|off] - Modo solo decisiones y permisos (habla solo si requiere acción)",
             "  /voice tldr [on|off|alto|medio|bajo] - Alterna o configura el nivel de resumen TL;DR",
             "  /voice project [on|off] - Antepone el nombre del proyecto al hablar ('En <proyecto>:')",
             "  /voice on              - Activa la lectura automática tras cada respuesta",

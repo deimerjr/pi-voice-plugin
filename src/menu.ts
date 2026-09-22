@@ -357,6 +357,13 @@ export class VoiceMenuComponent extends Container {
             description: "Lee automáticamente cada respuesta generada",
           },
           {
+            value: "toggle_decisions_only",
+            label: `${config.decisionsOnly ? "●" : "○"} Solo Decisiones y Permisos: ${
+              config.decisionsOnly ? "ACTIVADO (Habla solo si requiere acción)" : "DESACTIVADO"
+            }`,
+            description: "Limita la voz a preguntas con opciones o solicitudes de confirmación y autorización",
+          },
+          {
             value: "toggle_tldr",
             label: `${config.tldr ? "●" : "○"} Modo Resumen (TL;DR): ${config.tldr ? "ACTIVADO (Resumen breve)" : "DESACTIVADO (Lectura completa)"}`,
             description: config.tldr
@@ -1251,6 +1258,23 @@ export class VoiceMenuComponent extends Container {
       this.statusNotice = updated.autoRead
         ? "Auto-lectura ACTIVADA tras cada respuesta"
         : "Auto-lectura DESACTIVADA (modo manual)";
+      this.onConfigChanged(updated);
+      this.renderScreen();
+      this.tui.requestRender();
+      return;
+    }
+
+    if (value === "toggle_decisions_only") {
+      const config = this.configManager.getConfig();
+      const nextDecisionsOnly = !config.decisionsOnly;
+      const updates: Partial<VoicePluginConfig> = { decisionsOnly: nextDecisionsOnly };
+      if (nextDecisionsOnly && !config.autoRead) {
+        updates.autoRead = true;
+      }
+      const updated = this.configManager.save(updates);
+      this.statusNotice = updated.decisionsOnly
+        ? "Solo Decisiones y Permisos ACTIVADO (auto-lectura sincronizada)"
+        : "Solo Decisiones y Permisos DESACTIVADO";
       this.onConfigChanged(updated);
       this.renderScreen();
       this.tui.requestRender();

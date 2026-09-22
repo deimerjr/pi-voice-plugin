@@ -27,6 +27,7 @@ describe("ConfigManager", () => {
     const config = manager.getConfig();
 
     assert.equal(config.autoRead, false);
+    assert.equal(config.decisionsOnly, false);
     assert.equal(config.filterCode, "omit");
     assert.equal(config.provider, "openai");
     assert.equal(config.openai.voice, "nova");
@@ -64,6 +65,27 @@ describe("ConfigManager", () => {
     manager3.save({ concurrency: "focus" });
     const manager4 = new ConfigManager(tmpConfigFile);
     assert.equal(manager4.getConfig().concurrency, "focus");
+  });
+
+  it("persists and reloads decisionsOnly toggle cleanly", () => {
+    const manager = new ConfigManager(tmpConfigFile);
+    assert.equal(manager.getConfig().decisionsOnly, false);
+
+    manager.save({ decisionsOnly: true });
+    assert.equal(manager.getConfig().decisionsOnly, true);
+
+    const reloaded = new ConfigManager(tmpConfigFile);
+    assert.equal(reloaded.getConfig().decisionsOnly, true);
+
+    reloaded.save({ decisionsOnly: false });
+    assert.equal(reloaded.getConfig().decisionsOnly, false);
+
+    const reloaded2 = new ConfigManager(tmpConfigFile);
+    assert.equal(reloaded2.getConfig().decisionsOnly, false);
+
+    // Merging non-boolean preserves existing
+    reloaded2.save({ decisionsOnly: undefined });
+    assert.equal(reloaded2.getConfig().decisionsOnly, false);
   });
 
   it("persists and reloads announceProject toggle cleanly", () => {
