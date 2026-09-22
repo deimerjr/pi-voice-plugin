@@ -9,3 +9,8 @@ Integración de un formulario de contacto y registro de comunidad con estética 
 - [x] Task 4: Escribir suite de pruebas unitarias en `landing/landing.test.js` para asegurar semántica, accesibilidad, CSS y lógica JS
 - [x] Task 5: Reconstruir el paquete descargable `landing/landing.zip` con los nuevos assets actualizados
 - [x] Task 6: Ejecutar suite de pruebas completa y auditar con subagente de verificación
+
+## Evidence & Work-Unit Commits
+- Commit: `4818ca4` - `feat(landing): add neo-brutalist community registration and contact form`
+- Test Verification: `node --test landing/landing.test.js` (37/37 passing), `npm test` (72/72 passing), `unzip -t landing/landing.zip` (15 files verified OK).
+
