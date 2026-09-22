@@ -36,6 +36,7 @@
         <li><a href="#features">FEATURES</a></li>
         <li><a href="#pipeline">ARQUITECTURA</a></li>
         <li><a href="#comandos">COMANDOS &amp; ATAJOS</a></li>
+        <li><a href="#contacto">CONTACTO</a></li>
       </ul>
       <div class="nav-actions">
         <button class="btn btn-theme" id="btn-theme-toggle" aria-label="Cambiar tema">
@@ -908,6 +909,138 @@
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN CONTACTO / REGISTRO NEO-BRUTALISTA -->
+  <section class="section-container container" id="contacto">
+    <div class="section-header">
+      <div class="section-tag">COMUNIDAD &amp; INSCRIPCIÓN</div>
+      <h2 class="section-title">REGISTRO &amp; CONTACTO DE LA CUADRILLA</h2>
+      <p class="section-desc">
+        Sumate a la red de desarrolladores con audio neuronal en Pi CLI. Dejanos tus datos, tu caso de uso preferido o solicitá la calibración de tu propia voz clonada.
+      </p>
+    </div>
+
+    <div class="contact-card-wrapper">
+      <div class="contact-card-header">
+        <div class="contact-header-left">
+          <div class="window-dots">
+            <span class="w-dot red"></span>
+            <span class="w-dot yellow"></span>
+            <span class="w-dot green"></span>
+          </div>
+          <h3 class="contact-card-title">FORMULARIO_INSCRIPCION_V1.EXE</h3>
+        </div>
+        <span class="contact-badge-status">[ DISPONIBLE ]</span>
+      </div>
+
+      <form id="form-contact" class="brutalist-form" novalidate>
+        <div id="form-feedback-banner" class="form-feedback-banner hidden" role="alert" aria-live="polite"></div>
+
+        <div class="form-grid">
+          <!-- Campo 01: Nombre / GitHub handle -->
+          <div class="form-group">
+            <label class="form-label" for="contact-name">
+              <span class="label-tag">[01]</span> NOMBRE / GITHUB HANDLE <span class="required-star">*</span>
+            </label>
+            <input type="text" id="contact-name" name="name" class="form-input" placeholder="ej. CinloDev o Hermes" required autocomplete="name">
+            <span class="form-error-msg" id="err-contact-name"></span>
+          </div>
+
+          <!-- Campo 02: Email -->
+          <div class="form-group">
+            <label class="form-label" for="contact-email">
+              <span class="label-tag">[02]</span> EMAIL DE CONTACTO <span class="required-star">*</span>
+            </label>
+            <input type="email" id="contact-email" name="email" class="form-input" placeholder="tu@dominio.com" required autocomplete="email">
+            <span class="form-error-msg" id="err-contact-email"></span>
+          </div>
+
+          <!-- Campo 03: Rol / Caso de uso -->
+          <div class="form-group form-group-full">
+            <label class="form-label" id="label-role">
+              <span class="label-tag">[03]</span> ROL / CASO DE USO PRINCIPAL
+            </label>
+            <div class="role-selector-grid" role="radiogroup" aria-labelledby="label-role">
+              <label class="role-option">
+                <input type="radio" name="role" value="DEV" class="role-input" checked>
+                <div class="role-box">
+                  <div class="role-code">DEV</div>
+                  <div class="role-desc">Desarrollo diario &amp; CLI</div>
+                </div>
+              </label>
+
+              <label class="role-option">
+                <input type="radio" name="role" value="ARCHITECT" class="role-input">
+                <div class="role-box">
+                  <div class="role-code">ARCHITECT</div>
+                  <div class="role-desc">Diseño &amp; ODD Harness</div>
+                </div>
+              </label>
+
+              <label class="role-option">
+                <input type="radio" name="role" value="LEAD" class="role-input">
+                <div class="role-box">
+                  <div class="role-code">LEAD</div>
+                  <div class="role-desc">Cuadrillas &amp; Subagentes</div>
+                </div>
+              </label>
+
+              <label class="role-option">
+                <input type="radio" name="role" value="ENTHUSIAST" class="role-input">
+                <div class="role-box">
+                  <div class="role-code">ENTHUSIAST</div>
+                  <div class="role-desc">Audio &amp; Voces Locales</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Campo 04: Preferencia de audio / Interés -->
+          <div class="form-group form-group-full">
+            <label class="form-label" for="contact-interest">
+              <span class="label-tag">[04]</span> PREFERENCIA DE AUDIO / INTERÉS
+            </label>
+            <div class="input-with-action">
+              <select id="contact-interest" name="audioInterest" class="form-select">
+                <option value="kokoro_local">Kokoro ONNX Local (100% Offline)</option>
+                <option value="cloned_voices">Voces Clonadas (Valeria, Juan Carlos, Fenrir)</option>
+                <option value="cuadrilla_crew">Modo Cuadrilla Multi-Voz</option>
+                <option value="whisper_stt">Dictado Whisper STT (Alt+R)</option>
+                <option value="custom_cloning">Calibración de Voz Propia</option>
+              </select>
+              <button type="button" class="btn btn-select-preview" id="btn-preview-form-voice" aria-label="Escuchar muestra de voz">
+                <svg class="b-icon-inline" viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                  <polygon points="4,2 14,8 4,14"/>
+                </svg>
+                <span>TEST</span>
+              </button>
+            </div>
+            <span class="form-error-msg" id="err-contact-interest"></span>
+          </div>
+
+          <!-- Campo 05: Mensaje / Feedback -->
+          <div class="form-group form-group-full">
+            <label class="form-label" for="contact-message">
+              <span class="label-tag">[05]</span> MENSAJE / FEEDBACK (OPCIONAL)
+            </label>
+            <textarea id="contact-message" name="message" class="form-textarea" rows="4" placeholder="Contanos cómo usás Pi CLI, qué voces te gustaría tener o feedback sobre la cuadrilla..."></textarea>
+            <span class="form-error-msg" id="err-contact-message"></span>
+          </div>
+        </div>
+
+        <!-- Barra de acciones -->
+        <div class="form-actions-bar">
+          <span class="pill pill-green">PERSISTENCIA LOCAL // SIN TRACKERS</span>
+          <button type="submit" class="btn btn-giant btn-primary" id="btn-submit-contact">
+            <svg class="b-icon-inline" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <polygon points="3,2 13,8 3,14"/>
+            </svg>
+            <span class="submit-btn-text">ENVIAR REGISTRO ➔</span>
+          </button>
+        </div>
+      </form>
     </div>
   </section>
 

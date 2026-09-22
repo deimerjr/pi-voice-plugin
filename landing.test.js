@@ -47,6 +47,7 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
       assert.match(html, /id="pipeline"/i);
       assert.match(html, /id="comandos"/i);
       assert.match(html, /id="install"/i);
+      assert.match(html, /id="contacto"/i);
       assert.match(html, /<footer\s+class="footer-wrapper">/i);
     });
 
@@ -253,6 +254,161 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
       assert.match(js, /setupVideoRecorder/);
       assert.match(js, /MediaRecorder/);
       assert.match(js, /video\/webm/);
+    });
+  });
+
+  describe("Neo-Brutalist Registration & Contact Form Architecture", () => {
+    const html = fs.readFileSync(htmlPath, "utf-8");
+    const css = fs.readFileSync(cssPath, "utf-8");
+    const js = fs.readFileSync(jsPath, "utf-8");
+
+    it("verifies #contacto placement in index.html after #install and before footer", () => {
+      assert.match(html, /id="contacto"/);
+      assert.match(html, /<a href="#contacto">CONTACTO<\/a>/);
+      const installIdx = html.indexOf('id="install"');
+      const contactIdx = html.indexOf('id="contacto"');
+      const footerIdx = html.indexOf('class="footer-wrapper"');
+
+      assert.ok(installIdx !== -1, "#install must exist");
+      assert.ok(contactIdx !== -1, "#contacto must exist");
+      assert.ok(footerIdx !== -1, "footer must exist");
+      assert.ok(contactIdx > installIdx, "#contacto must be placed after #install");
+      assert.ok(contactIdx < footerIdx, "#contacto must be placed before footer");
+    });
+
+    it("declares form with id='form-contact' and novalidate attribute", () => {
+      assert.match(html, /<form\s+id="form-contact"\s+class="brutalist-form"\s+novalidate>/);
+    });
+
+    it("contains terminal dots, title FORMULARIO_INSCRIPCION_V1.EXE and status badge", () => {
+      assert.match(html, /class="contact-card-header"/);
+      assert.match(html, /w-dot red/);
+      assert.match(html, /w-dot yellow/);
+      assert.match(html, /w-dot green/);
+      assert.match(html, /FORMULARIO_INSCRIPCION_V1\.EXE/);
+      assert.match(html, /class="contact-badge-status"[^>]*>\s*\[\s*DISPONIBLE\s*\]/);
+    });
+
+    it("declares required inputs with semantic IDs and matching labels", () => {
+      // Field 01: Name / GitHub
+      assert.match(html, /<label\s+class="form-label"\s+for="contact-name">/);
+      assert.match(html, /<input\s+type="text"\s+id="contact-name"\s+name="name"[^>]*required/);
+      assert.match(html, /id="err-contact-name"/);
+
+      // Field 02: Email
+      assert.match(html, /<label\s+class="form-label"\s+for="contact-email">/);
+      assert.match(html, /<input\s+type="email"\s+id="contact-email"\s+name="email"[^>]*required/);
+      assert.match(html, /id="err-contact-email"/);
+
+      // Field 04: Interest select & preview button
+      assert.match(html, /<label\s+class="form-label"\s+for="contact-interest">/);
+      assert.match(html, /<select\s+id="contact-interest"\s+name="audioInterest"/);
+      assert.match(html, /value="kokoro_local"/);
+      assert.match(html, /value="cloned_voices"/);
+      assert.match(html, /value="cuadrilla_crew"/);
+      assert.match(html, /value="whisper_stt"/);
+      assert.match(html, /value="custom_cloning"/);
+      assert.match(html, /id="btn-preview-form-voice"/);
+
+      // Field 05: Message textarea
+      assert.match(html, /<label\s+class="form-label"\s+for="contact-message">/);
+      assert.match(html, /<textarea\s+id="contact-message"\s+name="message"/);
+    });
+
+    it("contains role selector radiogroup with all 4 required roles", () => {
+      assert.match(html, /role="radiogroup"/);
+      assert.match(html, /class="role-selector-grid"/);
+      assert.match(html, /value="DEV"/);
+      assert.match(html, /value="ARCHITECT"/);
+      assert.match(html, /value="LEAD"/);
+      assert.match(html, /value="ENTHUSIAST"/);
+      assert.match(html, /class="role-box"/);
+      assert.match(html, /class="role-code"/);
+      assert.match(html, /class="role-desc"/);
+    });
+
+    it("contains submit button and aria-live feedback banner", () => {
+      assert.match(html, /id="btn-submit-contact"/);
+      assert.match(html, /ENVIAR REGISTRO ➔/);
+      assert.match(html, /id="form-feedback-banner"/);
+      assert.match(html, /role="alert"/);
+      assert.match(html, /aria-live="polite"/);
+      assert.match(html, /PERSISTENCIA LOCAL \/\/ SIN TRACKERS/);
+    });
+
+    it("verifies zero generic emojis in #contacto section", () => {
+      const contactSection = html.slice(html.indexOf('id="contacto"'), html.indexOf('class="footer-wrapper"'));
+      assert.doesNotMatch(contactSection, /[🎙️🎩🧭⚡🛡️⚙️⏹️🔊🔉🔇💡⌨️🚀📩✉️📝✨🔥👍]/, "No generic emojis in #contacto");
+    });
+
+    it("defines all neo-brutalist CSS classes and theme overrides in styles.css", () => {
+      assert.match(css, /\.contact-card-wrapper/);
+      assert.match(css, /\.contact-card-header/);
+      assert.match(css, /\.contact-badge-status/);
+      assert.match(css, /\.brutalist-form/);
+      assert.match(css, /\.form-grid/);
+      assert.match(css, /\.form-group/);
+      assert.match(css, /\.form-group-full/);
+      assert.match(css, /\.form-label/);
+      assert.match(css, /\.label-tag/);
+      assert.match(css, /\.required-star/);
+      assert.match(css, /\.form-input/);
+      assert.match(css, /\.form-select/);
+      assert.match(css, /\.form-textarea/);
+      assert.match(css, /\.form-input:focus/);
+      assert.match(css, /\.form-select:focus/);
+      assert.match(css, /\.form-textarea:focus/);
+      assert.match(css, /\.input-invalid/);
+      assert.match(css, /\.form-error-msg/);
+      assert.match(css, /\.role-selector-grid/);
+      assert.match(css, /\.role-option/);
+      assert.match(css, /\.role-input/);
+      assert.match(css, /\.role-box/);
+      assert.match(css, /\.role-code/);
+      assert.match(css, /\.role-desc/);
+      assert.match(css, /\.role-option:hover \.role-box/);
+      assert.match(css, /\.role-input:checked \+ \.role-box/);
+      assert.match(css, /\.input-with-action/);
+      assert.match(css, /\.btn-select-preview/);
+      assert.match(css, /\.form-actions-bar/);
+      assert.match(css, /\.form-feedback-banner/);
+      assert.match(css, /\.form-feedback-banner\.success/);
+      assert.match(css, /\.form-feedback-banner\.error/);
+      assert.match(css, /\.form-feedback-banner\.hidden/);
+
+      // Dark mode overrides
+      assert.match(css, /body\.dark-mode \.contact-card-wrapper/);
+      assert.match(css, /body\.dark-mode \.form-input/);
+      assert.match(css, /body\.dark-mode \.role-box/);
+      assert.match(css, /body\.dark-mode \.role-input:checked \+ \.role-box/);
+      assert.match(css, /body\.dark-mode \.btn-select-preview/);
+      assert.match(css, /#00ff66/);
+    });
+
+    it("verifies JS setupContactForm, storage key, validation, and audio tones in app.js", () => {
+      assert.match(js, /const\s+STORAGE_KEY_CONTACTS\s*=\s*"pi_voice_contacts";/);
+      assert.match(js, /function\s+setupContactForm\s*\(/);
+      assert.match(js, /setupContactForm\(\);/);
+      assert.match(js, /form-contact/);
+      assert.match(js, /form-feedback-banner/);
+      assert.match(js, /btn-submit-contact/);
+      assert.match(js, /btn-preview-form-voice/);
+      assert.match(js, /input-invalid/);
+      assert.match(js, /TRANSMITIENDO\.\.\./);
+      assert.match(js, /\[STATUS::OK\]\s*¡Inscripción recibida!/);
+
+      // Voice preview mappings
+      assert.match(js, /kokoro_local:\s*"gentleman"/);
+      assert.match(js, /cloned_voices:\s*"valeria"/);
+      assert.match(js, /cuadrilla_crew:\s*"dora"/);
+      assert.match(js, /whisper_stt:\s*"alex"/);
+      assert.match(js, /custom_cloning:\s*"juan_carlos"/);
+
+      // Audio feedback tones
+      assert.match(js, /playRetroTone\(140,\s*0\.18,\s*"sawtooth"\)/);
+      assert.match(js, /playRetroTone\(523,\s*0\.08,\s*"triangle"\)/);
+      assert.match(js, /playRetroTone\(659,\s*0\.08,\s*"triangle"\)/);
+      assert.match(js, /playRetroTone\(784,\s*0\.12,\s*"triangle"\)/);
     });
   });
 });

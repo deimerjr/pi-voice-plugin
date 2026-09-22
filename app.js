@@ -559,6 +559,164 @@ function setupVideoRecorder() {
   });
 }
 
+// Clave para almacenamiento en localStorage del formulario de contacto/inscripción
+const STORAGE_KEY_CONTACTS = "pi_voice_contacts";
+
+/**
+ * Configuración del formulario Neo-Brutalista de inscripción y contacto
+ */
+function setupContactForm() {
+  const form = document.getElementById("form-contact");
+  if (!form) return;
+
+  const nameInput = document.getElementById("contact-name");
+  const emailInput = document.getElementById("contact-email");
+  const interestSelect = document.getElementById("contact-interest");
+  const messageTextarea = document.getElementById("contact-message");
+  const feedbackBanner = document.getElementById("form-feedback-banner");
+  const submitBtn = document.getElementById("btn-submit-contact");
+  const previewBtn = document.getElementById("btn-preview-form-voice");
+  const errName = document.getElementById("err-contact-name");
+  const errEmail = document.getElementById("err-contact-email");
+
+  // Botón para previsualizar la voz según el interés seleccionado
+  if (previewBtn && interestSelect) {
+    const VOICE_MAP = {
+      kokoro_local: "gentleman",
+      cloned_voices: "valeria",
+      cuadrilla_crew: "dora",
+      whisper_stt: "alex",
+      custom_cloning: "juan_carlos",
+    };
+
+    previewBtn.addEventListener("click", () => {
+      const selected = interestSelect.value;
+      const agentKey = VOICE_MAP[selected] || "gentleman";
+      speakAgent(agentKey);
+    });
+  }
+
+  // Limpieza dinámica de errores al tipear
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (nameInput) {
+    nameInput.addEventListener("input", () => {
+      if (nameInput.value.trim().length >= 2) {
+        nameInput.classList.remove("input-invalid");
+        if (errName) errName.textContent = "";
+      }
+    });
+  }
+
+  if (emailInput) {
+    emailInput.addEventListener("input", () => {
+      if (emailRegex.test(emailInput.value.trim())) {
+        emailInput.classList.remove("input-invalid");
+        if (errEmail) errEmail.textContent = "";
+      }
+    });
+  }
+
+  // Manejador del envío del formulario
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const nameVal = nameInput ? nameInput.value.trim() : "";
+    const emailVal = emailInput ? emailInput.value.trim() : "";
+
+    let hasError = false;
+
+    if (nameVal.length < 2) {
+      hasError = true;
+      if (nameInput) nameInput.classList.add("input-invalid");
+      if (errName) errName.textContent = "Ingresá un nombre o handle válido (mínimo 2 caracteres).";
+    } else {
+      if (nameInput) nameInput.classList.remove("input-invalid");
+      if (errName) errName.textContent = "";
+    }
+
+    if (!emailRegex.test(emailVal)) {
+      hasError = true;
+      if (emailInput) emailInput.classList.add("input-invalid");
+      if (errEmail) errEmail.textContent = "Ingresá un correo electrónico válido.";
+    } else {
+      if (emailInput) emailInput.classList.remove("input-invalid");
+      if (errEmail) errEmail.textContent = "";
+    }
+
+    if (hasError) {
+      playRetroTone(140, 0.18, "sawtooth");
+      if (feedbackBanner) {
+        feedbackBanner.className = "form-feedback-banner error";
+        feedbackBanner.textContent = "[ERROR::400] Por favor completá los campos obligatorios marcados en rojo.";
+      }
+      if (nameVal.length < 2 && nameInput) {
+        nameInput.focus();
+      } else if (emailInput) {
+        emailInput.focus();
+      }
+      return;
+    }
+
+    // Estado transmitiendo
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      const submitText = submitBtn.querySelector(".submit-btn-text");
+      if (submitText) {
+        submitText.textContent = "TRANSMITIENDO...";
+      } else {
+        submitBtn.textContent = "TRANSMITIENDO...";
+      }
+    }
+
+    const roleInput = form.querySelector('input[name="role"]:checked');
+    const roleVal = roleInput ? roleInput.value : "DEV";
+    const interestVal = interestSelect ? interestSelect.value : "kokoro_local";
+    const messageVal = messageTextarea ? messageTextarea.value.trim() : "";
+
+    const payload = {
+      id: "reg_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
+      name: nameVal,
+      email: emailVal,
+      role: roleVal,
+      audioInterest: interestVal,
+      message: messageVal,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY_CONTACTS) || "[]");
+      stored.push(payload);
+      localStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify(stored));
+    } catch (err) {
+      console.warn("Storage warning:", err);
+    }
+
+    // Arpegio retro ascendente
+    playRetroTone(523, 0.08, "triangle");
+    setTimeout(() => playRetroTone(659, 0.08, "triangle"), 90);
+    setTimeout(() => playRetroTone(784, 0.12, "triangle"), 180);
+
+    if (feedbackBanner) {
+      feedbackBanner.className = "form-feedback-banner success";
+      feedbackBanner.textContent = "[STATUS::OK] ¡Inscripción recibida! Datos almacenados en el registro local.";
+    }
+
+    form.reset();
+
+    if (submitBtn) {
+      setTimeout(() => {
+        submitBtn.disabled = false;
+        const submitText = submitBtn.querySelector(".submit-btn-text");
+        if (submitText) {
+          submitText.textContent = "ENVIAR REGISTRO ➔";
+        } else {
+          submitBtn.textContent = "ENVIAR REGISTRO ➔";
+        }
+      }, 400);
+    }
+  });
+}
+
 // Alias para retrocompatibilidad
 const playCuadrillaChain = startFullTheater;
 
@@ -773,4 +931,5 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   setupVideoRecorder();
+  setupContactForm();
 });
