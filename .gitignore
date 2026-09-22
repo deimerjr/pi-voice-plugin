@@ -17,8 +17,9 @@ dist/
 *.tmp.wav
 *.tmp.mp3
 
-# Zip bundles
+# Zip and tarball bundles
 *.zip
+*.tgz
 
 # User media samples
 *.mp4

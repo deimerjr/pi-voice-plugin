@@ -7,10 +7,13 @@ Consolidar todas las ramas de trabajo en la rama `main`, actualizar la documenta
 - [x] Task 2: Incrementar versión a `1.1.0` en `package.json`
 - [x] Task 3: Ejecutar pruebas completas (`npm test` y `node --test landing/landing.test.js`) asegurando 140/140 pasando
 - [x] Task 4: Mergear la cadena de ramas a `main` y registrar commit de consolidación y release
-- [ ] Task 5: Generar el paquete tarball `.tgz` con `npm pack` y verificar su integridad y contenido
+- [x] Task 5: Generar el paquete tarball `.tgz` con `npm pack` y verificar su integridad y contenido
 
 ## Evidence & Release
 - Merge commit / Fast-forward on `main`: `e1d498f`
-- Version: `1.1.0`
+- Release Version: `1.1.0`
 - Tests: 140/140 passing (103 TypeScript unit tests + 37 landing tests).
+- Distributable Tarball: `pi-voice-plugin-1.1.0.tgz` (84.5 kB, 30 files, checksum verified).
+- Pi Package manifest: `package.json` with `"keywords": ["pi-package", ...]`, `"pi": { "extensions": ["./src/index.ts"] }`.
+
 
