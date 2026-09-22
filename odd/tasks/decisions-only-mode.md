@@ -10,7 +10,7 @@ Permitir que Pi Voice opere en modo silencioso durante ejecuciones autónomas de
 - [x] Task 5: Ejecutar suite completa de pruebas TypeScript y auditar con subagente de verificación
 
 ## Evidence & Work-Unit Commits
-- Commit: `feat(voice): add decisions and permissions only speech mode`
+- Commit: `ed03a26` - `feat(voice): add decisions and permissions only speech mode`
 - Test Verification:
   - `npm test`: 96/96 passing across 15 suites (0 failures).
   - `node --test landing/landing.test.js`: 37/37 passing across 7 suites (0 failures).
