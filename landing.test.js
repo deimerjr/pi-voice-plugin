@@ -411,4 +411,136 @@ describe("Landing Page Structure & Neo-Brutalist Assets", () => {
       assert.match(js, /playRetroTone\(784,\s*0\.12,\s*"triangle"\)/);
     });
   });
+
+  describe("Neo-Brutalist Documentation Webpage Architecture (docs.html & docs.js)", () => {
+    const docsHtmlPath = path.join(__dirname, "docs.html");
+    const docsJsPath = path.join(__dirname, "docs.js");
+    const docsHtml = fs.readFileSync(docsHtmlPath, "utf-8");
+    const docsJs = fs.readFileSync(docsJsPath, "utf-8");
+    const css = fs.readFileSync(cssPath, "utf-8");
+    const indexHtml = fs.readFileSync(htmlPath, "utf-8");
+
+    it("ensures docs.html and docs.js exist in landing/", () => {
+      assert.ok(fs.existsSync(docsHtmlPath), "docs.html must exist in landing/");
+      assert.ok(fs.existsSync(docsJsPath), "docs.js must exist in landing/");
+    });
+
+    it("has valid HTML5 doctype, charset, viewport, and page title", () => {
+      assert.match(docsHtml, /<!DOCTYPE\s+html>/i);
+      assert.match(docsHtml, /<html\s+lang="es">/i);
+      assert.match(docsHtml, /<meta\s+charset="UTF-8"/i);
+      assert.match(docsHtml, /<meta\s+name="viewport"/i);
+      assert.match(docsHtml, /<title>Documentación Técnica \/\/ Pi Voice Plugin<\/title>/);
+    });
+
+    it("defines essential semantic layout, sticky navbar, and scripts", () => {
+      assert.match(docsHtml, /<header\s+class="navbar-wrapper">/i);
+      assert.match(docsHtml, /class="brand-badge"[^>]*>EXT::VOICE<\/span>/);
+      assert.match(docsHtml, /class="brand-title"[^>]*>PI_VOICE<span class="dot">\.<\/span>DOCS<\/span>/);
+      assert.match(docsHtml, /href="index\.html"[^>]*>\s*VOLVER A LA LANDING ➔\s*<\/a>/);
+      assert.match(docsHtml, /id="btn-theme-toggle"/);
+      assert.match(docsHtml, /id="btn-docs-drawer-toggle"/);
+      assert.match(docsHtml, /class="docs-layout container"/);
+      assert.match(docsHtml, /<aside\s+class="docs-sidebar"\s+id="docs-sidebar">/);
+      assert.match(docsHtml, /<main\s+class="docs-content-pane">/);
+      assert.match(docsHtml, /<script\s+src="docs\.js"><\/script>/);
+    });
+
+    it("contains all 6 documentation sections with matching IDs", () => {
+      assert.match(docsHtml, /id="sec-arquitectura"/);
+      assert.match(docsHtml, /id="sec-concurrencia"/);
+      assert.match(docsHtml, /id="sec-configuracion"/);
+      assert.match(docsHtml, /id="sec-kokoro"/);
+      assert.match(docsHtml, /id="sec-changelog"/);
+      assert.match(docsHtml, /id="sec-contribucion"/);
+    });
+
+    it("contains sidebar navigation links matching all 6 section IDs", () => {
+      assert.match(docsHtml, /<a\s+href="#sec-arquitectura"\s+class="docs-nav-link/);
+      assert.match(docsHtml, /<a\s+href="#sec-concurrencia"\s+class="docs-nav-link/);
+      assert.match(docsHtml, /<a\s+href="#sec-configuracion"\s+class="docs-nav-link/);
+      assert.match(docsHtml, /<a\s+href="#sec-kokoro"\s+class="docs-nav-link/);
+      assert.match(docsHtml, /<a\s+href="#sec-changelog"\s+class="docs-nav-link/);
+      assert.match(docsHtml, /<a\s+href="#sec-contribucion"\s+class="docs-nav-link/);
+    });
+
+    it("contains deep search input, prompt, and result count badge", () => {
+      assert.match(docsHtml, /id="docs-search-box"/);
+      assert.match(docsHtml, /\[BUSCADOR::DOCS\]\s*\$/);
+      assert.match(docsHtml, /<input[^>]+id="docs-search-input"/);
+      assert.match(docsHtml, /id="search-count-badge"/);
+      assert.match(docsHtml, /class="docs-breadcrumb"/);
+      assert.match(docsHtml, /id="breadcrumb-current"/);
+    });
+
+    it("contains code snippet copy buttons across technical modules", () => {
+      const copyBtnMatches = docsHtml.match(/class="btn-copy-code"/g);
+      assert.ok(copyBtnMatches && copyBtnMatches.length >= 4, "Must contain multiple code copy buttons");
+      assert.match(docsHtml, /class="docs-code-box"/);
+      assert.match(docsHtml, /class="code-box-pre"/);
+    });
+
+    it("contains ASCII architecture diagrams and comparison tables", () => {
+      assert.match(docsHtml, /class="docs-ascii-card"/);
+      assert.match(docsHtml, /PI CLI RUNTIME/);
+      assert.match(docsHtml, /\/tmp\/pi-voice/);
+      assert.match(docsHtml, /class="docs-table"/);
+    });
+
+    it("enforces zero generic emojis in docs.html and docs.js", () => {
+      const emojiRegex = /[🎙️🎩🧭⚡🛡️⚙️⏹️🔊🔉🔇💡⌨️🚀📩✉️📝✨🔥👍🎉🤖💻📦🔧🧪]/;
+      assert.doesNotMatch(docsHtml, emojiRegex, "No generic emojis in docs.html");
+      assert.doesNotMatch(docsJs, emojiRegex, "No generic emojis in docs.js");
+    });
+
+    it("verifies navbar link in index.html pointing to docs.html with .nav-highlight", () => {
+      assert.match(indexHtml, /<a\s+href="docs\.html"\s+class="nav-highlight">DOCUMENTACIÓN ➔<\/a>/);
+    });
+
+    it("defines CSS rules for docs portal, layout, sidebar, search, code boxes, and dark mode", () => {
+      assert.match(css, /\.nav-links\s+a\.nav-highlight/);
+      assert.match(css, /\.docs-layout/);
+      assert.match(css, /\.docs-sidebar/);
+      assert.match(css, /\.docs-nav-link/);
+      assert.match(css, /\.docs-nav-link\.active/);
+      assert.match(css, /\.docs-subnav-list/);
+      assert.match(css, /\.docs-subnav-link/);
+      assert.match(css, /\.docs-content-pane/);
+      assert.match(css, /\.docs-search-box/);
+      assert.match(css, /#docs-search-input/);
+      assert.match(css, /\.search-count-badge/);
+      assert.match(css, /\.docs-breadcrumb/);
+      assert.match(css, /\.breadcrumb-current/);
+      assert.match(css, /\.docs-section/);
+      assert.match(css, /\.docs-module-header/);
+      assert.match(css, /\.module-badge/);
+      assert.match(css, /\.docs-code-box/);
+      assert.match(css, /\.btn-copy-code/);
+      assert.match(css, /\.btn-copy-code\.copied/);
+      assert.match(css, /\.docs-ascii-card/);
+
+      // Dark mode rules
+      assert.match(css, /body\.dark-mode\s+\.docs-sidebar/);
+      assert.match(css, /body\.dark-mode\s+\.docs-nav-link/);
+      assert.match(css, /body\.dark-mode\s+\.docs-search-box/);
+      assert.match(css, /body\.dark-mode\s+\.docs-code-box/);
+      assert.match(css, /body\.dark-mode\s+\.btn-copy-code/);
+      assert.match(css, /body\.dark-mode\s+\.docs-section/);
+    });
+
+    it("verifies JS controller methods, shared theme storage, and event handlers in docs.js", () => {
+      assert.match(docsJs, /const\s+THEME_KEY\s*=\s*"pi_voice_theme";/);
+      assert.match(docsJs, /function\s+initThemeToggle\s*\(/);
+      assert.match(docsJs, /function\s+initMobileDrawer\s*\(/);
+      assert.match(docsJs, /function\s+initCodeCopy\s*\(/);
+      assert.match(docsJs, /function\s+initDeepSearch\s*\(/);
+      assert.match(docsJs, /function\s+initScrollSpy\s*\(/);
+      assert.match(docsJs, /function\s+initJumpToTop\s*\(/);
+      assert.match(docsJs, /btn-theme-toggle/);
+      assert.match(docsJs, /btn-docs-drawer-toggle/);
+      assert.match(docsJs, /btn-copy-code/);
+      assert.match(docsJs, /docs-search-input/);
+      assert.match(docsJs, /btn-jump-top/);
+    });
+  });
 });

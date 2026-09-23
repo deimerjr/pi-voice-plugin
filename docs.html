@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentación Técnica // Pi Voice Plugin</title>
+  <meta name="description" content="Manual de referencia y arquitectura técnica para Pi Voice Plugin: síntesis TTS universal, Modo Cuadrilla, Kokoro offline, cerrojos FIFO y hooks de ciclo de vida.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;0,800;1,400&family=Space+Grotesk:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- CINTA DE MARQUESINA BRUTALISTA SUPERIOR -->
+  <div class="marquee-banner" id="marquee-top">
+    <div class="marquee-track">
+      <span>[▮█▄█▮] PI_VOICE_DOCS // MANUAL TÉCNICO DE ARQUITECTURA ◆ PROTOCOLO IPC /tmp/pi-voice/ ◆ KOKORO ONNX 100% OFFLINE ◆ BARRETA HEURÍSTICA DECISION-GATE ◆ 140+ SUITE TESTS OK ◆</span>
+      <span>[▮█▄█▮] PI_VOICE_DOCS // MANUAL TÉCNICO DE ARQUITECTURA ◆ PROTOCOLO IPC /tmp/pi-voice/ ◆ KOKORO ONNX 100% OFFLINE ◆ BARRETA HEURÍSTICA DECISION-GATE ◆ 140+ SUITE TESTS OK ◆</span>
+    </div>
+  </div>
+
+  <!-- NAVEGACIÓN PRINCIPAL STICKY -->
+  <header class="navbar-wrapper">
+    <nav class="navbar container">
+      <div class="brand">
+        <span class="brand-badge">EXT::VOICE</span>
+        <span class="brand-title">PI_VOICE<span class="dot">.</span>DOCS</span>
+      </div>
+
+      <div class="nav-actions">
+        <a href="index.html" class="nav-highlight" style="text-decoration: none; padding: 8px 14px; font-size: 13px; font-weight: 800;">
+          VOLVER A LA LANDING ➔
+        </a>
+
+        <button class="btn btn-theme" id="btn-theme-toggle" aria-label="Cambiar tema">
+          <svg class="b-icon-inline" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="8" cy="8" r="6"/>
+            <path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/>
+          </svg>
+          <span class="theme-label">DARK MATRIX</span>
+        </button>
+
+        <button class="btn" id="btn-docs-drawer-toggle" aria-label="Abrir menú de navegación lateral">
+          [00] ÍNDICE
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- TELÓN DE FONDO PARA DRAWER MÓVIL -->
+  <div class="docs-drawer-backdrop" id="docs-drawer-backdrop"></div>
+
+  <!-- LAYOUT PRINCIPAL DE DOCUMENTACIÓN (2 COLUMNAS) -->
+  <div class="docs-layout container">
+
+    <!-- COLUMNA IZQUIERDA: SIDEBAR DE NAVEGACIÓN -->
+    <aside class="docs-sidebar" id="docs-sidebar">
+      <div class="docs-sidebar-header">
+        <div class="term-dots-group" style="display: flex; gap: 6px;">
+          <span class="term-dot red"></span>
+          <span class="term-dot yellow"></span>
+          <span class="term-dot green"></span>
+        </div>
+        <span class="docs-sidebar-title">ÍNDICE_TÉCNICO.TXT</span>
+      </div>
+
+      <nav aria-label="Navegación de módulos técnicos">
+        <ul class="docs-nav-list">
+          <!-- MÓDULO 01 -->
+          <li class="docs-nav-item">
+            <a href="#sec-arquitectura" class="docs-nav-link active">
+              <span>[01] ARQUITECTURA</span>
+              <span>➔</span>
+            </a>
+            <ul class="docs-subnav-list">
+              <li><a href="#sub-vision-general" class="docs-subnav-link">◆ Visión &amp; Diagrama</a></li>
+              <li><a href="#sub-ciclo-vida" class="docs-subnav-link">◆ Hooks de Ciclo de Vida</a></li>
+              <li><a href="#sub-modulos-nucleo" class="docs-subnav-link">◆ Módulos del Núcleo</a></li>
+              <li><a href="#sub-factories" class="docs-subnav-link">◆ Factory &amp; Sanitizer</a></li>
+            </ul>
+          </li>
+
+          <!-- MÓDULO 02 -->
+          <li class="docs-nav-item">
+            <a href="#sec-concurrencia" class="docs-nav-link">
+              <span>[02] CONCURRENCIA</span>
+              <span>➔</span>
+            </a>
+            <ul class="docs-subnav-list">
+              <li><a href="#sub-ipc-posix" class="docs-subnav-link">◆ IPC POSIX &amp; /tmp</a></li>
+              <li><a href="#sub-modos-concurrencia" class="docs-subnav-link">◆ 4 Modos de Cola</a></li>
+              <li><a href="#sub-prefijo-proyecto" class="docs-subnav-link">◆ Prefijo de Proyecto</a></li>
+              <li><a href="#sub-ejemplo-concurrencia" class="docs-subnav-link">◆ Scripts &amp; Config</a></li>
+            </ul>
+          </li>
+
+          <!-- MÓDULO 03 -->
+          <li class="docs-nav-item">
+            <a href="#sec-configuracion" class="docs-nav-link">
+              <span>[03] CONFIGURACIÓN</span>
+              <span>➔</span>
+            </a>
+            <ul class="docs-subnav-list">
+              <li><a href="#sub-schema-json" class="docs-subnav-link">◆ Schema voice.json</a></li>
+              <li><a href="#sub-parametros-globales" class="docs-subnav-link">◆ Parámetros Globales</a></li>
+              <li><a href="#sub-roles-cuadrilla" class="docs-subnav-link">◆ Roles de Cuadrilla</a></li>
+              <li><a href="#sub-comandos-cli" class="docs-subnav-link">◆ Comandos CLI (/voice)</a></li>
+            </ul>
+          </li>
+
+          <!-- MÓDULO 04 -->
+          <li class="docs-nav-item">
+            <a href="#sec-kokoro" class="docs-nav-link">
+              <span>[04] KOKORO OFFLINE</span>
+              <span>➔</span>
+            </a>
+            <ul class="docs-subnav-list">
+              <li><a href="#sub-zero-tokens" class="docs-subnav-link">◆ Cero Tokens &amp; TTFA</a></li>
+              <li><a href="#sub-systemd-service" class="docs-subnav-link">◆ Servicio systemd</a></li>
+              <li><a href="#sub-clonacion-embeddings" class="docs-subnav-link">◆ Embeddings .npy</a></li>
+              <li><a href="#sub-catalogo-voces" class="docs-subnav-link">◆ Catálogo de 10 Voces</a></li>
+            </ul>
+          </li>
+
+          <!-- MÓDULO 05 -->
+          <li class="docs-nav-item">
+            <a href="#sec-changelog" class="docs-nav-link">
+              <span>[05] CHANGELOG</span>
+              <span>➔</span>
+            </a>
+            <ul class="docs-subnav-list">
+              <li><a href="#sub-v1-1-0" class="docs-subnav-link">◆ Versión 1.1.0</a></li>
+              <li><a href="#sub-v1-0-0" class="docs-subnav-link">◆ Versión 1.0.0</a></li>
+            </ul>
+          </li>
+
+          <!-- MÓDULO 06 -->
+          <li class="docs-nav-item">
+            <a href="#sec-contribucion" class="docs-nav-link">
+              <span>[06] CONTRIBUCIÓN</span>
+              <span>➔</span>
+            </a>
+            <ul class="docs-subnav-list">
+              <li><a href="#sub-principios-dev" class="docs-subnav-link">◆ Principios ODD &amp; No-Emoji</a></li>
+              <li><a href="#sub-flujo-tdd" class="docs-subnav-link">◆ Suite de Pruebas Node</a></li>
+              <li><a href="#sub-checklist-pr" class="docs-subnav-link">◆ Checklist Pull Request</a></li>
+            </ul>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- COLUMNA DERECHA: PANEL PRINCIPAL DE CONTENIDO -->
+    <main class="docs-content-pane">
+
+      <!-- BUSCADOR PROFUNDO -->
+      <div class="docs-search-box" id="docs-search-box">
+        <span class="search-prompt-sym">[BUSCADOR::DOCS] $</span>
+        <input type="text" id="docs-search-input" placeholder="Filtrar por arquitectura, IPC, Kokoro, comandos, TLDR..." aria-label="Buscar en la documentación técnica">
+        <span class="search-count-badge" id="search-count-badge">[6 MÓDULOS]</span>
+      </div>
+
+      <!-- BARRA DE BREADCRUMBS -->
+      <div class="docs-breadcrumb" aria-label="Migas de pan">
+        <span class="breadcrumb-root">PI_VOICE_DOCS</span>
+        <span class="breadcrumb-sep">//</span>
+        <span>NÚCLEO</span>
+        <span class="breadcrumb-sep">//</span>
+        <span class="breadcrumb-current" id="breadcrumb-current">[01] ARQUITECTURA</span>
+      </div>
+
+      <!-- ====================================================================
+           MÓDULO 01: ARQUITECTURA Y CICLO DE VIDA
+           ==================================================================== -->
+      <section class="docs-section" id="sec-arquitectura">
+        <div class="docs-module-header">
+          <div class="module-header-left">
+            <div class="term-dots-group" style="display: flex; gap: 6px;">
+              <span class="term-dot red"></span>
+              <span class="term-dot yellow"></span>
+              <span class="term-dot green"></span>
+            </div>
+            <span class="module-badge">[MOD::01]</span>
+            <h2 class="docs-section-title">ARQUITECTURA DEL SISTEMA Y CICLO DE VIDA</h2>
+          </div>
+          <span class="module-status-tag">[ESTABLE]</span>
+        </div>
+
+        <p class="docs-lead-text">
+          Pi Voice Plugin es una extensión modular de alto rendimiento para el entorno <strong>Pi CLI</strong>. Se integra en el bucle de eventos del agente mediante interceptores de ciclo de vida, sanitiza y resume las respuestas en tiempo de ejecución, aplica exclusión mutua inter-proceso mediante cerrojos POSIX y sintetiza voz en tiempo real con baja latencia.
+        </p>
+
+        <!-- SUBSECCIÓN: VISIÓN GENERAL Y DIAGRAMA ASCII -->
+        <article class="docs-subsection" id="sub-vision-general">
+          <h3 class="docs-subsection-title"><span class="sec-num">[01.1]</span> VISIÓN GENERAL &amp; DIAGRAMA DE FLUJO</h3>
+          <p>
+            El flujo de procesamiento de voz desacopla la generación de texto del motor de síntesis de audio, garantizando que el modelo no se bloquee durante la lectura ni se generen ruidos por fragmentos de código o trazas de razonamiento interno.
+          </p>
+
+          <div class="docs-ascii-card">
++-----------------------------------------------------------------------------+
+|                                PI CLI RUNTIME                               |
+|  +-------------------+      +---------------------+      +----------------+ |
+|  | User Prompt / CLI | ---> | LLM Agent Execution | ---> | Tool Execution | |
+|  +-------------------+      +---------------------+      +----------------+ |
++----------------------------------------|------------------------------------+
+                                         |
+                       [Event Bus: agent_end, tool_*]
+                                         v
++-----------------------------------------------------------------------------+
+|                          PI-VOICE-PLUGIN ENGINE                             |
+|                                                                             |
+|  +---------------------+        +--------------------+                      |
+|  | DecisionsGate       | -----> | TextSanitizer      |                      |
+|  | - decisionsOnly     |        | - Omit/Mention code|                      |
+|  | - Tool Detection    |        | - Strip <think>    |                      |
+|  +---------------------+        +--------------------+                      |
+|            |                               |                                |
+|            v                               v                                |
+|  +---------------------+        +--------------------+                      |
+|  | TldrSummarizer      | -----> | ConcurrencyLock    |                      |
+|  | - Low/Med/High      |        | - POSIX /tmp FIFO  |                      |
+|  | - Spanish Barrier   |        | - Queue/Focus/PID  |                      |
+|  +---------------------+        +--------------------+                      |
+|                                            |                                |
+|                                            v                                |
+|  +-----------------------------------------------------------------------+  |
+|  | AudioPlayer -> Auto-Detect Player (pw-play, paplay, aplay, afplay)    |  |
+|  +-----------------------------------------------------------------------+  |
+|                                            |                                |
+|                                            v                                |
+|  +-----------------------------------------------------------------------+  |
+|  | TTS Provider Layer:                                                   |  |
+|  | [1] KokoroProvider (Local ONNX, 0 Tokens, 120ms TTFA)                 |  |
+|  | [2] OpenAIProvider (Cloud API, tts-1)                                 |  |
+|  | [3] ElevenLabsProvider (Cloud API, Multilingual v2)                   |  |
+|  | [4] CustomHttpProvider (Generic Endpoint)                             |  |
+|  +-----------------------------------------------------------------------+  |
++-----------------------------------------------------------------------------+
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: HOOKS DEL CICLO DE VIDA -->
+        <article class="docs-subsection" id="sub-ciclo-vida">
+          <h3 class="docs-subsection-title"><span class="sec-num">[01.2]</span> HOOKS DE CICLO DE VIDA Y EVENTOS DEL AGENTE</h3>
+          <p>
+            El plugin escucha tres eventos fundamentales emitidos por el núcleo de Pi para orquestar la locución de estado y la entrega final de respuestas:
+          </p>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Hook Pi CLI</th>
+                  <th>Payload Interceptado</th>
+                  <th>Comportamiento de Voz</th>
+                  <th>Condición de Disparo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>tool_execution_start</code></td>
+                  <td><code>{ toolName, args }</code></td>
+                  <td>Anuncia el inicio de ejecución de herramienta o subagente ("Explorando con Dora...", "Ejecutando pruebas...").</td>
+                  <td>Siempre que <code>subagents.enabled</code> sea <code>true</code> y <code>decisionsOnly</code> no lo silencie.</td>
+                </tr>
+                <tr>
+                  <td><code>tool_execution_end</code></td>
+                  <td><code>{ toolName, result, isError }</code></td>
+                  <td>Sintetiza el resultado o veredicto de la herramienta con traducción automática al español nativo.</td>
+                  <td>Filtra herramientas internas y solo vocaliza cambios sustanciales o fallos.</td>
+                </tr>
+                <tr>
+                  <td><code>agent_end</code></td>
+                  <td><code>{ message: { content, role } }</code></td>
+                  <td>Procesa el texto de salida mediante DecisionGate, TextSanitizer y TldrSummarizer antes de enviarlo a la cola de audio.</td>
+                  <td>Activado si <code>autoRead</code> es <code>true</code> o si DecisionGate detecta una pregunta interactiva.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: MÓDULOS DEL NÚCLEO -->
+        <article class="docs-subsection" id="sub-modulos-nucleo">
+          <h3 class="docs-subsection-title"><span class="sec-num">[01.3]</span> MÓDULOS DEL NÚCLEO (CORE ENGINE)</h3>
+          <p>
+            La arquitectura interna se divide en 8 subsistemas desacoplados con responsabilidades únicas y pruebas unitarias aisladas:
+          </p>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Archivo</th>
+                  <th>Componente</th>
+                  <th>Responsabilidad Técnica</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>src/index.ts</code></td>
+                  <td>VoiceExtension Entrypoint</td>
+                  <td>Registro del plugin, comandos CLI <code>/voice</code>, atajos globales de teclado e integración con Pi context.</td>
+                </tr>
+                <tr>
+                  <td><code>src/decision-gate.ts</code></td>
+                  <td>DecisionGate Heuristics</td>
+                  <td>Detección inteligente de preguntas interactivas y herramientas de confirmación para el modo <code>decisionsOnly</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>src/tldr.ts</code></td>
+                  <td>TldrSummarizer Engine</td>
+                  <td>Resumen predictivo en 3 niveles (low, medium, high) con barrera idiomática estricta hacia el español.</td>
+                </tr>
+                <tr>
+                  <td><code>src/lock.ts</code></td>
+                  <td>PlaybackLockManager</td>
+                  <td>Control de concurrencia inter-proceso mediante tickets en <code>/tmp/pi-voice-&lt;uid&gt;/</code> y chequeo de PID.</td>
+                </tr>
+                <tr>
+                  <td><code>src/menu.ts</code></td>
+                  <td>VoiceMenuComponent</td>
+                  <td>Interfaz modal interactiva TUI para navegación por teclado/ratón sin abandonar la sesión de la terminal.</td>
+                </tr>
+                <tr>
+                  <td><code>src/sanitizer.ts</code></td>
+                  <td>TextSanitizer</td>
+                  <td>Eliminación de fences markdown, bloques de código (omit/mention), tags <code>&lt;think&gt;</code> y segmentación oracional.</td>
+                </tr>
+                <tr>
+                  <td><code>src/player.ts</code></td>
+                  <td>AudioPlayer Manager</td>
+                  <td>Reproducción de buffers WAV/MP3, escalado lineal de amplitud PCM y terminación atómica de procesos de sonido.</td>
+                </tr>
+                <tr>
+                  <td><code>src/providers/*</code></td>
+                  <td>TTS Providers Factory</td>
+                  <td>Adaptadores HTTP para Kokoro ONNX local, OpenAI TTS, ElevenLabs y endpoints REST custom.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: FACTORY DE PROVIDERS Y SANITIZER -->
+        <article class="docs-subsection" id="sub-factories">
+          <h3 class="docs-subsection-title"><span class="sec-num">[01.4]</span> FACTORY DE PROVEEDORES Y SANITIZACIÓN</h3>
+          <p>
+            Ejemplo de cómo la fábrica instancía el proveedor TTS adecuado y cómo el sanitizador purga bloques sintácticos antes de invocar el motor de voz:
+          </p>
+
+          <div class="docs-code-box">
+            <div class="code-box-header">
+              <span class="code-box-title">
+                <span class="term-dot green"></span>
+                <span>src/providers/factory.ts // Instanciación tipada de proveedores</span>
+              </span>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="code-lang-tag">TYPESCRIPT</span>
+                <button class="btn-copy-code" aria-label="Copiar código">[COPIAR]</button>
+              </div>
+            </div>
+            <pre class="code-box-pre"><code>import { TTSProvider, VoiceConfig } from "../types.js";
+import { KokoroProvider } from "./kokoro.js";
+import { OpenAIProvider } from "./openai.js";
+import { ElevenLabsProvider } from "./elevenlabs.js";
+import { CustomHttpProvider } from "./custom.js";
+
+export function createTTSProvider(config: VoiceConfig): TTSProvider {
+  switch (config.provider) {
+    case "kokoro":
+      return new KokoroProvider(config.providers?.kokoro);
+    case "openai":
+      return new OpenAIProvider(config.providers?.openai);
+    case "elevenlabs":
+      return new ElevenLabsProvider(config.providers?.elevenlabs);
+    case "custom":
+      return new CustomHttpProvider(config.providers?.custom);
+    default:
+      throw new Error(`[PiVoice] Proveedor no reconocido: ${config.provider}`);
+  }
+}</code></pre>
+          </div>
+        </article>
+      </section>
+
+      <!-- ====================================================================
+           MÓDULO 02: CONCURRENCIA INTER-PROCESO Y CERROJOS FIFO
+           ==================================================================== -->
+      <section class="docs-section" id="sec-concurrencia">
+        <div class="docs-module-header">
+          <div class="module-header-left">
+            <div class="term-dots-group" style="display: flex; gap: 6px;">
+              <span class="term-dot red"></span>
+              <span class="term-dot yellow"></span>
+              <span class="term-dot green"></span>
+            </div>
+            <span class="module-badge">[MOD::02]</span>
+            <h2 class="docs-section-title">CONCURRENCIA INTER-PROCESO Y CERROJOS FIFO</h2>
+          </div>
+          <span class="module-status-tag">[POSIX_IPC]</span>
+        </div>
+
+        <p class="docs-lead-text">
+          Cuando trabajas con múltiples terminales o subagentes de Pi corriendo en paralelo sobre distintos repositorios, los procesos compiten por el mismo dispositivo de salida de audio del sistema operativo. Sin sincronización, las voces se solaparían creando una cacofonía ininteligible.
+        </p>
+
+        <!-- SUBSECCIÓN: ARQUITECTURA POSIX -->
+        <article class="docs-subsection" id="sub-ipc-posix">
+          <h3 class="docs-subsection-title"><span class="sec-num">[02.1]</span> ARQUITECTURA IPC EN /tmp/pi-voice-&lt;uid&gt;/</h3>
+          <p>
+            Pi Voice Plugin resuelve la coordinación entre procesos independientes mediante un directorio IPC aislado por usuario en el sistema de archivos temporal de Linux/macOS:
+          </p>
+
+          <div class="docs-card-callout">
+            <span class="callout-title">[!] DIRECTORIO DE AISLAMIENTO POSIX</span>
+            <p>
+              Ruta canónica: <code>/tmp/pi-voice-&lt;UID&gt;/</code> (ej: <code>/tmp/pi-voice-1000/</code>). Con permisos <code>0700</code>, asegurando que ningún otro usuario local pueda espiar o alterar los cerrojos de reproducción.
+            </p>
+          </div>
+
+          <div class="docs-ascii-card">
+/tmp/pi-voice-1000/
+|-- playback.lock         <- Lease atómico con PID del proceso reproductor activo
+|-- active_session.json   <- Identificador de sesión con foco y timestamp de actividad
+`-- queue/                <- Directorio de tickets FIFO
+    |-- 1726910000000_14205.ticket  <- Sesión A (PID 14205, esperando turno)
+    `-- 1726910000150_14890.ticket  <- Sesión B (PID 14890, siguiente en cola)
+          </div>
+
+          <p>
+            Antes de comenzar a reproducir audio, cada proceso escribe un ticket atómico con timestamp. La cola se ordena de manera lexicográfica garantizando un estricto orden <strong>FIFO (First-In, First-Out)</strong>. Si un proceso termina inesperadamente (SIGKILL / crash), el supervisor verifica la vivacidad del PID mediante <code>kill(pid, 0)</code> y purga los tickets huérfanos sin bloquear el sistema.
+          </p>
+        </article>
+
+        <!-- SUBSECCIÓN: LOS 4 MODOS DE CONCURRENCIA -->
+        <article class="docs-subsection" id="sub-modos-concurrencia">
+          <h3 class="docs-subsection-title"><span class="sec-num">[02.2]</span> COMPARATIVA DETALLADA DE LOS 4 MODOS DE COLA</h3>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Modo</th>
+                  <th>Estrategia de Cerrojo</th>
+                  <th>Comportamiento ante Colisión</th>
+                  <th>Caso de Uso Recomendado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>queue</code> <em>(Default)</em></td>
+                  <td>Cola FIFO Cooperativa</td>
+                  <td>Espera a que el audio anterior termine y reproduce inmediatamente en estricto orden cronológico.</td>
+                  <td>Flujo estándar de trabajo cuando quieres escuchar todas las respuestas completas.</td>
+                </tr>
+                <tr>
+                  <td><code>interrupt</code></td>
+                  <td>Desalojo Preemptivo</td>
+                  <td>Envía <code>SIGTERM</code> al reproductor activo, limpia el cerrojo anterior y toma el control de voz de inmediato.</td>
+                  <td>Sesiones interactivas donde la respuesta más reciente siempre tiene máxima prioridad.</td>
+                </tr>
+                <tr>
+                  <td><code>focus</code></td>
+                  <td>Aislamiento de Sesión Activa</td>
+                  <td>Solo reproduce voz si la sesión emisora es la que actualmente tiene foco en la terminal; suprime las demás.</td>
+                  <td>Múltiples terminales abiertas en mosaico; silencia procesos en segundo plano.</td>
+                </tr>
+                <tr>
+                  <td><code>off</code></td>
+                  <td>Sin Control de Concurrencia</td>
+                  <td>Bypasea todos los cerrojos y reproduce de forma concurrente en el bus de audio.</td>
+                  <td>Entornos de pruebas o depuración de rendimiento sin exclusión mutua.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: PREFIJO DE PROYECTO -->
+        <article class="docs-subsection" id="sub-prefijo-proyecto">
+          <h3 class="docs-subsection-title"><span class="sec-num">[02.3]</span> PREFIJO DE PROYECTO (announceProject)</h3>
+          <p>
+            Al trabajar en múltiples repositorios a la vez, la opción <code>announceProject</code> prefija inteligentemente las respuestas con el nombre del directorio base del proyecto actual:
+          </p>
+          <div class="docs-card-callout success">
+            <span class="callout-title">[OK] EJEMPLO DE LOCUCIÓN CONTEXTUAL</span>
+            <p>
+              <em>"En <strong>Gentle-Plugin-Voz</strong>: Dora ha terminado la exploración del árbol de dependencias."</em>
+            </p>
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: CONFIGURACIÓN BASH -->
+        <article class="docs-subsection" id="sub-ejemplo-concurrencia">
+          <h3 class="docs-subsection-title"><span class="sec-num">[02.4]</span> SCRIPT Y COMANDOS DE CONCURRENCIA</h3>
+          <div class="docs-code-box">
+            <div class="code-box-header">
+              <span class="code-box-title">
+                <span class="term-dot green"></span>
+                <span>bash // Comandos para cambiar la concurrencia en vivo</span>
+              </span>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="code-lang-tag">BASH</span>
+                <button class="btn-copy-code" aria-label="Copiar código">[COPIAR]</button>
+              </div>
+            </div>
+            <pre class="code-box-pre"><code># Configurar el modo de concurrencia en la sesión activa de Pi CLI:
+/voice concurrency queue       # Cola FIFO ordenada
+/voice concurrency interrupt   # Desalojo inmediato de voz previa
+/voice concurrency focus       # Solo habla si la ventana tiene foco
+/voice concurrency off         # Sin cerrojos de concurrencia
+
+# Alternar el prefijo de proyecto:
+/voice project                 # Habilita o deshabilita "En <proyecto>: ..."</code></pre>
+          </div>
+        </article>
+      </section>
+
+      <!-- ====================================================================
+           MÓDULO 03: REFERENCIA DE CONFIGURACIÓN Y COMANDOS
+           ==================================================================== -->
+      <section class="docs-section" id="sec-configuracion">
+        <div class="docs-module-header">
+          <div class="module-header-left">
+            <div class="term-dots-group" style="display: flex; gap: 6px;">
+              <span class="term-dot red"></span>
+              <span class="term-dot yellow"></span>
+              <span class="term-dot green"></span>
+            </div>
+            <span class="module-badge">[MOD::03]</span>
+            <h2 class="docs-section-title">REFERENCIA DE CONFIGURACIÓN Y COMANDOS</h2>
+          </div>
+          <span class="module-status-tag">[JSON_V1]</span>
+        </div>
+
+        <p class="docs-lead-text">
+          Toda la configuración del plugin se almacena en el archivo persistente <code>~/.pi/agent/voice.json</code>. Puedes editarlo manualmente o manipularlo en caliente mediante comandos de terminal o a través del menú TUI interactivo.
+        </p>
+
+        <!-- SUBSECCIÓN: SCHEMA JSON COMPLETO -->
+        <article class="docs-subsection" id="sub-schema-json">
+          <h3 class="docs-subsection-title"><span class="sec-num">[03.1]</span> SCHEMA COMPLETO DE ~/.pi/agent/voice.json</h3>
+
+          <div class="docs-code-box">
+            <div class="code-box-header">
+              <span class="code-box-title">
+                <span class="term-dot green"></span>
+                <span>~/.pi/agent/voice.json // Estructura completa tipada</span>
+              </span>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="code-lang-tag">JSON</span>
+                <button class="btn-copy-code" aria-label="Copiar código">[COPIAR]</button>
+              </div>
+            </div>
+            <pre class="code-box-pre"><code>{
+  "provider": "kokoro",
+  "voice": "af_bella",
+  "speed": 1.0,
+  "volume": 0.9,
+  "autoRead": true,
+  "decisionsOnly": false,
+  "announceProject": true,
+  "concurrencyMode": "queue",
+  "tldr": true,
+  "tldrLevel": "medium",
+  "userTitle": "Líder",
+  "subagents": {
+    "enabled": true,
+    "announceTests": true,
+    "voices": {
+      "gentleman": "am_fenrir",
+      "dora": "af_sarah",
+      "alex": "am_michael",
+      "santa": "af_nicole"
+    },
+    "names": {
+      "gentleman": "el Gentleman",
+      "dora": "Dora la Exploradora",
+      "alex": "Alex el Arreglador",
+      "santa": "Santa Claus"
+    }
+  },
+  "providers": {
+    "kokoro": {
+      "url": "http://localhost:8880/v1/audio/speech"
+    },
+    "openai": {
+      "apiKey": "sk-...",
+      "model": "tts-1"
+    },
+    "elevenlabs": {
+      "apiKey": "xi-...",
+      "voiceId": "21m00Tcm4TlvDq8ikWAM"
+    },
+    "custom": {
+      "url": "http://localhost:5000/tts",
+      "method": "POST"
+    }
+  }
+}</code></pre>
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: PARÁMETROS GLOBALES -->
+        <article class="docs-subsection" id="sub-parametros-globales">
+          <h3 class="docs-subsection-title"><span class="sec-num">[03.2]</span> PARÁMETROS GLOBALES Y DE PROVEEDORES</h3>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Propiedad</th>
+                  <th>Tipo</th>
+                  <th>Default</th>
+                  <th>Descripción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>provider</code></td>
+                  <td>string</td>
+                  <td><code>"kokoro"</code></td>
+                  <td>Motor TTS activo: <code>"kokoro"</code>, <code>"openai"</code>, <code>"elevenlabs"</code>, <code>"custom"</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>autoRead</code></td>
+                  <td>boolean</td>
+                  <td><code>false</code></td>
+                  <td>Si está activo, lee en voz alta cada mensaje final emitido por el asistente.</td>
+                </tr>
+                <tr>
+                  <td><code>decisionsOnly</code></td>
+                  <td>boolean</td>
+                  <td><code>false</code></td>
+                  <td>Filtro inteligente: solo habla cuando el modelo requiere una confirmación o decisión humana.</td>
+                </tr>
+                <tr>
+                  <td><code>concurrencyMode</code></td>
+                  <td>string</td>
+                  <td><code>"queue"</code></td>
+                  <td>Estrategia de exclusión mutua de audio: <code>"queue"</code>, <code>"interrupt"</code>, <code>"focus"</code>, <code>"off"</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>tldrLevel</code></td>
+                  <td>string</td>
+                  <td><code>"medium"</code></td>
+                  <td>Profundidad del resumen antes de hablar: <code>"low"</code> (extenso), <code>"medium"</code> (balanceado), <code>"high"</code> (ultra-conciso).</td>
+                </tr>
+                <tr>
+                  <td><code>userTitle</code></td>
+                  <td>string</td>
+                  <td><code>"Líder"</code></td>
+                  <td>Apelativo de respeto con el que los agentes se dirigen al desarrollador (ej: "Jefe", "Comandante").</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: ROLES DE CUADRILLA -->
+        <article class="docs-subsection" id="sub-roles-cuadrilla">
+          <h3 class="docs-subsection-title"><span class="sec-num">[03.3]</span> ROLES DINÁMICOS DE LA CUADRILLA</h3>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Rol</th>
+                  <th>Nombre Configurable</th>
+                  <th>Voz Asignada</th>
+                  <th>Misión y Personalidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>gentleman</code></td>
+                  <td>el Gentleman</td>
+                  <td><code>am_fenrir</code></td>
+                  <td>Arquitecto principal, mentor técnico y orquestador senior del ciclo de desarrollo.</td>
+                </tr>
+                <tr>
+                  <td><code>dora</code></td>
+                  <td>Dora la Exploradora</td>
+                  <td><code>af_sarah</code></td>
+                  <td>Investigadora rápida de repositorios, mapas de código y análisis de impacto estructural.</td>
+                </tr>
+                <tr>
+                  <td><code>alex</code></td>
+                  <td>Alex el Arreglador</td>
+                  <td><code>am_michael</code></td>
+                  <td>Especialista en refactorización, depuración de incidencias y ciclos de desarrollo guiados por pruebas (TDD).</td>
+                </tr>
+                <tr>
+                  <td><code>santa</code></td>
+                  <td>Santa Claus</td>
+                  <td><code>af_nicole</code></td>
+                  <td>Auditor adversarial de calidad, revisión de seguridad y evaluador del checklist de entrega.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: COMANDOS CLI -->
+        <article class="docs-subsection" id="sub-comandos-cli">
+          <h3 class="docs-subsection-title"><span class="sec-num">[03.4]</span> REFERENCIA COMPLETA DE COMANDOS CLI</h3>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Comando</th>
+                  <th>Argumentos</th>
+                  <th>Acción Realizada</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>/voice</code></td>
+                  <td><em>(ninguno)</em></td>
+                  <td>Abre el menú interactivo TUI en pantalla completa dentro de la terminal.</td>
+                </tr>
+                <tr>
+                  <td><code>/voice on</code> / <code>/voice off</code></td>
+                  <td><em>(ninguno)</em></td>
+                  <td>Habilita o deshabilita la síntesis de voz automática (<code>autoRead</code>).</td>
+                </tr>
+                <tr>
+                  <td><code>/voice stop</code></td>
+                  <td><em>(ninguno)</em></td>
+                  <td>Detiene de inmediato cualquier audio en reproducción y libera el cerrojo. Atajo equivalente: <code>Alt+S</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>/voice decisions</code></td>
+                  <td><em>(ninguno)</em></td>
+                  <td>Alterna el modo <code>decisionsOnly</code>. Si se activa, habilita automáticamente <code>autoRead</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>/voice volume</code></td>
+                  <td><code>&lt;0 - 100&gt;</code></td>
+                  <td>Ajusta el volumen porcentual de reproducción mediante escalado lineal PCM.</td>
+                </tr>
+                <tr>
+                  <td><code>/voice speed</code></td>
+                  <td><code>&lt;0.5 - 2.0&gt;</code></td>
+                  <td>Modifica el ratio de velocidad del habla para sintetizadores compatibles.</td>
+                </tr>
+                <tr>
+                  <td><code>/voice provider</code></td>
+                  <td><code>&lt;kokoro|openai|elevenlabs&gt;</code></td>
+                  <td>Cambia el proveedor activo de síntesis en caliente.</td>
+                </tr>
+                <tr>
+                  <td><code>/voice tldr</code></td>
+                  <td><code>&lt;on|off|low|medium|high&gt;</code></td>
+                  <td>Activa, desactiva o calibra la agresividad del resumen TL;DR.</td>
+                </tr>
+                <tr>
+                  <td><code>/voice jefe</code> / <code>/voice title</code></td>
+                  <td><code>&lt;apelativo&gt;</code></td>
+                  <td>Establece el apelativo con el que la cuadrilla te llama (ej: <code>/voice jefe Arquitecto</code>).</td>
+                </tr>
+                <tr>
+                  <td><code>/voice name</code></td>
+                  <td><code>&lt;rol&gt; &lt;nuevo_nombre&gt;</code></td>
+                  <td>Rebautiza a un miembro de la cuadrilla (ej: <code>/voice name dora Dora Investigadora</code>).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <!-- ====================================================================
+           MÓDULO 04: KOKORO TTS LOCAL Y CERO TOKENS DE IA
+           ==================================================================== -->
+      <section class="docs-section" id="sec-kokoro">
+        <div class="docs-module-header">
+          <div class="module-header-left">
+            <div class="term-dots-group" style="display: flex; gap: 6px;">
+              <span class="term-dot red"></span>
+              <span class="term-dot yellow"></span>
+              <span class="term-dot green"></span>
+            </div>
+            <span class="module-badge">[MOD::04]</span>
+            <h2 class="docs-section-title">KOKORO TTS LOCAL Y CERO TOKENS DE IA</h2>
+          </div>
+          <span class="module-status-tag">[OFFLINE_ONNX]</span>
+        </div>
+
+        <p class="docs-lead-text">
+          Kokoro es un modelo de síntesis de voz neuronal de vanguardia con 82 millones de parámetros, optimizado para ejecutarse en CPU/GPU local mediante ONNX Runtime. Garantiza privacidad absoluta, funcionamiento sin conexión a internet y <strong>cero consumo de tokens o llamadas de API de pago</strong>.
+        </p>
+
+        <!-- SUBSECCIÓN: CERO TOKENS Y BENCHMARKS -->
+        <article class="docs-subsection" id="sub-zero-tokens">
+          <h3 class="docs-subsection-title"><span class="sec-num">[04.1]</span> GARANTÍA DE CERO TOKENS &amp; BENCHMARKS DE LATENCIA</h3>
+          <p>
+            Al correr 100% en la máquina local, el plugin no envía telemetría ni texto a servidores externos. A continuación se presentan los benchmarks medidos en hardware de desarrollo estándar (AMD Ryzen 7 5800H / 16GB RAM):
+          </p>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Métrica</th>
+                  <th>Kokoro ONNX Local</th>
+                  <th>OpenAI TTS (tts-1)</th>
+                  <th>ElevenLabs Multilingual</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>TTFA (Time to First Audio)</strong></td>
+                  <td><code>120ms - 180ms</code></td>
+                  <td><code>450ms - 850ms</code></td>
+                  <td><code>650ms - 1200ms</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Costo por 1M caracteres</strong></td>
+                  <td><code>$0.00 (Cero Tokens)</code></td>
+                  <td><code>$15.00 USD</code></td>
+                  <td><code>$30.00 - $90.00 USD</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Dependencia de Conexión</strong></td>
+                  <td><code>100% Offline</code></td>
+                  <td>Requiere Conexión</td>
+                  <td>Requiere Conexión</td>
+                </tr>
+                <tr>
+                  <td><strong>Privacidad de Código</strong></td>
+                  <td><code>Total (Memoria Local)</code></td>
+                  <td>Sujeto a Cloud ToS</td>
+                  <td>Sujeto a Cloud ToS</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: SERVICIO SYSTEMD -->
+        <article class="docs-subsection" id="sub-systemd-service">
+          <h3 class="docs-subsection-title"><span class="sec-num">[04.2]</span> ADMINISTRACIÓN DEL SERVICIO LOCAL SYSTEMD</h3>
+          <p>
+            El daemon de Kokoro corre como servicio de usuario de systemd escuchando peticiones en el puerto local <code>8880</code>:
+          </p>
+
+          <div class="docs-code-box">
+            <div class="code-box-header">
+              <span class="code-box-title">
+                <span class="term-dot green"></span>
+                <span>systemd // Comandos de administración de Kokoro TTS</span>
+              </span>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="code-lang-tag">BASH</span>
+                <button class="btn-copy-code" aria-label="Copiar código">[COPIAR]</button>
+              </div>
+            </div>
+            <pre class="code-box-pre"><code># Consultar el estado del servidor Kokoro TTS local:
+systemctl --user status kokoro-tts
+
+# Reiniciar el servicio tras actualizar voces o modelos:
+systemctl --user restart kokoro-tts
+
+# Iniciar o detener manualmente el daemon:
+systemctl --user start kokoro-tts
+systemctl --user stop kokoro-tts
+
+# Ver los registros en vivo del sintetizador:
+journalctl --user -u kokoro-tts -f</code></pre>
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: PIPELINE DE CLONACIÓN -->
+        <article class="docs-subsection" id="sub-clonacion-embeddings">
+          <h3 class="docs-subsection-title"><span class="sec-num">[04.3]</span> PIPELINE DE CLONACIÓN CON EMBEDDINGS .NPY</h3>
+          <p>
+            A diferencia de los modelos tradicionales que requieren horas de reentrenamiento, Kokoro soporta adaptación de estilo por embeddings de <strong>512 dimensiones en formato NumPy (<code>.npy</code>)</strong>:
+          </p>
+          <div class="docs-ascii-card">
+Muestra de Voz (WAV 24kHz, 8s)
+       |
+       v
+Extractor de Estilo (WavLM / StyleEncoder)
+       |
+       v
+Vector de 512 Floats -> ~/.local/share/kokoro/voices/juan_carlos.npy
+       |
+       v
+Inferencia Condicionada en Tiempo Real (120ms) -> Audio Sintetizado
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: CATÁLOGO DE 10 VOCES -->
+        <article class="docs-subsection" id="sub-catalogo-voces">
+          <h3 class="docs-subsection-title"><span class="sec-num">[04.4]</span> CATÁLOGO DE 10 VOCES AUTÉNTICAS</h3>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Voz</th>
+                  <th>ID Técnico</th>
+                  <th>Tipo</th>
+                  <th>Perfil Acústico y Tonalidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Valeria</strong></td>
+                  <td><code>af_bella</code></td>
+                  <td>Híbrida</td>
+                  <td>Español nativo femenino, tono empático, ideal para desarrollo diario y feedback positivo.</td>
+                </tr>
+                <tr>
+                  <td><strong>Juan Carlos</strong></td>
+                  <td><code>am_adam</code></td>
+                  <td>Clonada</td>
+                  <td>Masculino institucional, pausado, excelente para auditorías de código y lecturas de arquitectura.</td>
+                </tr>
+                <tr>
+                  <td><strong>Fenrir</strong></td>
+                  <td><code>am_fenrir</code></td>
+                  <td>Clonada</td>
+                  <td>Masculino barítono profundo y autoritario; voz oficial de <em>el Gentleman</em>.</td>
+                </tr>
+                <tr>
+                  <td><strong>Ximena</strong></td>
+                  <td><code>af_sarah</code></td>
+                  <td>Híbrida</td>
+                  <td>Femenino dinámico y rápido; ideal para resumen de herramientas y ejecución de comandos.</td>
+                </tr>
+                <tr>
+                  <td><strong>Mateo</strong></td>
+                  <td><code>am_michael</code></td>
+                  <td>Clonada</td>
+                  <td>Masculino joven, técnico y directo; optimizado para ciclos intensos de depuración y TDD.</td>
+                </tr>
+                <tr>
+                  <td><strong>el Gentleman</strong></td>
+                  <td><code>am_fenrir</code></td>
+                  <td>Cuadrilla</td>
+                  <td>Rol de Arquitecto Líder y orquestador del equipo.</td>
+                </tr>
+                <tr>
+                  <td><strong>Dora la Exploradora</strong></td>
+                  <td><code>af_sarah</code></td>
+                  <td>Cuadrilla</td>
+                  <td>Rol de investigación y cartografía de archivos.</td>
+                </tr>
+                <tr>
+                  <td><strong>Alex el Arreglador</strong></td>
+                  <td><code>am_michael</code></td>
+                  <td>Cuadrilla</td>
+                  <td>Rol de reparación quirúrgica y tests automatizados.</td>
+                </tr>
+                <tr>
+                  <td><strong>Santa Claus</strong></td>
+                  <td><code>af_nicole</code></td>
+                  <td>Cuadrilla</td>
+                  <td>Rol de revisión adversarial y cierre de entregables.</td>
+                </tr>
+                <tr>
+                  <td><strong>Test Engine</strong></td>
+                  <td><code>test-engine</code></td>
+                  <td>Sistema</td>
+                  <td>Emisión de tonos de prueba y validación de drivers de audio.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <!-- ====================================================================
+           MÓDULO 05: HISTORIAL DE VERSIONES (CHANGELOG)
+           ==================================================================== -->
+      <section class="docs-section" id="sec-changelog">
+        <div class="docs-module-header">
+          <div class="module-header-left">
+            <div class="term-dots-group" style="display: flex; gap: 6px;">
+              <span class="term-dot red"></span>
+              <span class="term-dot yellow"></span>
+              <span class="term-dot green"></span>
+            </div>
+            <span class="module-badge">[MOD::05]</span>
+            <h2 class="docs-section-title">HISTORIAL DE VERSIONES (CHANGELOG)</h2>
+          </div>
+          <span class="module-status-tag">[HISTÓRICO]</span>
+        </div>
+
+        <p class="docs-lead-text">
+          Registro semántico de lanzamientos, nuevas características, parches de seguridad y mejoras arquitectónicas en el plugin de voz para Pi CLI.
+        </p>
+
+        <!-- SUBSECCIÓN: V1.1.0 -->
+        <article class="docs-subsection" id="sub-v1-1-0">
+          <h3 class="docs-subsection-title"><span class="sec-num">[05.1]</span> VERSIÓN 1.1.0 (PRODUCCIÓN ACTUAL)</h3>
+          <div class="docs-card-callout success">
+            <span class="callout-title">[OK] HITOS DE LA VERSIÓN 1.1.0</span>
+            <ul style="margin-left: 20px; line-height: 1.6;">
+              <li><strong>Modo DecisionsOnly:</strong> Integración del motor heurístico DecisionGate para hablar únicamente ante preguntas de confirmación e interacción con el usuario.</li>
+              <li><strong>Barrera Idiomática Español:</strong> Traducción heurística garantizada al español nativo para salidas y resúmenes de subagentes en inglés.</li>
+              <li><strong>Formulario Neo-Brutalista:</strong> Portal web de inscripción con almacenamiento local de contactos en <code>localStorage</code> y retroalimentación sonora retro.</li>
+              <li><strong>Suite de Pruebas Automatizadas:</strong> Cobertura superior a 140 tests unitarios verificando concurrencia, audio, sanitización y UI.</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: V1.0.0 -->
+        <article class="docs-subsection" id="sub-v1-0-0">
+          <h3 class="docs-subsection-title"><span class="sec-num">[05.2]</span> VERSIÓN 1.0.0 (LANZAMIENTO INICIAL)</h3>
+          <div class="docs-card-callout">
+            <span class="callout-title">[01] HITOS FUNDACIONALES</span>
+            <ul style="margin-left: 20px; line-height: 1.6;">
+              <li><strong>Concurrencia Multi-Sesión:</strong> Implementación del sistema de cerrojos FIFO en <code>/tmp/pi-voice-&lt;uid&gt;/</code> con detección de procesos vivos.</li>
+              <li><strong>Modo Cuadrilla:</strong> Asignación dinámica de voces para subagentes (Gentleman, Dora, Alex, Santa) con apelativo de usuario personalizable.</li>
+              <li><strong>Integración Kokoro TTS:</strong> Síntesis 100% offline con zero-tokens de IA y latencia ultrabaja (120ms).</li>
+              <li><strong>Transcripción STT Whisper:</strong> Dictado de voz por micrófono mediante atajo global <code>Alt+R</code>.</li>
+            </ul>
+          </div>
+        </article>
+      </section>
+
+      <!-- ====================================================================
+           MÓDULO 06: GUÍA DE CONTRIBUCIÓN Y DESARROLLO
+           ==================================================================== -->
+      <section class="docs-section" id="sec-contribucion">
+        <div class="docs-module-header">
+          <div class="module-header-left">
+            <div class="term-dots-group" style="display: flex; gap: 6px;">
+              <span class="term-dot red"></span>
+              <span class="term-dot yellow"></span>
+              <span class="term-dot green"></span>
+            </div>
+            <span class="module-badge">[MOD::06]</span>
+            <h2 class="docs-section-title">GUÍA DE CONTRIBUCIÓN Y DESARROLLO</h2>
+          </div>
+          <span class="module-status-tag">[OPEN_SOURCE]</span>
+        </div>
+
+        <p class="docs-lead-text">
+          Aceptamos contribuciones de la comunidad. Para mantener la consistencia técnica, estética y arquitectónica del proyecto, todos los aportes deben ceñirse a los siguientes principios de ingeniería.
+        </p>
+
+        <!-- SUBSECCIÓN: PRINCIPIOS DE DESARROLLO -->
+        <article class="docs-subsection" id="sub-principios-dev">
+          <h3 class="docs-subsection-title"><span class="sec-num">[06.1]</span> PRINCIPIOS DE DISEÑO Y DESARROLLO</h3>
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Principio</th>
+                  <th>Norma Arquitectónica</th>
+                  <th>Objetivo de Calidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Cognitive Doc Design</strong></td>
+                  <td>Jerarquía visual explícita, badges de estado, bloques de código copiables y tablas contrastadas.</td>
+                  <td>Reducir la carga cognitiva y permitir escaneo visual instantáneo para ingenieros.</td>
+                </tr>
+                <tr>
+                  <td><strong>Organic Driven Dev (ODD)</strong></td>
+                  <td>Ramas de trabajo por feature, avance paso a paso, trazabilidad en <code>odd/tasks/</code> y verificación de pruebas.</td>
+                  <td>Garantizar evolución limpia sin regresiones en la base de código.</td>
+                </tr>
+                <tr>
+                  <td><strong>Zero Generic Emojis</strong></td>
+                  <td>Terminantemente prohibido el uso de emojis genéricos en UI, código o documentación. Solo SVGs monocráticos o tags ASCII (<code>[OK]</code>, <code>➔</code>).</td>
+                  <td>Preservar la identidad visual Neo-Brutalista industrial de alto contraste.</td>
+                </tr>
+                <tr>
+                  <td><strong>Español Profesional</strong></td>
+                  <td>Todo texto visible para el usuario debe redactarse en español neutro y técnico sin modismos locales ni voseo.</td>
+                  <td>Claridad y uniformidad lingüística para toda la comunidad hispanohablante.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: FLUJO TDD Y TESTS -->
+        <article class="docs-subsection" id="sub-flujo-tdd">
+          <h3 class="docs-subsection-title"><span class="sec-num">[06.2]</span> PRERREQUISITOS Y EJECUCIÓN DE PRUEBAS</h3>
+          <p>
+            Requisitos: <strong>Node.js >= 22.0.0</strong>, npm y reproductores de audio instalados (<code>pw-play</code>, <code>paplay</code> o <code>aplay</code> en Linux; <code>afplay</code> en macOS).
+          </p>
+
+          <div class="docs-code-box">
+            <div class="code-box-header">
+              <span class="code-box-title">
+                <span class="term-dot green"></span>
+                <span>bash // Comandos para ejecutar la suite de pruebas automatizadas</span>
+              </span>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="code-lang-tag">BASH</span>
+                <button class="btn-copy-code" aria-label="Copiar código">[COPIAR]</button>
+              </div>
+            </div>
+            <pre class="code-box-pre"><code># Ejecutar la suite principal de pruebas unitarias de TypeScript:
+npm test
+
+# Ejecutar las pruebas de verificación de la landing page y documentación web:
+node --test landing/landing.test.js
+
+# Reconstruir el paquete zip distribuible para despliegue:
+cd landing &amp;&amp; zip -r landing.zip index.html styles.css app.js docs.html docs.js CNAME audio/</code></pre>
+          </div>
+        </article>
+
+        <!-- SUBSECCIÓN: CHECKLIST DE PR -->
+        <article class="docs-subsection" id="sub-checklist-pr">
+          <h3 class="docs-subsection-title"><span class="sec-num">[06.3]</span> CHECKLIST OBLIGATORIO DE PULL REQUEST</h3>
+          <div class="docs-card-callout warning">
+            <span class="callout-title">[!] REQUISITOS ANTES DE ENVIAR TU PR</span>
+            <ul style="margin-left: 20px; line-height: 1.6;">
+              <li>[OK] El 100% de los tests en <code>npm test</code> y <code>landing/landing.test.js</code> pasan con éxito.</li>
+              <li>[OK] No se incluyeron emojis genéricos en código, comentarios ni elementos visuales.</li>
+              <li>[OK] Los estilos CSS agregados respetan los tokens Neo-Brutalistas y funcionan en modo claro y Dark Matrix.</li>
+              <li>[OK] El diseño se verificó en viewport de escritorio y dispositivo móvil (&lt; 900px).</li>
+              <li>[OK] El paquete distribuible <code>landing/landing.zip</code> está actualizado y validado.</li>
+            </ul>
+          </div>
+        </article>
+      </section>
+
+      <!-- BOTONES DE NAVEGACIÓN Y CIERRE -->
+      <footer class="docs-footer-nav">
+        <a href="index.html" class="btn btn-secondary" style="text-decoration: none;">
+          VOLVER A LA LANDING ➔
+        </a>
+        <button class="btn" id="btn-jump-top">
+          ▲ IR AL INICIO
+        </button>
+      </footer>
+
+    </main>
+  </div>
+
+  <!-- SCRIPT CONTROLADOR INTERACTIVO -->
+  <script src="docs.js"></script>
+</body>
+</html>
