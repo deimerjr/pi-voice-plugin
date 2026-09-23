@@ -1,0 +1,307 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid-theater" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1.5" fill="#0a0a0a" opacity="0.12" />
+    </pattern>
+    <pattern id="matrix-grid" width="16" height="16" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="16" x2="16" y2="16" stroke="#1a2e1a" stroke-width="1" />
+      <line x1="16" y1="0" x2="16" y2="16" stroke="#1a2e1a" stroke-width="1" />
+    </pattern>
+    <style>
+      .mono { font-family: ui-monospace, 'JetBrains Mono', 'Roboto Mono', Menlo, Consolas, monospace; }
+      .dialogue-text { font-family: ui-monospace, 'JetBrains Mono', Menlo, monospace; font-size: 13.5px; font-weight: 700; }
+    </style>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1200" height="620" fill="#faf8f5" />
+  <rect width="1200" height="620" fill="url(#dot-grid-theater)" />
+
+  <!-- Outer Hard Border -->
+  <rect x="8" y="8" width="1184" height="604" fill="none" stroke="#0a0a0a" stroke-width="3" />
+
+  <!-- Terminal Window Hard Drop Shadow (+8px, +8px) -->
+  <rect x="38" y="28" width="1132" height="568" fill="#0a0a0a" />
+
+  <!-- Terminal Window Body -->
+  <rect x="30" y="20" width="1132" height="568" fill="#ffffff" stroke="#0a0a0a" stroke-width="4" />
+
+  <!-- Window Title Bar -->
+  <rect x="30" y="20" width="1132" height="46" fill="#ffe600" stroke="#0a0a0a" stroke-width="4" />
+
+  <!-- Terminal Window Dots -->
+  <circle cx="58" cy="43" r="8" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+  <circle cx="82" cy="43" r="8" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+  <circle cx="106" cy="43" r="8" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+
+  <!-- Terminal Title -->
+  <text x="596" y="49" class="mono" font-weight="900" font-size="14" fill="#0a0a0a" text-anchor="middle" letter-spacing="1">
+    GENTLEMAN_SEXY_DJR // TUI SIMULATOR &amp; THEATER
+  </text>
+
+  <!-- Title Bar Right Status Badge -->
+  <rect x="1040" y="29" width="106" height="28" fill="#0a0a0a" />
+  <text x="1093" y="48" class="mono" font-weight="900" font-size="11" fill="#00ff66" text-anchor="middle" letter-spacing="1">
+    [ LIVE 24k ]
+  </text>
+
+  <!-- HUD Audio Status Monitor Bar -->
+  <g id="hud-status" transform="translate(50, 78)">
+    <rect x="0" y="0" width="1092" height="44" fill="#0a0a0a" stroke="#0a0a0a" stroke-width="3" />
+
+    <!-- Status Badge: REPRODUCIENDO -->
+    <rect x="12" y="8" width="270" height="28" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+    <text x="147" y="27" class="mono" font-weight="900" font-size="12" fill="#0a0a0a" text-anchor="middle">
+      STATUS: REPRODUCIENDO (WAV 24kHz)
+    </text>
+
+    <!-- Session Badge: ACTIVA [COLA FIFO] -->
+    <rect x="296" y="8" width="250" height="28" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+    <text x="421" y="27" class="mono" font-weight="900" font-size="12" fill="#0a0a0a" text-anchor="middle">
+      SESIÓN: ACTIVA [COLA FIFO]
+    </text>
+
+    <!-- Volume Badge: 100% -->
+    <rect x="560" y="8" width="120" height="28" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2" />
+    <text x="620" y="27" class="mono" font-weight="900" font-size="12" fill="#0a0a0a" text-anchor="middle">
+      VOL: 100%
+    </text>
+
+    <!-- Driver Info Tag -->
+    <rect x="694" y="8" width="220" height="28" fill="#a855f7" stroke="#0a0a0a" stroke-width="2" />
+    <text x="804" y="27" class="mono" font-weight="900" font-size="12" fill="#ffffff" text-anchor="middle">
+      BACKEND: KOKORO ONNX
+    </text>
+
+    <text x="1076" y="27" class="mono" font-weight="800" font-size="11" fill="#00ff66" text-anchor="end">
+      FIFO_QUEUE::ACTIVE
+    </text>
+  </g>
+
+  <!-- Audio Waveform Canvas Visualization Section -->
+  <g id="waveform-canvas" transform="translate(50, 134)">
+    <!-- Canvas frame with shadow -->
+    <rect x="4" y="4" width="1092" height="96" fill="#0a0a0a" />
+    <rect x="0" y="0" width="1092" height="96" fill="#0d1117" stroke="#0a0a0a" stroke-width="3" />
+    <rect x="0" y="0" width="1092" height="96" fill="url(#matrix-grid)" opacity="0.6" />
+
+    <!-- Canvas Header Meta -->
+    <text x="16" y="20" class="mono" font-weight="800" font-size="11" fill="#00f0ff" letter-spacing="1">
+      OSC_CH1: 24.0 kHz PCM AUDIO SYNTHESIS ENGINE
+    </text>
+    <text x="1076" y="20" class="mono" font-weight="800" font-size="11" fill="#ffe600" text-anchor="end" letter-spacing="1">
+      [ FFT REAL-TIME SPECTRUM ]
+    </text>
+
+    <!-- Center Zero Axis -->
+    <line x1="16" y1="56" x2="1076" y2="56" stroke="#238636" stroke-width="1" stroke-dasharray="4 4" />
+
+    <!-- Waveform Visualizer Bars (Neon Green & Yellow) -->
+    <!-- Stylized audio bars across the bottom half -->
+    <g transform="translate(24, 28)">
+      <!-- Wave bars sequence -->
+      <rect x="0" y="20" width="6" height="16" fill="#00ff66" />
+      <rect x="12" y="14" width="6" height="28" fill="#00ff66" />
+      <rect x="24" y="8" width="6" height="40" fill="#ffe600" />
+      <rect x="36" y="18" width="6" height="20" fill="#00ff66" />
+      <rect x="48" y="2" width="6" height="52" fill="#00f0ff" />
+      <rect x="60" y="12" width="6" height="32" fill="#00ff66" />
+      <rect x="72" y="22" width="6" height="12" fill="#ffe600" />
+      <rect x="84" y="5" width="6" height="46" fill="#00ff66" />
+      <rect x="96" y="16" width="6" height="24" fill="#00ff66" />
+      <rect x="108" y="0" width="6" height="56" fill="#ffe600" />
+
+      <rect x="120" y="10" width="6" height="36" fill="#00ff66" />
+      <rect x="132" y="22" width="6" height="12" fill="#00ff66" />
+      <rect x="144" y="6" width="6" height="44" fill="#00f0ff" />
+      <rect x="156" y="14" width="6" height="28" fill="#00ff66" />
+      <rect x="168" y="2" width="6" height="52" fill="#ffe600" />
+      <rect x="180" y="18" width="6" height="20" fill="#00ff66" />
+      <rect x="192" y="8" width="6" height="40" fill="#00ff66" />
+      <rect x="204" y="24" width="6" height="8" fill="#00f0ff" />
+      <rect x="216" y="4" width="6" height="48" fill="#ffe600" />
+      <rect x="228" y="16" width="6" height="24" fill="#00ff66" />
+    </g>
+
+    <!-- Continuous Neon Sine Oscilloscope Paths -->
+    <!-- Primary Green Waveform -->
+    <path d="M 280 56 Q 320 18, 360 56 T 440 56 T 520 56 T 600 56 T 680 56 T 760 56 T 840 56 T 920 56 T 1000 56 T 1070 56"
+          fill="none" stroke="#00ff66" stroke-width="3.5" />
+    <!-- Secondary Harmonic Yellow Waveform -->
+    <path d="M 280 56 Q 310 82, 340 56 T 400 56 T 460 56 T 520 56 T 580 56 T 640 56 T 700 56 T 760 56 T 820 56 T 880 56 T 940 56 T 1000 56 T 1060 56"
+          fill="none" stroke="#ffe600" stroke-width="2.5" opacity="0.85" />
+    <!-- Tertiary Cyan High-Frequency Waveform -->
+    <path d="M 280 56 Q 295 40, 310 56 T 340 56 T 370 56 T 400 56 T 430 56 T 460 56 T 490 56 T 520 56 T 550 56 T 580 56 T 610 56 T 640 56 T 670 56 T 700 56 T 730 56 T 760 56 T 790 56 T 820 56 T 850 56 T 880 56 T 910 56 T 940 56 T 970 56 T 1000 56 T 1030 56 T 1060 56"
+          fill="none" stroke="#00f0ff" stroke-width="1.5" opacity="0.5" />
+  </g>
+
+  <!-- Active Cuadrilla Dialogue Feed (4 Entries) -->
+  <g id="cuadrilla-feed" transform="translate(50, 242)">
+
+    <!-- DIALOGUE ENTRY 1: DORA (SCOUT) -->
+    <g transform="translate(0, 0)">
+      <!-- Hard Shadow -->
+      <rect x="4" y="4" width="1092" height="66" fill="#0a0a0a" />
+      <!-- Card Body -->
+      <rect x="0" y="0" width="1092" height="66" fill="#ffffff" stroke="#0a0a0a" stroke-width="3" />
+      <!-- Left Role Color Stripe -->
+      <rect x="0" y="0" width="10" height="66" fill="#00ff66" />
+
+      <!-- Agent Avatar & Badge -->
+      <rect x="22" y="12" width="220" height="42" fill="#00ff66" stroke="#0a0a0a" stroke-width="2.5" />
+      <text x="132" y="38" class="mono" font-weight="900" font-size="12" fill="#0a0a0a" text-anchor="middle">
+        [01/04] Exploradora (Dora)
+      </text>
+
+      <!-- Voice Tag -->
+      <rect x="250" y="18" width="94" height="28" fill="#faf8f5" stroke="#0a0a0a" stroke-width="2" />
+      <text x="297" y="36" class="mono" font-weight="800" font-size="11" fill="#0a0a0a" text-anchor="middle">
+        VOZ: ef_dora
+      </text>
+
+      <!-- Speech Bubble Text -->
+      <text x="360" y="40" class="dialogue-text" fill="#0a0a0a">
+        "Líder, me pongo a explorar: formulario de contacto en la landing page."
+      </text>
+
+      <!-- Trailing Action Pill -->
+      <rect x="976" y="18" width="100" height="28" fill="#0a0a0a" />
+      <text x="1026" y="36" class="mono" font-weight="900" font-size="11" fill="#00ff66" text-anchor="middle">
+        [ SCOUT ]
+      </text>
+    </g>
+
+    <!-- DIALOGUE ENTRY 2: ALEX (WORKER) -->
+    <g transform="translate(0, 74)">
+      <!-- Hard Shadow -->
+      <rect x="4" y="4" width="1092" height="66" fill="#0a0a0a" />
+      <!-- Card Body -->
+      <rect x="0" y="0" width="1092" height="66" fill="#ffffff" stroke="#0a0a0a" stroke-width="3" />
+      <!-- Left Role Color Stripe -->
+      <rect x="0" y="0" width="10" height="66" fill="#00f0ff" />
+
+      <!-- Agent Avatar & Badge -->
+      <rect x="22" y="12" width="220" height="42" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2.5" />
+      <text x="132" y="38" class="mono" font-weight="900" font-size="12" fill="#0a0a0a" text-anchor="middle">
+        [02/04] Programador (Alex)
+      </text>
+
+      <!-- Voice Tag -->
+      <rect x="250" y="18" width="94" height="28" fill="#faf8f5" stroke="#0a0a0a" stroke-width="2" />
+      <text x="297" y="36" class="mono" font-weight="800" font-size="11" fill="#0a0a0a" text-anchor="middle">
+        VOZ: em_alex
+      </text>
+
+      <!-- Speech Bubble Text -->
+      <text x="360" y="40" class="dialogue-text" fill="#0a0a0a">
+        "Recibido Dora, tomo la posta. Líder, arranco a programar los componentes y estilos."
+      </text>
+
+      <!-- Trailing Action Pill -->
+      <rect x="976" y="18" width="100" height="28" fill="#0a0a0a" />
+      <text x="1026" y="36" class="mono" font-weight="900" font-size="11" fill="#00f0ff" text-anchor="middle">
+        [ WORKER ]
+      </text>
+    </g>
+
+    <!-- DIALOGUE ENTRY 3: SANTA (REVIEWER) -->
+    <g transform="translate(0, 148)">
+      <!-- Hard Shadow -->
+      <rect x="4" y="4" width="1092" height="66" fill="#0a0a0a" />
+      <!-- Card Body -->
+      <rect x="0" y="0" width="1092" height="66" fill="#ffffff" stroke="#0a0a0a" stroke-width="3" />
+      <!-- Left Role Color Stripe -->
+      <rect x="0" y="0" width="10" height="66" fill="#ff0055" />
+
+      <!-- Agent Avatar & Badge -->
+      <rect x="22" y="12" width="220" height="42" fill="#ff0055" stroke="#0a0a0a" stroke-width="2.5" />
+      <text x="132" y="38" class="mono" font-weight="900" font-size="12" fill="#ffffff" text-anchor="middle">
+        [03/04] Auditor (Santa)
+      </text>
+
+      <!-- Voice Tag -->
+      <rect x="250" y="18" width="94" height="28" fill="#faf8f5" stroke="#0a0a0a" stroke-width="2" />
+      <text x="297" y="36" class="mono" font-weight="800" font-size="11" fill="#0a0a0a" text-anchor="middle">
+        VOZ: em_santa
+      </text>
+
+      <!-- Speech Bubble Text -->
+      <text x="360" y="40" class="dialogue-text" fill="#0a0a0a">
+        "A ver qué hiciste, Alex... Líder, paso la lupa y corro las pruebas de verificación."
+      </text>
+
+      <!-- Trailing Action Pill -->
+      <rect x="976" y="18" width="100" height="28" fill="#0a0a0a" />
+      <text x="1026" y="36" class="mono" font-weight="900" font-size="11" fill="#ff0055" text-anchor="middle">
+        [ REVIEWER ]
+      </text>
+    </g>
+
+    <!-- DIALOGUE ENTRY 4: EL GENTLEMAN (ORCHESTRATOR) -->
+    <g transform="translate(0, 222)">
+      <!-- Hard Shadow -->
+      <rect x="4" y="4" width="1092" height="66" fill="#0a0a0a" />
+      <!-- Card Body -->
+      <rect x="0" y="0" width="1092" height="66" fill="#ffffff" stroke="#0a0a0a" stroke-width="3" />
+      <!-- Left Role Color Stripe -->
+      <rect x="0" y="0" width="10" height="66" fill="#ffe600" />
+
+      <!-- Agent Avatar & Badge -->
+      <rect x="22" y="12" width="220" height="42" fill="#ffe600" stroke="#0a0a0a" stroke-width="2.5" />
+      <text x="132" y="38" class="mono" font-weight="900" font-size="11.5" fill="#0a0a0a" text-anchor="middle">
+        [04/04] Orquestador (Gentleman)
+      </text>
+
+      <!-- Voice Tag -->
+      <rect x="250" y="18" width="94" height="28" fill="#faf8f5" stroke="#0a0a0a" stroke-width="2" />
+      <text x="297" y="36" class="mono" font-weight="800" font-size="10.5" fill="#0a0a0a" text-anchor="middle">
+        VOZ: dora_heart
+      </text>
+
+      <!-- Speech Bubble Text -->
+      <text x="360" y="40" class="dialogue-text" fill="#0a0a0a">
+        "Líder, tarea verificada con éxito. 152/152 pruebas aprobadas al 100%."
+      </text>
+
+      <!-- Trailing Action Pill -->
+      <rect x="976" y="18" width="100" height="28" fill="#0a0a0a" />
+      <text x="1026" y="36" class="mono" font-weight="900" font-size="10" fill="#ffe600" text-anchor="middle">
+        [ VERIFIED ]
+      </text>
+    </g>
+  </g>
+
+  <!-- Bottom Interactive Status Bar Mockup -->
+  <g id="bottom-status-bar" transform="translate(50, 542)">
+    <rect x="0" y="0" width="1092" height="36" fill="#0a0a0a" stroke="#0a0a0a" stroke-width="2" />
+
+    <!-- Button 1: Voice ON -->
+    <rect x="8" y="5" width="150" height="26" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+    <text x="83" y="22" class="mono" font-weight="900" font-size="11" fill="#0a0a0a" text-anchor="middle">
+      [ VOICE: ON ]
+    </text>
+
+    <!-- Button 2: Parar -->
+    <rect x="166" y="5" width="120" height="26" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+    <text x="226" y="22" class="mono" font-weight="900" font-size="11" fill="#ffffff" text-anchor="middle">
+      [ DETENER ]
+    </text>
+
+    <!-- Button 3: Vol -->
+    <rect x="294" y="5" width="130" height="26" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2" />
+    <text x="359" y="22" class="mono" font-weight="900" font-size="11" fill="#0a0a0a" text-anchor="middle">
+      [ VOL: 100% ]
+    </text>
+
+    <!-- Button 4: Dictar -->
+    <rect x="432" y="5" width="170" height="26" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+    <text x="517" y="22" class="mono" font-weight="900" font-size="11" fill="#0a0a0a" text-anchor="middle">
+      [ DICTAR (Alt+R) ]
+    </text>
+
+    <!-- Right Shortcuts Guide -->
+    <text x="1076" y="23" class="mono" font-weight="800" font-size="11" fill="#ffffff" text-anchor="end">
+      MENU INTERACTIVO: Alt+V // CANCELAR: Alt+S // VOL: Alt+Up/Down
+    </text>
+  </g>
+</svg>

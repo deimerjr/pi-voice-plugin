@@ -1,0 +1,244 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 580" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid-cuadrilla" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1.5" fill="#0a0a0a" opacity="0.12" />
+    </pattern>
+    <style>
+      .mono { font-family: ui-monospace, 'JetBrains Mono', 'Roboto Mono', Menlo, Consolas, monospace; }
+      .display { font-family: system-ui, -apple-system, 'Space Grotesk', BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1200" height="580" fill="#faf8f5" />
+  <rect width="1200" height="580" fill="url(#dot-grid-cuadrilla)" />
+
+  <!-- Outer Frame -->
+  <rect x="8" y="8" width="1184" height="564" fill="none" stroke="#0a0a0a" stroke-width="3" />
+
+  <!-- Header Banner -->
+  <g id="cuadrilla-header" transform="translate(44, 20)">
+    <!-- Shadow -->
+    <rect x="6" y="6" width="1112" height="54" fill="#0a0a0a" />
+    <!-- Header Body -->
+    <rect x="0" y="0" width="1112" height="54" fill="#ffe600" stroke="#0a0a0a" stroke-width="3.5" />
+    <!-- Title -->
+    <text x="32" y="34" class="display" font-weight="900" font-size="20" fill="#0a0a0a" letter-spacing="0.5">
+      LA CUADRILLA &amp; CATÁLOGO DE VOCES CLONADAS (100% OFFLINE)
+    </text>
+    <!-- Right Badge -->
+    <rect x="862" y="10" width="230" height="34" fill="#0a0a0a" />
+    <text x="977" y="32" class="mono" font-weight="900" font-size="12" fill="#00ff66" text-anchor="middle" letter-spacing="1">
+      [ 0 TOKENS LOCAL ONNX ]
+    </text>
+  </g>
+
+  <!-- 4-Column Row of Cuadrilla Role Cards -->
+  <g id="cuadrilla-cards" transform="translate(44, 94)">
+
+    <!-- CARD 1: DORA (SCOUT) -->
+    <g transform="translate(0, 0)">
+      <!-- Hard Shadow -->
+      <rect x="6" y="6" width="260" height="268" fill="#0a0a0a" />
+      <!-- Card Box -->
+      <rect x="0" y="0" width="260" height="268" fill="#ffffff" stroke="#0a0a0a" stroke-width="3" />
+      <!-- Header Stripe -->
+      <rect x="0" y="0" width="260" height="42" fill="#00ff66" stroke="#0a0a0a" stroke-width="3" />
+      <text x="14" y="27" class="mono" font-weight="900" font-size="14" fill="#0a0a0a">01 // DORA</text>
+      <!-- Badge -->
+      <rect x="170" y="8" width="80" height="26" fill="#0a0a0a" />
+      <text x="210" y="25" class="mono" font-weight="900" font-size="11" fill="#00ff66" text-anchor="middle">SCOUT</text>
+
+      <!-- Role & Persona -->
+      <text x="14" y="70" class="display" font-weight="800" font-size="16" fill="#0a0a0a">Exploradora</text>
+      <text x="14" y="88" class="mono" font-weight="700" font-size="11.5" fill="#666666">gentle-ai-explore</text>
+
+      <!-- Voice Pill -->
+      <rect x="14" y="104" width="232" height="30" fill="#faf8f5" stroke="#0a0a0a" stroke-width="2" />
+      <text x="24" y="124" class="mono" font-weight="900" font-size="12" fill="#0a0a0a">VOZ: ef_dora</text>
+
+      <!-- Personality Quote Box -->
+      <rect x="14" y="146" width="232" height="54" fill="#f0fff4" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="22" y="166" class="mono" font-weight="800" font-size="11.5" fill="#0a0a0a">"Ágil y descriptiva"</text>
+      <text x="22" y="186" class="mono" font-weight="700" font-size="10.5" fill="#2d3748">Mapea terreno y código</text>
+
+      <!-- Handoff Note -->
+      <text x="14" y="222" class="mono" font-weight="800" font-size="10.5" fill="#0a0a0a">TRASPASA POSTA A:</text>
+      <rect x="14" y="230" width="232" height="24" fill="#00ff66" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="130" y="246" class="mono" font-weight="900" font-size="10.5" fill="#0a0a0a" text-anchor="middle">
+        "Alex, te dejo la cancha lista"
+      </text>
+    </g>
+
+    <!-- CARD 2: ALEX (WORKER) -->
+    <g transform="translate(284, 0)">
+      <!-- Hard Shadow -->
+      <rect x="6" y="6" width="260" height="268" fill="#0a0a0a" />
+      <!-- Card Box -->
+      <rect x="0" y="0" width="260" height="268" fill="#ffffff" stroke="#0a0a0a" stroke-width="3" />
+      <!-- Header Stripe -->
+      <rect x="0" y="0" width="260" height="42" fill="#00f0ff" stroke="#0a0a0a" stroke-width="3" />
+      <text x="14" y="27" class="mono" font-weight="900" font-size="14" fill="#0a0a0a">02 // ALEX</text>
+      <!-- Badge -->
+      <rect x="160" y="8" width="90" height="26" fill="#0a0a0a" />
+      <text x="205" y="25" class="mono" font-weight="900" font-size="11" fill="#00f0ff" text-anchor="middle">WORKER</text>
+
+      <!-- Role & Persona -->
+      <text x="14" y="70" class="display" font-weight="800" font-size="16" fill="#0a0a0a">Programador</text>
+      <text x="14" y="88" class="mono" font-weight="700" font-size="11.5" fill="#666666">gentle-ai-worker</text>
+
+      <!-- Voice Pill -->
+      <rect x="14" y="104" width="232" height="30" fill="#faf8f5" stroke="#0a0a0a" stroke-width="2" />
+      <text x="24" y="124" class="mono" font-weight="900" font-size="12" fill="#0a0a0a">VOZ: em_alex</text>
+
+      <!-- Personality Quote Box -->
+      <rect x="14" y="146" width="232" height="54" fill="#e6fffa" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="22" y="166" class="mono" font-weight="800" font-size="11.5" fill="#0a0a0a">"Técnica y directa"</text>
+      <text x="22" y="186" class="mono" font-weight="700" font-size="10.5" fill="#2d3748">Implementa y refactoriza</text>
+
+      <!-- Handoff Note -->
+      <text x="14" y="222" class="mono" font-weight="800" font-size="10.5" fill="#0a0a0a">TRASPASA POSTA A:</text>
+      <rect x="14" y="230" width="232" height="24" fill="#00f0ff" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="130" y="246" class="mono" font-weight="900" font-size="10.5" fill="#0a0a0a" text-anchor="middle">
+        "Santa, pasale la lupa"
+      </text>
+    </g>
+
+    <!-- CARD 3: SANTA (REVIEWER) -->
+    <g transform="translate(568, 0)">
+      <!-- Hard Shadow -->
+      <rect x="6" y="6" width="260" height="268" fill="#0a0a0a" />
+      <!-- Card Box -->
+      <rect x="0" y="0" width="260" height="268" fill="#ffffff" stroke="#0a0a0a" stroke-width="3" />
+      <!-- Header Stripe -->
+      <rect x="0" y="0" width="260" height="42" fill="#ff0055" stroke="#0a0a0a" stroke-width="3" />
+      <text x="14" y="27" class="mono" font-weight="900" font-size="14" fill="#ffffff">03 // SANTA</text>
+      <!-- Badge -->
+      <rect x="150" y="8" width="100" height="26" fill="#0a0a0a" />
+      <text x="200" y="25" class="mono" font-weight="900" font-size="11" fill="#ff0055" text-anchor="middle">REVIEWER</text>
+
+      <!-- Role & Persona -->
+      <text x="14" y="70" class="display" font-weight="800" font-size="16" fill="#0a0a0a">Auditor / Verificador</text>
+      <text x="14" y="88" class="mono" font-weight="700" font-size="11.5" fill="#666666">gentle-ai-verify</text>
+
+      <!-- Voice Pill -->
+      <rect x="14" y="104" width="232" height="30" fill="#faf8f5" stroke="#0a0a0a" stroke-width="2" />
+      <text x="24" y="124" class="mono" font-weight="900" font-size="12" fill="#0a0a0a">VOZ: em_santa</text>
+
+      <!-- Personality Quote Box -->
+      <rect x="14" y="146" width="232" height="54" fill="#fff5f5" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="22" y="166" class="mono" font-weight="800" font-size="11.5" fill="#0a0a0a">"Grave y autoritaria"</text>
+      <text x="22" y="186" class="mono" font-weight="700" font-size="10.5" fill="#2d3748">Ejecuta suites de test 152/152</text>
+
+      <!-- Handoff Note -->
+      <text x="14" y="222" class="mono" font-weight="800" font-size="10.5" fill="#0a0a0a">TRASPASA POSTA A:</text>
+      <rect x="14" y="230" width="232" height="24" fill="#ff0055" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="130" y="246" class="mono" font-weight="900" font-size="10.5" fill="#ffffff" text-anchor="middle">
+        "Gentleman, todo verificado"
+      </text>
+    </g>
+
+    <!-- CARD 4: EL GENTLEMAN (ORCHESTRATOR) -->
+    <g transform="translate(852, 0)">
+      <!-- Hard Shadow -->
+      <rect x="6" y="6" width="260" height="268" fill="#0a0a0a" />
+      <!-- Card Box -->
+      <rect x="0" y="0" width="260" height="268" fill="#ffffff" stroke="#0a0a0a" stroke-width="3" />
+      <!-- Header Stripe -->
+      <rect x="0" y="0" width="260" height="42" fill="#ffe600" stroke="#0a0a0a" stroke-width="3" />
+      <text x="14" y="27" class="mono" font-weight="900" font-size="13" fill="#0a0a0a">04 // GENTLEMAN</text>
+      <!-- Badge -->
+      <rect x="140" y="8" width="110" height="26" fill="#0a0a0a" />
+      <text x="195" y="25" class="mono" font-weight="900" font-size="9.5" fill="#ffe600" text-anchor="middle">ORCHESTRATOR</text>
+
+      <!-- Role & Persona -->
+      <text x="14" y="70" class="display" font-weight="800" font-size="16" fill="#0a0a0a">Orquestador ODD</text>
+      <text x="14" y="88" class="mono" font-weight="700" font-size="11.5" fill="#666666">parent-session coordinator</text>
+
+      <!-- Voice Pill -->
+      <rect x="14" y="104" width="232" height="30" fill="#faf8f5" stroke="#0a0a0a" stroke-width="2" />
+      <text x="24" y="124" class="mono" font-weight="900" font-size="12" fill="#0a0a0a">VOZ: dora_heart</text>
+
+      <!-- Personality Quote Box -->
+      <rect x="14" y="146" width="232" height="54" fill="#fffbeb" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="22" y="166" class="mono" font-weight="800" font-size="11.5" fill="#0a0a0a">"Cálida y balanceada"</text>
+      <text x="22" y="186" class="mono" font-weight="700" font-size="10.5" fill="#2d3748">Coordina tareas y fases</text>
+
+      <!-- Handoff Note -->
+      <text x="14" y="222" class="mono" font-weight="800" font-size="10.5" fill="#0a0a0a">INFORMA AL USUARIO:</text>
+      <rect x="14" y="230" width="232" height="24" fill="#ffe600" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="130" y="246" class="mono" font-weight="900" font-size="10.5" fill="#0a0a0a" text-anchor="middle">
+        "Líder, tarea completada al 100%"
+      </text>
+    </g>
+  </g>
+
+  <!-- Cloned & Hybrid Voices Showcase Bar -->
+  <g id="cloned-voices" transform="translate(44, 380)">
+    <!-- Shadow -->
+    <rect x="6" y="6" width="1112" height="126" fill="#0a0a0a" />
+    <!-- Box Body -->
+    <rect x="0" y="0" width="1112" height="126" fill="#ffffff" stroke="#0a0a0a" stroke-width="3.5" />
+
+    <!-- Top Label Bar -->
+    <rect x="0" y="0" width="1112" height="32" fill="#0a0a0a" />
+    <text x="20" y="21" class="mono" font-weight="900" font-size="11.5" fill="#ffffff" letter-spacing="1">
+      CATÁLOGO DE VOCES CLONADAS &amp; HÍBRIDAS ADICIONALES (MATRICES NEURONALES .NPY // KOKORO ONNX)
+    </text>
+
+    <!-- 5 Cloned Voice Badges / Mini-Cards -->
+    <!-- Voice 1: VALERIA -->
+    <g transform="translate(16, 42)">
+      <rect x="4" y="4" width="204" height="70" fill="#0a0a0a" />
+      <rect x="0" y="0" width="204" height="70" fill="#00ff66" stroke="#0a0a0a" stroke-width="2.5" />
+      <text x="12" y="26" class="mono" font-weight="900" font-size="13" fill="#0a0a0a">VALERIA</text>
+      <text x="12" y="44" class="mono" font-weight="800" font-size="10.5" fill="#0a0a0a">Clon ElevenLabs</text>
+      <text x="12" y="60" class="mono" font-weight="700" font-size="10" fill="#222222">Ejecutiva profesional</text>
+    </g>
+
+    <!-- Voice 2: JUAN CARLOS -->
+    <g transform="translate(236, 42)">
+      <rect x="4" y="4" width="204" height="70" fill="#0a0a0a" />
+      <rect x="0" y="0" width="204" height="70" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2.5" />
+      <text x="12" y="26" class="mono" font-weight="900" font-size="13" fill="#0a0a0a">JUAN CARLOS</text>
+      <text x="12" y="44" class="mono" font-weight="800" font-size="10.5" fill="#0a0a0a">Locutor comercial</text>
+      <text x="12" y="60" class="mono" font-weight="700" font-size="10" fill="#222222">Enérgico y dinámico</text>
+    </g>
+
+    <!-- Voice 3: FENRIR ESPAÑOL -->
+    <g transform="translate(456, 42)">
+      <rect x="4" y="4" width="204" height="70" fill="#0a0a0a" />
+      <rect x="0" y="0" width="204" height="70" fill="#ff0055" stroke="#0a0a0a" stroke-width="2.5" />
+      <text x="12" y="26" class="mono" font-weight="900" font-size="13" fill="#ffffff">FENRIR ESPAÑOL</text>
+      <text x="12" y="44" class="mono" font-weight="800" font-size="10.5" fill="#ffffff">Híbrido neural</text>
+      <text x="12" y="60" class="mono" font-weight="700" font-size="10" fill="#ffe4e6">Profundo autoritario</text>
+    </g>
+
+    <!-- Voice 4: XIMENA -->
+    <g transform="translate(676, 42)">
+      <rect x="4" y="4" width="204" height="70" fill="#0a0a0a" />
+      <rect x="0" y="0" width="204" height="70" fill="#ffe600" stroke="#0a0a0a" stroke-width="2.5" />
+      <text x="12" y="26" class="mono" font-weight="900" font-size="13" fill="#0a0a0a">XIMENA</text>
+      <text x="12" y="44" class="mono" font-weight="800" font-size="10.5" fill="#0a0a0a">Español México</text>
+      <text x="12" y="60" class="mono" font-weight="700" font-size="10" fill="#333333">Cálido y cordial</text>
+    </g>
+
+    <!-- Voice 5: MATEO -->
+    <g transform="translate(896, 42)">
+      <rect x="4" y="4" width="200" height="70" fill="#0a0a0a" />
+      <rect x="0" y="0" width="200" height="70" fill="#a855f7" stroke="#0a0a0a" stroke-width="2.5" />
+      <text x="12" y="26" class="mono" font-weight="900" font-size="13" fill="#ffffff">MATEO</text>
+      <text x="12" y="44" class="mono" font-weight="800" font-size="10.5" fill="#ffffff">Conversacional</text>
+      <text x="12" y="60" class="mono" font-weight="700" font-size="10" fill="#f3e8ff">Fresco y natural</text>
+    </g>
+  </g>
+
+  <!-- Bottom Technical Footer Bar -->
+  <g id="cuadrilla-footer" transform="translate(44, 522)">
+    <rect x="4" y="4" width="1112" height="34" fill="#0a0a0a" />
+    <rect x="0" y="0" width="1112" height="34" fill="#faf8f5" stroke="#0a0a0a" stroke-width="2.5" />
+    <text x="556" y="22" class="mono" font-weight="900" font-size="11.5" fill="#0a0a0a" text-anchor="middle" letter-spacing="0.5">
+      CERO TOKENS DE API // SINTETIZADO CON MATRICES NEURONALES .NPY EN KOKORO ONNX LOCAL
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,248 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid-menu" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1.5" fill="#0a0a0a" opacity="0.12" />
+    </pattern>
+    <style>
+      .mono { font-family: ui-monospace, 'JetBrains Mono', 'Roboto Mono', Menlo, Consolas, monospace; }
+      .display { font-family: system-ui, -apple-system, 'Space Grotesk', BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1200" height="620" fill="#faf8f5" />
+  <rect width="1200" height="620" fill="url(#dot-grid-menu)" />
+
+  <!-- Outer Hard Border -->
+  <rect x="8" y="8" width="1184" height="604" fill="none" stroke="#0a0a0a" stroke-width="3" />
+
+  <!-- Terminal Window Hard Drop Shadow (+8px, +8px) -->
+  <rect x="38" y="26" width="1132" height="570" fill="#0a0a0a" />
+
+  <!-- Terminal Window Body -->
+  <rect x="30" y="18" width="1132" height="570" fill="#ffffff" stroke="#0a0a0a" stroke-width="4" />
+
+  <!-- Window Title Bar -->
+  <rect x="30" y="18" width="1132" height="46" fill="#ffe600" stroke="#0a0a0a" stroke-width="4" />
+
+  <!-- Terminal Window Control Dots -->
+  <circle cx="58" cy="41" r="8" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+  <circle cx="82" cy="41" r="8" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+  <circle cx="106" cy="41" r="8" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+
+  <!-- Title Text -->
+  <text x="596" y="47" class="mono" font-weight="900" font-size="14.5" fill="#0a0a0a" text-anchor="middle" letter-spacing="1">
+    PI VOICE // MENÚ INTERACTIVO TUI (Alt+V)
+  </text>
+
+  <!-- Right Badge -->
+  <rect x="1024" y="27" width="122" height="28" fill="#0a0a0a" />
+  <text x="1085" y="46" class="mono" font-weight="900" font-size="11" fill="#00f0ff" text-anchor="middle" letter-spacing="1">
+    [ OVERLAY TUI ]
+  </text>
+
+  <!-- Subheader Guidance Bar -->
+  <g id="nav-guide" transform="translate(50, 74)">
+    <rect x="0" y="0" width="1092" height="34" fill="#0a0a0a" stroke="#0a0a0a" stroke-width="2" />
+    <text x="546" y="22" class="mono" font-weight="900" font-size="11.5" fill="#00ff66" text-anchor="middle" letter-spacing="0.5">
+      NAVEGACIÓN: [↑/↓] SELECCIONAR // [ENTER] CONFIRMAR // [ESC] VOLVER // MOUSE CLIC TOTALMENTE HABILITADO
+    </text>
+  </g>
+
+  <!-- Two-Column Layout -->
+  <!-- LEFT COLUMN: Main Menu Options -->
+  <g id="menu-left" transform="translate(50, 120)">
+    <!-- Container Shadow & Box -->
+    <rect x="6" y="6" width="560" height="402" fill="#0a0a0a" />
+    <rect x="0" y="0" width="560" height="402" fill="#faf8f5" stroke="#0a0a0a" stroke-width="3" />
+
+    <!-- Column Header -->
+    <rect x="0" y="0" width="560" height="36" fill="#0a0a0a" />
+    <text x="16" y="24" class="mono" font-weight="900" font-size="12" fill="#ffe600" letter-spacing="1">
+      OPCIONES PRINCIPALES DE CONFIGURACIÓN
+    </text>
+
+    <!-- Item 1: Auto-lectura -->
+    <g transform="translate(14, 48)">
+      <rect x="3" y="3" width="532" height="48" fill="#0a0a0a" />
+      <rect x="0" y="0" width="532" height="48" fill="#ffffff" stroke="#0a0a0a" stroke-width="2" />
+      <circle cx="24" cy="24" r="8" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+      <text x="44" y="29" class="mono" font-weight="900" font-size="13" fill="#0a0a0a">
+        [●] Auto-lectura:
+      </text>
+      <rect x="382" y="10" width="136" height="28" fill="#00ff66" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="450" y="28" class="mono" font-weight="900" font-size="11.5" fill="#0a0a0a" text-anchor="middle">
+        ACTIVADA
+      </text>
+    </g>
+
+    <!-- Item 2: Solo Decisiones y Permisos (Active cursor selection) -->
+    <g transform="translate(14, 106)">
+      <rect x="3" y="3" width="532" height="52" fill="#0a0a0a" />
+      <rect x="0" y="0" width="532" height="52" fill="#ffe600" stroke="#0a0a0a" stroke-width="2.5" />
+      <!-- Cursor indicator -->
+      <polygon points="12,18 20,26 12,34" fill="#0a0a0a" />
+      <circle cx="34" cy="26" r="8" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+      <text x="52" y="24" class="mono" font-weight="900" font-size="12.5" fill="#0a0a0a">
+        [●] Solo Decisiones y Permisos: ACTIVADO
+      </text>
+      <text x="52" y="42" class="mono" font-weight="700" font-size="10.5" fill="#222222">
+        (Habla solo si requiere acción humana o permisos)
+      </text>
+      <rect x="420" y="12" width="98" height="28" fill="#ff0055" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="469" y="30" class="mono" font-weight="900" font-size="11" fill="#ffffff" text-anchor="middle">
+        [FILTRO]
+      </text>
+    </g>
+
+    <!-- Item 3: Nivel de Resumen TL;DR -->
+    <g transform="translate(14, 168)">
+      <rect x="3" y="3" width="532" height="48" fill="#0a0a0a" />
+      <rect x="0" y="0" width="532" height="48" fill="#ffffff" stroke="#0a0a0a" stroke-width="2" />
+      <text x="20" y="29" class="mono" font-weight="900" font-size="13" fill="#0a0a0a">
+        [▸] Nivel de Resumen TL;DR:
+      </text>
+      <rect x="286" y="10" width="232" height="28" fill="#00f0ff" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="402" y="28" class="mono" font-weight="900" font-size="11" fill="#0a0a0a" text-anchor="middle">
+        [ Medio (2-3 oraciones) ]
+      </text>
+    </g>
+
+    <!-- Item 4: Voces de Agentes y Roles -->
+    <g transform="translate(14, 226)">
+      <rect x="3" y="3" width="532" height="48" fill="#0a0a0a" />
+      <rect x="0" y="0" width="532" height="48" fill="#ffffff" stroke="#0a0a0a" stroke-width="2" />
+      <text x="20" y="29" class="mono" font-weight="900" font-size="13" fill="#0a0a0a">
+        [▸] Voces de Agentes y Roles:
+      </text>
+      <rect x="306" y="10" width="212" height="28" fill="#00ff66" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="412" y="28" class="mono" font-weight="900" font-size="11" fill="#0a0a0a" text-anchor="middle">
+        Cuadrilla [ACTIVADA]
+      </text>
+    </g>
+
+    <!-- Item 5: Concurrencia Multi-Sesión -->
+    <g transform="translate(14, 284)">
+      <rect x="3" y="3" width="532" height="48" fill="#0a0a0a" />
+      <rect x="0" y="0" width="532" height="48" fill="#ffffff" stroke="#0a0a0a" stroke-width="2" />
+      <text x="20" y="29" class="mono" font-weight="900" font-size="13" fill="#0a0a0a">
+        [▸] Concurrencia Multi-Sesión:
+      </text>
+      <rect x="312" y="10" width="206" height="28" fill="#ffe600" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="415" y="28" class="mono" font-weight="900" font-size="11" fill="#0a0a0a" text-anchor="middle">
+        [ Cola FIFO (queue) ]
+      </text>
+    </g>
+
+    <!-- Item 6: Guía de Atajos y Controles -->
+    <g transform="translate(14, 342)">
+      <rect x="3" y="3" width="532" height="48" fill="#0a0a0a" />
+      <rect x="0" y="0" width="532" height="48" fill="#ffffff" stroke="#0a0a0a" stroke-width="2" />
+      <text x="20" y="29" class="mono" font-weight="900" font-size="13" fill="#0a0a0a">
+        [▸] Guía de Atajos y Controles (Cheat Sheet)
+      </text>
+      <rect x="430" y="10" width="88" height="28" fill="#a855f7" stroke="#0a0a0a" stroke-width="1.5" />
+      <text x="474" y="28" class="mono" font-weight="900" font-size="11" fill="#ffffff" text-anchor="middle">
+        [ ABRIR ]
+      </text>
+    </g>
+  </g>
+
+  <!-- RIGHT COLUMN: Quick Reference Shortcuts Card -->
+  <g id="menu-right" transform="translate(630, 120)">
+    <!-- Shadow & Box -->
+    <rect x="6" y="6" width="512" height="402" fill="#0a0a0a" />
+    <rect x="0" y="0" width="512" height="402" fill="#ffffff" stroke="#0a0a0a" stroke-width="3" />
+
+    <!-- Column Header -->
+    <rect x="0" y="0" width="512" height="36" fill="#0a0a0a" />
+    <text x="16" y="24" class="mono" font-weight="900" font-size="12" fill="#00ff66" letter-spacing="1">
+      GUÍA DE ATAJOS GLOBALES &amp; CONTROLES
+    </text>
+
+    <!-- Shortcut Rows -->
+    <!-- Shortcut 1: Alt + R -->
+    <g transform="translate(16, 48)">
+      <rect x="2" y="2" width="108" height="32" fill="#0a0a0a" />
+      <rect x="0" y="0" width="108" height="32" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+      <text x="54" y="21" class="mono" font-weight="900" font-size="12.5" fill="#0a0a0a" text-anchor="middle">Alt + R</text>
+      <text x="124" y="21" class="mono" font-weight="800" font-size="12" fill="#0a0a0a">Dictar prompt por micrófono (STT)</text>
+    </g>
+
+    <!-- Shortcut 2: Alt + S -->
+    <g transform="translate(16, 92)">
+      <rect x="2" y="2" width="108" height="32" fill="#0a0a0a" />
+      <rect x="0" y="0" width="108" height="32" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+      <text x="54" y="21" class="mono" font-weight="900" font-size="12.5" fill="#ffffff" text-anchor="middle">Alt + S</text>
+      <text x="124" y="21" class="mono" font-weight="800" font-size="12" fill="#0a0a0a">Detener audio inmediatamente</text>
+    </g>
+
+    <!-- Shortcut 3: Alt + V -->
+    <g transform="translate(16, 136)">
+      <rect x="2" y="2" width="108" height="32" fill="#0a0a0a" />
+      <rect x="0" y="0" width="108" height="32" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2" />
+      <text x="54" y="21" class="mono" font-weight="900" font-size="12.5" fill="#0a0a0a" text-anchor="middle">Alt + V</text>
+      <text x="124" y="21" class="mono" font-weight="800" font-size="12" fill="#0a0a0a">Abrir este menú interactivo TUI</text>
+    </g>
+
+    <!-- Shortcut 4: Alt + Up/Down -->
+    <g transform="translate(16, 180)">
+      <rect x="2" y="2" width="140" height="32" fill="#0a0a0a" />
+      <rect x="0" y="0" width="140" height="32" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+      <text x="70" y="21" class="mono" font-weight="900" font-size="11.5" fill="#0a0a0a" text-anchor="middle">Alt + Up / Down</text>
+      <text x="154" y="21" class="mono" font-weight="800" font-size="12" fill="#0a0a0a">Control maestro de volumen (±10%)</text>
+    </g>
+
+    <!-- Mouse Support Callout Box -->
+    <g transform="translate(16, 230)">
+      <!-- Shadow & Box -->
+      <rect x="3" y="3" width="480" height="156" fill="#0a0a0a" />
+      <rect x="0" y="0" width="480" height="156" fill="#faf8f5" stroke="#0a0a0a" stroke-width="2.5" />
+
+      <!-- Callout Header -->
+      <rect x="0" y="0" width="480" height="30" fill="#0a0a0a" />
+      <text x="14" y="20" class="mono" font-weight="900" font-size="11" fill="#ffe600" letter-spacing="1">
+        SOPORTE COMPLETO DE MOUSE EN BARRA INFERIOR
+      </text>
+
+      <!-- Simulated Bottom Bar -->
+      <g transform="translate(14, 42)">
+        <rect x="0" y="0" width="452" height="34" fill="#ffffff" stroke="#0a0a0a" stroke-width="2" />
+        <!-- Button 1 -->
+        <rect x="6" y="5" width="102" height="24" fill="#00ff66" stroke="#0a0a0a" stroke-width="1.5" />
+        <text x="57" y="21" class="mono" font-weight="900" font-size="10" fill="#0a0a0a" text-anchor="middle">[ Voice: ON ]</text>
+        <!-- Button 2 -->
+        <rect x="114" y="5" width="82" height="24" fill="#ff0055" stroke="#0a0a0a" stroke-width="1.5" />
+        <text x="155" y="21" class="mono" font-weight="900" font-size="10" fill="#ffffff" text-anchor="middle">[ Parar ]</text>
+        <!-- Button 3 -->
+        <rect x="202" y="5" width="94" height="24" fill="#00f0ff" stroke="#0a0a0a" stroke-width="1.5" />
+        <text x="249" y="21" class="mono" font-weight="900" font-size="10" fill="#0a0a0a" text-anchor="middle">[ Vol: 100% ]</text>
+        <!-- Button 4 -->
+        <rect x="302" y="5" width="144" height="24" fill="#ffe600" stroke="#0a0a0a" stroke-width="1.5" />
+        <text x="374" y="21" class="mono" font-weight="900" font-size="10" fill="#0a0a0a" text-anchor="middle">[ Dictar (Alt+R) ]</text>
+      </g>
+
+      <!-- Note description -->
+      <text x="14" y="104" class="mono" font-weight="800" font-size="11" fill="#0a0a0a">
+        CLIC DIRECTO: Clickeá sobre los botones o sobre
+      </text>
+      <text x="14" y="122" class="mono" font-weight="800" font-size="11" fill="#0a0a0a">
+        cualquier ítem del menú para alternar valores al instante.
+      </text>
+      <text x="14" y="142" class="mono" font-weight="700" font-size="10" fill="#666666">
+        Compatible con terminales VT100 / xterm mouse tracking en Pi CLI.
+      </text>
+    </g>
+  </g>
+
+  <!-- Bottom Terminal Status Bar -->
+  <g id="bottom-strip" transform="translate(50, 538)">
+    <rect x="0" y="0" width="1092" height="34" fill="#0a0a0a" stroke="#0a0a0a" stroke-width="2" />
+    <text x="16" y="22" class="mono" font-weight="900" font-size="11" fill="#00ff66">
+      STATUS: ONLINE // MODO DECISIONES: ACTIVO // KOKORO TTS LOCAL ONNX (0 TOKENS)
+    </text>
+    <text x="1076" y="22" class="mono" font-weight="900" font-size="11" fill="#ffe600" text-anchor="end">
+      SESIÓN::FIFO_LOCKED // PREFIJO: En Voz
+    </text>
+  </g>
+</svg>

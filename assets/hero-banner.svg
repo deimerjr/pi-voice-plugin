@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1.5" fill="#0a0a0a" opacity="0.15" />
+    </pattern>
+    <style>
+      .mono { font-family: ui-monospace, 'JetBrains Mono', 'Roboto Mono', Menlo, Consolas, monospace; }
+      .display { font-family: system-ui, -apple-system, 'Space Grotesk', BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      .badge-text { font-family: ui-monospace, 'JetBrains Mono', Menlo, monospace; font-weight: 800; font-size: 13px; letter-spacing: 0.5px; }
+    </style>
+  </defs>
+
+  <!-- Canvas Background with Dot Matrix -->
+  <rect width="1200" height="480" fill="#faf8f5" />
+  <rect width="1200" height="480" fill="url(#dot-grid)" />
+
+  <!-- Outer Hard Border Frame -->
+  <rect x="12" y="12" width="1176" height="456" fill="none" stroke="#0a0a0a" stroke-width="4" />
+
+  <!-- Corner Decorative Neo-Brutalist Accents -->
+  <rect x="12" y="12" width="16" height="16" fill="#0a0a0a" />
+  <rect x="1172" y="12" width="16" height="16" fill="#0a0a0a" />
+  <rect x="12" y="452" width="16" height="16" fill="#0a0a0a" />
+  <rect x="1172" y="452" width="16" height="16" fill="#0a0a0a" />
+
+  <!-- Top Marquee Banner Badge -->
+  <!-- Hard Shadow -->
+  <rect x="42" y="34" width="1122" height="40" fill="#0a0a0a" />
+  <!-- Banner Body -->
+  <rect x="36" y="28" width="1122" height="40" fill="#ffe600" stroke="#0a0a0a" stroke-width="3" />
+  <text x="597" y="53" class="mono" font-weight="900" font-size="13.5" fill="#0a0a0a" text-anchor="middle" letter-spacing="1.5">
+    EXT::VOICE // v1.1.0 // 100% OFFLINE KOKORO TTS // ZERO TOKENS // MULTI-SESSION FIFO QUEUE
+  </text>
+
+  <!-- Main Headline Block -->
+  <!-- Shadow offset -->
+  <text x="606" y="152" class="display" font-weight="900" font-size="64" fill="#0a0a0a" opacity="0.25" text-anchor="middle" letter-spacing="-1.5">
+    PI_VOICE_PLUGIN.EXE
+  </text>
+  <text x="600" y="146" class="display" font-weight="900" font-size="64" fill="#0a0a0a" text-anchor="middle" letter-spacing="-1.5">
+    PI_VOICE_PLUGIN<tspan fill="#ff0055">.EXE</tspan>
+  </text>
+
+  <!-- Subtitle Pill -->
+  <!-- Shadow -->
+  <rect x="226" y="178" width="754" height="34" fill="#0a0a0a" />
+  <!-- Body -->
+  <rect x="220" y="172" width="754" height="34" fill="#00f0ff" stroke="#0a0a0a" stroke-width="3" />
+  <text x="597" y="194" class="mono" font-weight="800" font-size="13" fill="#0a0a0a" text-anchor="middle" letter-spacing="1">
+    UNIVERSAL AI TEXT-TO-SPEECH &amp; SUBAGENT CREW HARNESS FOR PI CLI
+  </text>
+
+  <!-- Feature Pills Row (5 items) -->
+  <!-- Pill 1: 0 TOKENS -->
+  <rect x="40" y="234" width="216" height="34" fill="#0a0a0a" />
+  <rect x="36" y="230" width="216" height="34" fill="#00ff66" stroke="#0a0a0a" stroke-width="3" />
+  <text x="144" y="252" class="badge-text" fill="#0a0a0a" text-anchor="middle">[ 0 TOKENS LOCAL ONNX ]</text>
+
+  <!-- Pill 2: COLA FIFO -->
+  <rect x="270" y="234" width="224" height="34" fill="#0a0a0a" />
+  <rect x="266" y="230" width="224" height="34" fill="#ffe600" stroke="#0a0a0a" stroke-width="3" />
+  <text x="378" y="252" class="badge-text" fill="#0a0a0a" text-anchor="middle">[ COLA FIFO ANTI-COLISIÓN ]</text>
+
+  <!-- Pill 3: MODO SOLO DECISIONES -->
+  <rect x="508" y="234" width="216" height="34" fill="#0a0a0a" />
+  <rect x="504" y="230" width="216" height="34" fill="#ff0055" stroke="#0a0a0a" stroke-width="3" />
+  <text x="612" y="252" class="badge-text" fill="#ffffff" text-anchor="middle">[ MODO SOLO DECISIONES ]</text>
+
+  <!-- Pill 4: TRADUCCIÓN AL ESPAÑOL -->
+  <rect x="738" y="234" width="224" height="34" fill="#0a0a0a" />
+  <rect x="734" y="230" width="224" height="34" fill="#00f0ff" stroke="#0a0a0a" stroke-width="3" />
+  <text x="846" y="252" class="badge-text" fill="#0a0a0a" text-anchor="middle">[ TRADUCCIÓN AL ESPAÑOL ]</text>
+
+  <!-- Pill 5: 152 TESTS -->
+  <rect x="976" y="234" width="186" height="34" fill="#0a0a0a" />
+  <rect x="972" y="230" width="186" height="34" fill="#a855f7" stroke="#0a0a0a" stroke-width="3" />
+  <text x="1065" y="252" class="badge-text" fill="#ffffff" text-anchor="middle">[ 152 TESTS PASSING ]</text>
+
+  <!-- Interactive Terminal Install Bar -->
+  <!-- Shadow (+6px, +6px) -->
+  <rect x="126" y="294" width="954" height="56" fill="#0a0a0a" />
+  <!-- Main Bar -->
+  <rect x="120" y="288" width="954" height="56" fill="#ffffff" stroke="#0a0a0a" stroke-width="3.5" />
+
+  <!-- Terminal Prompt Prefix -->
+  <rect x="120" y="288" width="56" height="56" fill="#ffe600" stroke="#0a0a0a" stroke-width="3.5" />
+  <text x="148" y="323" class="mono" font-weight="900" font-size="20" fill="#0a0a0a" text-anchor="middle">$</text>
+
+  <!-- Command text -->
+  <text x="194" y="323" class="mono" font-weight="800" font-size="16" fill="#0a0a0a">
+    pi install https://github.com/deimerjr/pi-voice-plugin
+  </text>
+
+  <!-- Copy Button Tag -->
+  <rect x="926" y="299" width="136" height="34" fill="#0a0a0a" />
+  <rect x="922" y="296" width="136" height="34" fill="#00ff66" stroke="#0a0a0a" stroke-width="2.5" />
+  <text x="990" y="318" class="mono" font-weight="900" font-size="12" fill="#0a0a0a" text-anchor="middle" letter-spacing="1">
+    [ COPY / CLONE ]
+  </text>
+
+  <!-- Vector Soundwave Bar Visualizer Along Base -->
+  <g id="soundwave-bars" transform="translate(60, 375)">
+    <!-- Base track line -->
+    <line x1="0" y1="65" x2="1080" y2="65" stroke="#0a0a0a" stroke-width="3" />
+
+    <!-- 40 Equalizer Bars -->
+    <rect x="0" y="45" width="14" height="20" fill="#0a0a0a" />
+    <rect x="24" y="35" width="14" height="30" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="48" y="20" width="14" height="45" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="72" y="40" width="14" height="25" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="96" y="10" width="14" height="55" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="120" y="30" width="14" height="35" fill="#a855f7" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="144" y="15" width="14" height="50" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="168" y="48" width="14" height="17" fill="#0a0a0a" />
+    <rect x="192" y="25" width="14" height="40" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="216" y="5" width="14" height="60" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+
+    <rect x="240" y="18" width="14" height="47" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="264" y="32" width="14" height="33" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="288" y="12" width="14" height="53" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="312" y="28" width="14" height="37" fill="#a855f7" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="336" y="42" width="14" height="23" fill="#0a0a0a" />
+    <rect x="360" y="8" width="14" height="57" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="384" y="22" width="14" height="43" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="408" y="14" width="14" height="51" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="432" y="36" width="14" height="29" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="456" y="4" width="14" height="61" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+
+    <!-- Center wave burst -->
+    <rect x="480" y="15" width="14" height="50" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="504" y="0" width="14" height="65" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="528" y="10" width="14" height="55" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="552" y="22" width="14" height="43" fill="#a855f7" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="576" y="2" width="14" height="63" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="600" y="16" width="14" height="49" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="624" y="28" width="14" height="37" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="648" y="6" width="14" height="59" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="672" y="38" width="14" height="27" fill="#0a0a0a" />
+    <rect x="696" y="14" width="14" height="51" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+
+    <rect x="720" y="26" width="14" height="39" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="744" y="8" width="14" height="57" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="768" y="34" width="14" height="31" fill="#a855f7" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="792" y="18" width="14" height="47" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="816" y="44" width="14" height="21" fill="#0a0a0a" />
+    <rect x="840" y="12" width="14" height="53" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="864" y="30" width="14" height="35" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="888" y="4" width="14" height="61" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="912" y="24" width="14" height="41" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="936" y="16" width="14" height="49" fill="#ffe600" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="960" y="38" width="14" height="27" fill="#a855f7" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="984" y="10" width="14" height="55" fill="#ff0055" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="1008" y="28" width="14" height="37" fill="#00ff66" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="1032" y="45" width="14" height="20" fill="#00f0ff" stroke="#0a0a0a" stroke-width="2" />
+    <rect x="1056" y="52" width="14" height="13" fill="#0a0a0a" />
+  </g>
+
+  <!-- Technical Audio Spec Label -->
+  <text x="600" y="466" class="mono" font-weight="800" font-size="11" fill="#0a0a0a" text-anchor="middle" letter-spacing="1">
+    KOKORO TTS LOCAL ONNX // PCM 24000Hz WAV // LOW LATENCY TTFA ~140ms // ZERO CLOUD DEPENDENCY
+  </text>
+</svg>
