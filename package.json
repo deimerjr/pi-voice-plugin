@@ -2,6 +2,11 @@
   "name": "pi-voice-plugin",
   "version": "1.1.0",
   "description": "Universal AI Text-to-Speech plugin for Pi CLI (OpenAI, ElevenLabs, compatible APIs)",
+  "homepage": "https://deimerjr.github.io/pi-voice-plugin/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deimerjr/pi-voice-plugin.git"
+  },
   "type": "module",
   "main": "./src/index.ts",
   "keywords": [

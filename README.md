@@ -5,6 +5,11 @@
 </p>
 
 <p align="center">
+  <a href="https://deimerjr.github.io/pi-voice-plugin/"><kbd><b>[WEB] SITIO OFICIAL / LANDING PAGE ➔</b></kbd></a> &nbsp;
+  <a href="https://deimerjr.github.io/pi-voice-plugin/docs.html"><kbd><b>[DOCS] PORTAL WEB DE DOCUMENTACIÓN ➔</b></kbd></a>
+</p>
+
+<p align="center">
   <a href="#qué-es-pi-voice-plugin"><kbd><b>[ QUÉ ES ]</b></kbd></a> &nbsp;
   <a href="#características-principales"><kbd><b>[ CARACTERÍSTICAS ]</b></kbd></a> &nbsp;
   <a href="#terminal-theater--simulación-en-vivo"><kbd><b>[ TERMINAL THEATER ]</b></kbd></a> &nbsp;
@@ -215,8 +220,8 @@ El modo **Solo Decisiones y Permisos** es el mecanismo óptimo para desarrollado
 # Instalación permanente vía GitHub
 pi install https://github.com/deimerjr/pi-voice-plugin
 
-# O prueba directa sin instalación previa
-pi -e /home/hermes/Desarrollos/Automatizacion/Gentle/Plugin/Voz
+# O prueba temporal en sesión actual vía Git
+pi -e git:github.com/deimerjr/pi-voice-plugin
 ```
 
 ### Tabla Completa de Comandos `/voice`
@@ -311,6 +316,8 @@ El archivo de configuración reside en `~/.pi/agent/voice.json`. El orden de res
 
 Para consultar la especificación exhaustiva de cada subsistema, revise los documentos dedicados:
 
+- **[Sitio Web Oficial y Landing Page (En Vivo)](https://deimerjr.github.io/pi-voice-plugin/)**: Landing page interactiva Neo-Brutalista con Terminal Theater, soundboard de la cuadrilla, osciloscopio y formulario de registro.
+- **[Portal Web Interactivo de Documentación (En Vivo)](https://deimerjr.github.io/pi-voice-plugin/docs.html)**: Navegación web con buscador en tiempo real, filtros por categoría y selector de temas (también accesible localmente en [landing/docs.html](landing/docs.html)).
 - **[Arquitectura del Sistema y Ciclo de Vida de Eventos](docs/architecture.md)**: Flujo de hooks en runtime Pi CLI (`tool_execution_start`, `tool_execution_end`, `agent_end`), diseño de subsistemas y compuertas de filtrado.
 - **[Coordinación Inter-Proceso y Concurrencia Multi-Sesión](docs/concurrency.md)**: Cerrojos atómicos POSIX en `/tmp/pi-voice-<uid>/`, análisis comparativo de modos (`queue`, `interrupt`, `focus`, `off`) y aislamiento de sesiones concurrentes.
 - **[Referencia Completa de Configuración y Comandos](docs/configuration.md)**: Estructura del esquema `voice.json`, catálogo de voces, resolución de credenciales y sintaxis de comandos CLI.

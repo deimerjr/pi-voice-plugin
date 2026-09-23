@@ -38,6 +38,7 @@
         <li><a href="#comandos">COMANDOS &amp; ATAJOS</a></li>
         <li><a href="#contacto">CONTACTO</a></li>
         <li><a href="docs.html" class="nav-highlight">DOCUMENTACIÓN ➔</a></li>
+        <li><a href="https://github.com/deimerjr/pi-voice-plugin" target="_blank" rel="noopener" style="background: var(--c-black); color: var(--c-yellow); border: var(--border-thin);">GITHUB ➔</a></li>
       </ul>
       <div class="nav-actions">
         <button class="btn btn-theme" id="btn-theme-toggle" aria-label="Cambiar tema">
@@ -56,7 +57,7 @@
   <section class="hero-section container">
     <div class="hero-grid">
       <div class="hero-content">
-        <div class="badge-tag">v1.2.0 // PRODUCCIÓN LISTA</div>
+        <div class="badge-tag">v1.1.0 // PRODUCCIÓN LISTA</div>
         <h1 class="hero-title">
           TU TERMINAL NO SOLO PIENSA.<br>
           <mark class="highlight-yellow">AHORA TIENE VOZ.</mark>
@@ -85,7 +86,7 @@
           </div>
           <div class="install-body">
             <span class="prompt-sym">$</span>
-            <code id="cmd-install">pi install /home/hermes/Desarrollos/Automatizacion/Gentle/Plugin/Voz</code>
+            <code id="cmd-install">pi install https://github.com/deimerjr/pi-voice-plugin</code>
             <button class="btn-copy" id="btn-copy-install" aria-label="Copiar comando">
               <span class="copy-text">COPIAR</span>
             </button>
@@ -897,7 +898,7 @@
           <h4>Instalar permanentemente</h4>
           <p>Se vincula a tu configuración de Pi para estar disponible en todos tus proyectos.</p>
           <div class="code-box">
-            <code>pi install /home/hermes/Desarrollos/Automatizacion/Gentle/Plugin/Voz</code>
+            <code>pi install https://github.com/deimerjr/pi-voice-plugin</code>
           </div>
         </div>
 
@@ -906,7 +907,7 @@
           <h4>Probar en sesión actual</h4>
           <p>Carga la extensión de forma temporal sin modificar la configuración global.</p>
           <div class="code-box">
-            <code>pi -e /home/hermes/Desarrollos/Automatizacion/Gentle/Plugin/Voz</code>
+            <code>pi -e git:github.com/deimerjr/pi-voice-plugin</code>
           </div>
         </div>
       </div>
@@ -1057,7 +1058,7 @@
       <div class="footer-meta">
         <div class="footer-badge">LICENCIA MIT // 100% OPEN SOURCE</div>
         <p class="footer-copy">
-          © 2026 Hermes &amp; Gentleman Programming. Construido con rigor arquitectónico.
+          © 2026 Hermes &amp; Gentleman Programming. Repositorio oficial en GitHub: <a href="https://github.com/deimerjr/pi-voice-plugin" target="_blank" rel="noopener" style="color: inherit; text-decoration: underline; font-weight: 800;">github.com/deimerjr/pi-voice-plugin</a>
         </p>
       </div>
     </div>
